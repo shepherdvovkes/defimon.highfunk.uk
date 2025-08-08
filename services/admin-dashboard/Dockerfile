@@ -2,11 +2,13 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Копируем package.json и package-lock.json
-COPY package*.json ./
+# Копируем package.json
+COPY package.json ./
 
-# Устанавливаем зависимости
-RUN npm ci --only=production --no-audit --no-fund
+# Настраиваем публичный реестр и ставим только prod-зависимости без lockfile
+RUN npm config set registry https://registry.npmjs.org/ \
+ && npm cache clean --force \
+ && npm install --omit=dev --no-audit --no-fund
 
 # Копируем исходный код
 COPY . .
