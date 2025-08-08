@@ -39,6 +39,32 @@ impl MetricsCollector {
         error!("Error recorded in metrics");
     }
 
+    pub async fn record_l2_sync_success(&self, network_name: &str, blocks_processed: u64, duration: std::time::Duration) {
+        info!("L2 sync success for {}: {} blocks in {:?}", network_name, blocks_processed, duration);
+    }
+
+    pub async fn record_l2_sync_error(&self, network_name: &str) {
+        self.errors_count.fetch_add(1, Ordering::Relaxed);
+        error!("L2 sync error for {}", network_name);
+    }
+
+    pub async fn record_l2_block_processed(&self, network_name: &str, block_number: u64) {
+        self.blocks_processed.fetch_add(1, Ordering::Relaxed);
+        info!("L2 block {} processed for {}", block_number, network_name);
+    }
+
+    pub async fn increment_counter(&self, name: &str, value: u64) {
+        info!("Counter {} incremented by {}", name, value);
+    }
+
+    pub async fn set_gauge(&self, name: &str, value: f64) {
+        info!("Gauge {} set to {}", name, value);
+    }
+
+    pub async fn collect_system_metrics(&self) {
+        info!("Collecting system metrics");
+    }
+
     pub fn get_metrics(&self) -> MetricsSnapshot {
         MetricsSnapshot {
             blocks_processed: self.blocks_processed.load(Ordering::Relaxed),

@@ -1,9 +1,8 @@
 use serde::Deserialize;
 use std::env;
 use dotenv::dotenv;
-use std::collections::HashMap;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Config {
     pub ethereum_node_url: String,
     pub database_url: String,
@@ -29,6 +28,15 @@ pub struct Config {
     // EVM Networks Configuration
     pub evm_sync_enabled: bool,
     pub evm_networks: Vec<String>,
+    
+    // Substrate Networks Configuration
+    pub substrate_sync_enabled: bool,
+    pub substrate_networks: Vec<String>,
+    pub substrate_sync_interval: u64,
+    pub substrate_batch_size: u32,
+    pub substrate_max_concurrent_requests: u32,
+    pub substrate_data_retention_days: u32,
+    pub substrate_priority_threshold: u8,
     
     // Cosmos Networks Configuration
     pub cosmos_sync_enabled: bool,
@@ -133,6 +141,38 @@ impl Config {
                 .map(|s| s.trim().to_string())
                 .filter(|s| !s.is_empty())
                 .collect(),
+
+            // Substrate Networks Configuration
+            substrate_sync_enabled: env::var("SUBSTRATE_SYNC_ENABLED")
+                .unwrap_or_else(|_| "true".to_string())
+                .parse()
+                .unwrap_or(true),
+            substrate_networks: env::var("SUBSTRATE_NETWORKS")
+                .unwrap_or_else(|_| "polkadot,kusama,westend,rococo,moonbeam,moonriver,astar,acala,parallel,centrifuge,hydradx,bifrost,interlay,unique,phala,zeitgeist".to_string())
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect(),
+            substrate_sync_interval: env::var("SUBSTRATE_SYNC_INTERVAL")
+                .unwrap_or_else(|_| "8".to_string())
+                .parse()
+                .unwrap_or(8),
+            substrate_batch_size: env::var("SUBSTRATE_BATCH_SIZE")
+                .unwrap_or_else(|_| "25".to_string())
+                .parse()
+                .unwrap_or(25),
+            substrate_max_concurrent_requests: env::var("SUBSTRATE_MAX_CONCURRENT_REQUESTS")
+                .unwrap_or_else(|_| "6".to_string())
+                .parse()
+                .unwrap_or(6),
+            substrate_data_retention_days: env::var("SUBSTRATE_DATA_RETENTION_DAYS")
+                .unwrap_or_else(|_| "90".to_string())
+                .parse()
+                .unwrap_or(90),
+            substrate_priority_threshold: env::var("SUBSTRATE_PRIORITY_THRESHOLD")
+                .unwrap_or_else(|_| "5".to_string())
+                .parse()
+                .unwrap_or(5),
 
             // Cosmos Networks Configuration
             cosmos_sync_enabled: env::var("COSMOS_SYNC_ENABLED")

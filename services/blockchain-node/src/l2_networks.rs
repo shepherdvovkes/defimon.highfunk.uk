@@ -34,7 +34,7 @@ pub enum L2Technology {
     Arbitrum,
     Polygon,
     StarkNet,
-    zkSync,
+    ZkSync,
     Loopring,
     ImmutableX,
     Boba,
@@ -48,6 +48,7 @@ pub enum L2Technology {
     Custom,
 }
 
+#[derive(Clone)]
 pub struct L2NetworkRegistry {
     networks: HashMap<String, L2Network>,
 }
@@ -163,7 +164,7 @@ impl L2NetworkRegistry {
             ws_url: None,
             explorer_url: "https://explorer.zksync.io".to_string(),
             category: L2Category::ZKRollup,
-            technology: L2Technology::zkSync,
+            technology: L2Technology::ZkSync,
             tvl_usd: Some(650_000_000.0),
             volume_24h: Some(25_000_000.0),
             protocols: vec![

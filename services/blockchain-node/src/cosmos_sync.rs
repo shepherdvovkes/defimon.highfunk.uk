@@ -1,8 +1,8 @@
 use std::sync::Arc;
-use tokio::sync::Mutex;
-use tracing::{info, error, warn};
+use tracing::{info, error};
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use sha2::Digest;
 
 use crate::database::DatabaseManager;
 use crate::kafka::KafkaProducer;
@@ -291,10 +291,11 @@ impl CosmosSyncManager {
         networks
     }
 
-    pub async fn start_sync(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn start_sync(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         info!("Starting Cosmos sync for {} networks", self.networks.len());
 
-        for network in &self.networks {
+        let networks = self.networks.clone();
+        for network in &networks {
             if network.priority >= self.config.cosmos_priority_threshold {
                 info!("Starting sync for {} (priority: {})", network.name, network.priority);
                 self.sync_network(network).await?;
@@ -304,7 +305,7 @@ impl CosmosSyncManager {
         Ok(())
     }
 
-    async fn sync_network(&mut self, network: &CosmosNetworkInfo) -> Result<(), Box<dyn std::error::Error>> {
+    async fn sync_network(&mut self, network: &CosmosNetworkInfo) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let last_height = self.last_processed_heights.get(&network.name).unwrap_or(&0);
         
         // Get latest block height
@@ -335,7 +336,7 @@ impl CosmosSyncManager {
         Ok(())
     }
 
-    async fn get_latest_height(&self, network: &CosmosNetworkInfo) -> Result<u64, Box<dyn std::error::Error>> {
+    async fn get_latest_height(&self, network: &CosmosNetworkInfo) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
         let client = reqwest::Client::new();
         let response: serde_json::Value = client
             .get(&format!("{}/status", network.rpc_url))
@@ -352,7 +353,7 @@ impl CosmosSyncManager {
         Ok(height)
     }
 
-    async fn fetch_block(&self, network: &CosmosNetworkInfo, height: u64) -> Result<CosmosBlockData, Box<dyn std::error::Error>> {
+    async fn fetch_block(&self, network: &CosmosNetworkInfo, height: u64) -> Result<CosmosBlockData, Box<dyn std::error::Error + Send + Sync>> {
         let client = reqwest::Client::new();
         
         // Fetch block
@@ -405,7 +406,7 @@ impl CosmosSyncManager {
         })
     }
 
-    async fn fetch_validators(&self, network: &CosmosNetworkInfo) -> Result<Vec<CosmosValidatorData>, Box<dyn std::error::Error>> {
+    async fn fetch_validators(&self, network: &CosmosNetworkInfo) -> Result<Vec<CosmosValidatorData>, Box<dyn std::error::Error + Send + Sync>> {
         let client = reqwest::Client::new();
         let response: serde_json::Value = client
             .get(&format!("{}/validators", network.rest_url))
@@ -434,13 +435,13 @@ impl CosmosSyncManager {
 
     fn parse_transaction(
         &self,
-        network: &CosmosNetworkInfo,
+        _network: &CosmosNetworkInfo,
         height: u64,
         tx: &serde_json::Value,
         tx_result: &serde_json::Value,
-    ) -> Result<CosmosTransactionData, Box<dyn std::error::Error>> {
+    ) -> Result<CosmosTransactionData, Box<dyn std::error::Error + Send + Sync>> {
         // Decode base64 transaction
-        let tx_bytes = base64::decode(tx.as_str().unwrap_or(""))?;
+        let tx_bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, tx.as_str().unwrap_or(""))?;
         let tx_json: serde_json::Value = serde_json::from_slice(&tx_bytes)?;
 
         let fee = CosmosFee {
@@ -485,7 +486,7 @@ impl CosmosSyncManager {
         })
     }
 
-    async fn process_block(&self, block_data: CosmosBlockData) -> Result<(), Box<dyn std::error::Error>> {
+    async fn process_block(&self, block_data: CosmosBlockData) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Store in database
         self.store_block_data(&block_data).await?;
 
@@ -499,31 +500,30 @@ impl CosmosSyncManager {
         Ok(())
     }
 
-    async fn store_block_data(&self, block_data: &CosmosBlockData) -> Result<(), Box<dyn std::error::Error>> {
+    async fn store_block_data(&self, block_data: &CosmosBlockData) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Implementation for storing to PostgreSQL
         // This would include storing blocks, transactions, and validator data
         Ok(())
     }
 
-    async fn send_to_kafka(&self, block_data: &CosmosBlockData) -> Result<(), Box<dyn std::error::Error>> {
+    async fn send_to_kafka(&self, block_data: &CosmosBlockData) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let topic = format!("cosmos.blocks.{}", block_data.network);
         let message = serde_json::to_string(block_data)?;
         self.kafka_producer.send_message(&topic, &message).await?;
         Ok(())
     }
 
-    async fn update_metrics(&self, block_data: &CosmosBlockData) -> Result<(), Box<dyn std::error::Error>> {
+    async fn update_metrics(&self, block_data: &CosmosBlockData) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Update Prometheus metrics
         self.metrics_collector.increment_counter(
             "cosmos_blocks_processed_total",
-            &[("network", &block_data.network)],
-        );
+            1,
+        ).await;
 
         self.metrics_collector.set_gauge(
             "cosmos_latest_block_height",
             block_data.height as f64,
-            &[("network", &block_data.network)],
-        );
+        ).await;
 
         Ok(())
     }

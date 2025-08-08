@@ -1,18 +1,18 @@
 use crate::l2_networks::{L2NetworkRegistry, L2Network};
-use crate::ethereum::{BlockData, TransactionData, LogData};
+use crate::ethereum::{BlockData, TransactionData};
 use crate::database::DatabaseManager;
 use crate::kafka::KafkaProducer;
 use crate::monitoring::MetricsCollector;
 use ethers::{
-    providers::{Http, Provider, Ws},
-    types::{Block, Transaction, Log, H256, U256, Address},
+    providers::{Http, Provider},
+    types::{H256, U256, Address},
+    middleware::Middleware,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 use tokio::time::{sleep, Duration};
-use tracing::{info, error, warn, debug};
+use tracing::{info, error, debug, warn};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -103,7 +103,7 @@ impl L2SyncManager {
 
         // Initialize last processed blocks from database
         for network in enabled_networks {
-            if let Some(network_config) = self.registry.get_network(network) {
+            if let Some(_network_config) = self.registry.get_network(network) {
                 let last_block = self.db_manager.get_last_l2_processed_block(network).await?;
                 self.last_processed_blocks.insert(network.clone(), last_block);
                 info!("Network {}: starting from block {}", network, last_block);
@@ -117,26 +117,49 @@ impl L2SyncManager {
     }
 
     async fn sync_all_networks(&mut self, enabled_networks: &[String]) -> Result<(), Box<dyn std::error::Error>> {
-        let mut sync_tasks = Vec::new();
-
-        for network_name in enabled_networks {
-            if let Some(network) = self.registry.get_network(network_name) {
-                if network.priority >= self.priority_threshold && network.sync_enabled {
-                    let task = self.sync_network(network_name, network);
-                    sync_tasks.push(task);
-                }
-            }
-        }
+        let priority_threshold = self.priority_threshold;
+        let max_concurrent_requests = self.max_concurrent_requests;
+        
+        // Collect networks to sync
+        let networks_to_sync: Vec<(String, L2Network)> = enabled_networks
+            .iter()
+            .filter_map(|network_name| {
+                self.registry.get_network(network_name).map(|network| {
+                    if network.priority >= priority_threshold && network.sync_enabled {
+                        Some((network_name.clone(), network.clone()))
+                    } else {
+                        None
+                    }
+                })
+            })
+            .flatten()
+            .collect();
 
         // Execute sync tasks concurrently with rate limiting
-        let semaphore = Arc::new(tokio::sync::Semaphore::new(self.max_concurrent_requests as usize));
+        let semaphore = Arc::new(tokio::sync::Semaphore::new(max_concurrent_requests as usize));
         
         let mut handles = Vec::new();
-        for task in sync_tasks {
+        for (network_name, network) in networks_to_sync {
             let permit = semaphore.clone().acquire_owned().await?;
+            let db_manager = self.db_manager.clone();
+            let kafka_producer = self.kafka_producer.clone();
+            let metrics_collector = self.metrics_collector.clone();
+            let registry = self.registry.clone();
+            
             let handle = tokio::spawn(async move {
                 let _permit = permit;
-                task.await
+                let mut sync_manager = L2SyncManager {
+                    registry,
+                    db_manager,
+                    kafka_producer,
+                    metrics_collector,
+                    last_processed_blocks: HashMap::new(),
+                    sync_interval: 0,
+                    batch_size: 0,
+                    max_concurrent_requests: 0,
+                    priority_threshold: 0,
+                };
+                sync_manager.sync_network(&network_name, &network).await
             });
             handles.push(handle);
         }
@@ -151,7 +174,7 @@ impl L2SyncManager {
         Ok(())
     }
 
-    async fn sync_network(&self, network_name: &str, network: &L2Network) -> Result<(), Box<dyn std::error::Error>> {
+    async fn sync_network(&mut self, network_name: &str, network: &L2Network) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let start_time = std::time::Instant::now();
         
         match self.sync_network_data(network_name, network).await {
@@ -161,7 +184,7 @@ impl L2SyncManager {
                     "Network {}: processed {} blocks in {:?}",
                     network_name, blocks_processed, duration
                 );
-                self.metrics_collector.record_l2_sync_success(network_name, blocks_processed, duration).await;
+                self.metrics_collector.record_l2_sync_success(network_name, blocks_processed.into(), duration).await;
             }
             Err(e) => {
                 error!("Failed to sync network {}: {}", network_name, e);
@@ -172,7 +195,7 @@ impl L2SyncManager {
         Ok(())
     }
 
-    async fn sync_network_data(&self, network_name: &str, network: &L2Network) -> Result<u32, Box<dyn std::error::Error>> {
+    async fn sync_network_data(&mut self, network_name: &str, network: &L2Network) -> Result<u32, Box<dyn std::error::Error + Send + Sync>> {
         let provider = Provider::<Http>::try_from(&network.rpc_url)?;
         
         // Get latest block
@@ -218,11 +241,11 @@ impl L2SyncManager {
 
         let mut transactions = Vec::new();
         for tx in &block.transactions {
-            let receipt = provider.get_transaction_receipt(tx.hash).await?;
-            let gas_used = receipt.map(|r| r.gas_used).unwrap_or(U256::zero());
-
-            // Extract L2-specific data
-            let l2_gas_price = self.extract_l2_gas_price(&receipt);
+                    let receipt = provider.get_transaction_receipt(tx.hash).await?;
+        let gas_used = receipt.as_ref().map(|r| r.gas_used).unwrap_or(Some(U256::zero())).unwrap_or(U256::zero());
+        
+        // Extract L2-specific data
+        let l2_gas_price = self.extract_l2_gas_price(&receipt);
             let l1_gas_price = self.extract_l1_gas_price(&receipt);
             let l1_batch_number = self.extract_l1_batch_number(&receipt);
 
@@ -232,7 +255,7 @@ impl L2SyncManager {
                 to: tx.to,
                 value: tx.value,
                 gas_price: tx.gas_price.unwrap_or(U256::zero()),
-                gas_used,
+                gas_used: gas_used,
                 block_number,
                 l2_gas_price,
                 l1_gas_price,
@@ -258,7 +281,9 @@ impl L2SyncManager {
         self.db_manager.save_l2_block_data(&l2_block_data).await?;
 
         // Send to Kafka
-        self.kafka_producer.send_message("l2_blockchain_data", &l2_block_data).await?;
+        if let Err(e) = self.kafka_producer.send_message("l2_blockchain_data", &l2_block_data).await {
+            warn!("Failed to send to Kafka: {}", e);
+        }
 
         // Update metrics
         self.metrics_collector.record_l2_block_processed(network_name, block_number).await;
@@ -278,7 +303,7 @@ impl L2SyncManager {
                 address: log.address,
                 topics: log.topics,
                 data: log.data.to_vec(),
-                block_number: log.block_number.unwrap_or(0).as_u64(),
+                block_number: log.block_number.unwrap_or_default().as_u64(),
                 transaction_hash: log.transaction_hash.unwrap_or(H256::zero()),
                 l2_specific_metadata: None, // Can be extended with L2-specific metadata
             });
@@ -289,9 +314,9 @@ impl L2SyncManager {
 
     async fn extract_l2_specific_data(
         &self,
-        provider: &Provider<Http>,
-        network: &L2Network,
-        block_number: u64,
+        _provider: &Provider<Http>,
+        _network: &L2Network,
+        _block_number: u64,
     ) -> Result<L2SpecificData, Box<dyn std::error::Error>> {
         // This is a simplified implementation
         // In a real implementation, you would extract L2-specific data based on the network type
@@ -319,7 +344,7 @@ impl L2SyncManager {
 
     fn extract_l1_batch_number(&self, receipt: &Option<ethers::types::TransactionReceipt>) -> Option<u64> {
         // Extract L1 batch number from receipt metadata
-        receipt.as_ref().map(|r| r.block_number.unwrap_or(0).as_u64())
+        receipt.as_ref().map(|r| r.block_number.unwrap_or_default().as_u64())
     }
 
     pub async fn get_network_stats(&self, network_name: &str) -> Result<NetworkStats, Box<dyn std::error::Error>> {

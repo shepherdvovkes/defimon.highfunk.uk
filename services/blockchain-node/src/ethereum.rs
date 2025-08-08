@@ -1,12 +1,34 @@
 use ethers::{
     providers::{Http, Provider, Ws},
-    types::{Block, Transaction, Log, H256, U256, Address},
-    contract::Contract,
+    types::{Block, H256, U256, Address, U64},
+    middleware::Middleware,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use tokio::sync::Mutex;
-use tracing::{info, error, warn};
+use tracing::{info, error};
+use futures_util::StreamExt;
+use std::fmt;
+
+#[derive(Debug)]
+pub struct EthereumError {
+    message: String,
+}
+
+impl EthereumError {
+    pub fn new(message: &str) -> Self {
+        EthereumError {
+            message: message.to_string(),
+        }
+    }
+}
+
+impl fmt::Display for EthereumError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Ethereum error: {}", self.message)
+    }
+}
+
+impl std::error::Error for EthereumError {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlockData {
@@ -44,7 +66,7 @@ pub struct EthereumNode {
 }
 
 impl EthereumNode {
-    pub async fn new(node_url: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn new(node_url: &str) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let provider = Provider::<Http>::try_from(node_url)?;
         
         // Попытка подключения к WebSocket
@@ -72,19 +94,19 @@ impl EthereumNode {
         })
     }
 
-    pub async fn get_latest_block(&self) -> Result<Block<H256>, Box<dyn std::error::Error>> {
+    pub async fn get_latest_block(&self) -> Result<Block<H256>, Box<dyn std::error::Error + Send + Sync>> {
         let block = self.provider.get_block(ethers::types::BlockNumber::Latest).await?;
         Ok(block.ok_or("No latest block found")?)
     }
 
-    pub async fn get_block_data(&self, block_number: u64) -> Result<BlockData, Box<dyn std::error::Error>> {
+    pub async fn get_block_data(&self, block_number: u64) -> Result<BlockData, Box<dyn std::error::Error + Send + Sync>> {
         let block = self.provider.get_block_with_txs(block_number).await?;
         let block = block.ok_or("Block not found")?;
 
         let mut transactions = Vec::new();
         for tx in &block.transactions {
             let receipt = self.provider.get_transaction_receipt(tx.hash).await?;
-            let gas_used = receipt.map(|r| r.gas_used).unwrap_or(U256::zero());
+            let gas_used = receipt.map(|r| r.gas_used).unwrap_or(Some(U256::zero())).unwrap_or(U256::zero());
 
             transactions.push(TransactionData {
                 hash: tx.hash,
@@ -92,7 +114,7 @@ impl EthereumNode {
                 to: tx.to,
                 value: tx.value,
                 gas_price: tx.gas_price.unwrap_or(U256::zero()),
-                gas_used,
+                gas_used: gas_used,
                 block_number,
             });
         }
@@ -108,7 +130,7 @@ impl EthereumNode {
         })
     }
 
-    pub async fn get_block_logs(&self, block_number: u64) -> Result<Vec<LogData>, Box<dyn std::error::Error>> {
+    pub async fn get_block_logs(&self, block_number: u64) -> Result<Vec<LogData>, Box<dyn std::error::Error + Send + Sync>> {
         let logs = self.provider.get_logs(&ethers::types::Filter::new()
             .from_block(block_number)
             .to_block(block_number)).await?;
@@ -119,7 +141,7 @@ impl EthereumNode {
                 address: log.address,
                 topics: log.topics,
                 data: log.data.to_vec(),
-                block_number: log.block_number.unwrap_or(0).as_u64(),
+                block_number: log.block_number.unwrap_or(U64::from(0)).as_u64(),
                 transaction_hash: log.transaction_hash.unwrap_or(H256::zero()),
             });
         }
@@ -132,7 +154,7 @@ impl EthereumNode {
         contract_name: &str,
         from_block: u64,
         to_block: u64,
-    ) -> Result<Vec<LogData>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<LogData>, Box<dyn std::error::Error + Send + Sync>> {
         let contract_address = self.contract_addresses.get(contract_name)
             .ok_or("Contract not found")?;
 
@@ -149,7 +171,7 @@ impl EthereumNode {
                 address: log.address,
                 topics: log.topics,
                 data: log.data.to_vec(),
-                block_number: log.block_number.unwrap_or(0).as_u64(),
+                block_number: log.block_number.unwrap_or(U64::from(0)).as_u64(),
                 transaction_hash: log.transaction_hash.unwrap_or(H256::zero()),
             });
         }
@@ -162,7 +184,7 @@ impl EthereumNode {
         contract_name: &str,
         function_signature: &str,
         params: Vec<ethers::types::U256>,
-    ) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<u8>, Box<dyn std::error::Error + Send + Sync>> {
         let contract_address = self.contract_addresses.get(contract_name)
             .ok_or("Contract not found")?;
 
@@ -173,7 +195,8 @@ impl EthereumNode {
             .to(*contract_address)
             .data(data);
 
-        let result = self.provider.call(&call_data, None).await?;
+        // Исправленный вызов для ethers 2.0
+        let result = self.provider.call(&call_data.into(), None).await?;
         Ok(result.to_vec())
     }
 
@@ -181,7 +204,7 @@ impl EthereumNode {
         &self,
         function_signature: &str,
         params: &[ethers::types::U256],
-    ) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<u8>, Box<dyn std::error::Error + Send + Sync>> {
         // Простое кодирование вызова функции
         // В реальном приложении нужно использовать ABI
         let mut data = Vec::new();
@@ -192,13 +215,15 @@ impl EthereumNode {
         
         // Добавление параметров
         for param in params {
-            data.extend_from_slice(&param.to_big_endian());
+            let mut bytes = [0u8; 32];
+            param.to_big_endian(&mut bytes);
+            data.extend_from_slice(&bytes);
         }
         
         Ok(data)
     }
 
-    pub async fn subscribe_to_blocks(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn subscribe_to_blocks(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if let Some(ws_provider) = &self.ws_provider {
             let mut stream = ws_provider.subscribe_blocks().await?;
             

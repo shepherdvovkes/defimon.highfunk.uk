@@ -3,7 +3,10 @@ use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
 use ethers::providers::{Http, Provider};
-use ethers::types::{Address, Block, H256, Log, Transaction, U256};
+use ethers::{
+    types::{Address, H256, U256},
+    middleware::Middleware,
+};
 use serde::{Deserialize, Serialize};
 use tokio::time::{sleep, Duration};
 use tracing::{error, info, warn};
@@ -11,7 +14,7 @@ use tracing::{error, info, warn};
 use crate::database::DatabaseManager;
 use crate::kafka::KafkaProducer;
 use crate::monitoring::MetricsCollector;
-use crate::network::{NetworkCategory, NetworkDescriptor, NetworkModule, NetworkRuntime};
+use crate::network::{NetworkCategory, NetworkDescriptor, NetworkRuntime};
 use crate::network_registry::NetworkRegistry;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -77,7 +80,7 @@ impl EvmSyncManager {
         }
     }
 
-    pub async fn start_sync(&mut self, enabled_networks: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn start_sync(&mut self, enabled_networks: &[String]) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         info!("Starting EVM sync for: {:?}", enabled_networks);
 
         // Seed last processed blocks
@@ -92,7 +95,7 @@ impl EvmSyncManager {
         }
     }
 
-    async fn sync_all_networks(&mut self, enabled_networks: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+    async fn sync_all_networks(&mut self, enabled_networks: &[String]) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let semaphore = Arc::new(tokio::sync::Semaphore::new(self.max_concurrent_requests as usize));
         let mut handles = Vec::new();
 
@@ -148,7 +151,7 @@ async fn sync_evm_network(
     db_manager: Arc<DatabaseManager>,
     kafka_producer: Arc<KafkaProducer>,
     metrics_collector: Arc<MetricsCollector>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let provider = Provider::<Http>::try_from(rpc_url)?;
     let latest_block = provider.get_block_number().await?.as_u64();
     if latest_block <= last_processed_block { return Ok(()); }
@@ -159,7 +162,8 @@ async fn sync_evm_network(
     for bn in start_block..=end_block {
         match process_block(&provider, network_key, bn).await {
             Ok(block) => {
-                db_manager.save_evm_block_data(&block).await?;
+                db_manager.save_evm_block_data(&block).await
+                    .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())) as Box<dyn std::error::Error + Send + Sync>)?;
                 kafka_producer.send_message("evm_blockchain_data", &block).await?;
                 metrics_collector.record_block_processed(bn).await;
             }
@@ -170,20 +174,20 @@ async fn sync_evm_network(
     Ok(())
 }
 
-async fn process_block(provider: &Provider<Http>, network_key: &str, block_number: u64) -> Result<EvmBlockData, Box<dyn std::error::Error>> {
+async fn process_block(provider: &Provider<Http>, network_key: &str, block_number: u64) -> Result<EvmBlockData, Box<dyn std::error::Error + Send + Sync>> {
     let block = provider.get_block_with_txs(block_number).await?.ok_or("Block not found")?;
 
     let mut transactions = Vec::new();
     for tx in &block.transactions {
         let receipt = provider.get_transaction_receipt(tx.hash).await?;
-        let gas_used = receipt.map(|r| r.gas_used).unwrap_or(U256::zero());
+        let gas_used = receipt.map(|r| r.gas_used).unwrap_or(Some(U256::zero())).unwrap_or(U256::zero());
         transactions.push(EvmTransactionData {
             hash: tx.hash,
             from: tx.from,
             to: tx.to,
             value: tx.value,
             gas_price: tx.gas_price.unwrap_or(U256::zero()),
-            gas_used,
+            gas_used: gas_used,
             block_number,
         });
     }
@@ -200,7 +204,7 @@ async fn process_block(provider: &Provider<Http>, network_key: &str, block_numbe
     })
 }
 
-async fn get_block_logs(provider: &Provider<Http>, block_number: u64) -> Result<Vec<EvmLogData>, Box<dyn std::error::Error>> {
+async fn get_block_logs(provider: &Provider<Http>, block_number: u64) -> Result<Vec<EvmLogData>, Box<dyn std::error::Error + Send + Sync>> {
     let logs = provider
         .get_logs(&ethers::types::Filter::new().from_block(block_number).to_block(block_number))
         .await?;
@@ -210,7 +214,7 @@ async fn get_block_logs(provider: &Provider<Http>, block_number: u64) -> Result<
             address: log.address,
             topics: log.topics,
             data: log.data.to_vec(),
-            block_number: log.block_number.unwrap_or(0).as_u64(),
+            block_number: log.block_number.unwrap_or_default().as_u64(),
             transaction_hash: log.transaction_hash.unwrap_or(H256::zero()),
         });
     }

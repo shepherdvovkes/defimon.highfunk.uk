@@ -7,10 +7,10 @@ edition = "2021"
 # Web3 и Ethereum
 web3 = "0.19"
 ethers = { version = "2.0", features = ["ws", "rustls"] }
-ethers-core = "0.8"
-ethers-providers = "0.8"
-ethers-signers = "0.8"
-ethers-contract = "0.8"
+ethers-core = "2.0"
+ethers-providers = "2.0"
+ethers-signers = "2.0"
+ethers-contract = "2.0"
 subxt = "0.34"
 jsonrpsee = { version = "0.22", features = ["http-client", "jsonrpsee-types"] }
 futures-util = "0.3"

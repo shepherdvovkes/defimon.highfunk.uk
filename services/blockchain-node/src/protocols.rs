@@ -1,10 +1,10 @@
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use serde::{Deserialize, Serialize};
-use tracing::{info, error, warn};
+use tracing::{info, error};
 use chrono::{DateTime, Utc};
 
-use crate::ethereum::{EthereumNode, BlockData, LogData};
+use crate::ethereum::{EthereumNode, BlockData};
 use crate::database::DatabaseManager;
 use crate::kafka::KafkaProducer;
 use crate::monitoring::MetricsCollector;
@@ -82,16 +82,18 @@ impl ProtocolMonitor {
         }
     }
 
-    pub async fn start_monitoring(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn start_monitoring(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         info!("Starting protocol monitoring...");
 
         // Получение последнего обработанного блока
-        self.last_processed_block = self.db_manager.get_last_processed_block().await?;
+        self.last_processed_block = self.db_manager.get_last_processed_block().await
+            .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())) as Box<dyn std::error::Error + Send + Sync>)?;
 
         loop {
             let current_block = {
                 let node = self.ethereum_node.lock().await;
-                node.get_latest_block().await?.number.as_u64()
+                node.get_latest_block().await
+                    .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())) as Box<dyn std::error::Error + Send + Sync>)?.number.unwrap_or_default().as_u64()
             };
 
             if current_block > self.last_processed_block {
@@ -104,7 +106,7 @@ impl ProtocolMonitor {
         }
     }
 
-    async fn process_new_blocks(&self, latest_block: u64) -> Result<(), Box<dyn std::error::Error>> {
+    async fn process_new_blocks(&self, latest_block: u64) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let start_block = self.last_processed_block + 1;
         
         for block_number in start_block..=latest_block {
@@ -114,10 +116,11 @@ impl ProtocolMonitor {
         Ok(())
     }
 
-    async fn process_block(&self, block_number: u64) -> Result<(), Box<dyn std::error::Error>> {
+    async fn process_block(&self, block_number: u64) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let block_data = {
             let node = self.ethereum_node.lock().await;
-            node.get_block_data(block_number).await?
+            node.get_block_data(block_number).await
+                .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())) as Box<dyn std::error::Error + Send + Sync>)?
         };
 
         // Обработка транзакций Uniswap V3
@@ -127,7 +130,8 @@ impl ProtocolMonitor {
         self.process_aave_v3_transactions(&block_data).await?;
 
         // Сохранение данных в базу
-        self.db_manager.save_block_data(&block_data).await?;
+        self.db_manager.save_block_data(&block_data).await
+            .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())) as Box<dyn std::error::Error + Send + Sync>)?;
 
         // Отправка в Kafka
         self.kafka_producer.send_message("blockchain_data", &block_data).await?;
@@ -139,7 +143,7 @@ impl ProtocolMonitor {
         Ok(())
     }
 
-    async fn process_uniswap_v3_transactions(&self, block_data: &BlockData) -> Result<(), Box<dyn std::error::Error>> {
+    async fn process_uniswap_v3_transactions(&self, block_data: &BlockData) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let uniswap_address = "0x1f98431c8ad98523631ae4a59f267346ea31f984";
         
         for transaction in &block_data.transactions {
@@ -149,7 +153,8 @@ impl ProtocolMonitor {
                     let pool_data = self.analyze_uniswap_transaction(transaction).await?;
                     
                     if let Some(data) = pool_data {
-                        self.db_manager.save_uniswap_data(&data).await?;
+                        self.db_manager.save_uniswap_data(&data).await
+                            .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())) as Box<dyn std::error::Error + Send + Sync>)?;
                         self.kafka_producer.send_message("uniswap_v3_data", &data).await?;
                     }
                 }
@@ -159,7 +164,7 @@ impl ProtocolMonitor {
         Ok(())
     }
 
-    async fn process_aave_v3_transactions(&self, block_data: &BlockData) -> Result<(), Box<dyn std::error::Error>> {
+    async fn process_aave_v3_transactions(&self, block_data: &BlockData) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let aave_address = "0x87870bace4f61ad5d8ba8c16b2e9ae4b6e79a1a7";
         
         for transaction in &block_data.transactions {
@@ -169,7 +174,8 @@ impl ProtocolMonitor {
                     let reserve_data = self.analyze_aave_transaction(transaction).await?;
                     
                     if let Some(data) = reserve_data {
-                        self.db_manager.save_aave_data(&data).await?;
+                        self.db_manager.save_aave_data(&data).await
+                            .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())) as Box<dyn std::error::Error + Send + Sync>)?;
                         self.kafka_producer.send_message("aave_v3_data", &data).await?;
                     }
                 }
@@ -179,7 +185,7 @@ impl ProtocolMonitor {
         Ok(())
     }
 
-    async fn analyze_uniswap_transaction(&self, transaction: &crate::ethereum::TransactionData) -> Result<Option<UniswapV3Data>, Box<dyn std::error::Error>> {
+    async fn analyze_uniswap_transaction(&self, transaction: &crate::ethereum::TransactionData) -> Result<Option<UniswapV3Data>, Box<dyn std::error::Error + Send + Sync>> {
         // Анализ данных транзакции Uniswap V3
         // Здесь можно добавить более сложную логику анализа
         
@@ -204,7 +210,7 @@ impl ProtocolMonitor {
         Ok(Some(uniswap_data))
     }
 
-    async fn analyze_aave_transaction(&self, transaction: &crate::ethereum::TransactionData) -> Result<Option<AaveV3Data>, Box<dyn std::error::Error>> {
+    async fn analyze_aave_transaction(&self, transaction: &crate::ethereum::TransactionData) -> Result<Option<AaveV3Data>, Box<dyn std::error::Error + Send + Sync>> {
         // Анализ данных транзакции Aave V3
         // Здесь можно добавить более сложную логику анализа
         

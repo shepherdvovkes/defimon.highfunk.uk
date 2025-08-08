@@ -1,7 +1,30 @@
+use tracing::{info, error};
+use tracing_subscriber;
+use futures_util::StreamExt;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{info, error, warn};
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use std::fmt;
+
+#[derive(Debug)]
+pub struct AppError {
+    message: String,
+}
+
+impl AppError {
+    pub fn new(message: &str) -> Self {
+        AppError {
+            message: message.to_string(),
+        }
+    }
+}
+
+impl fmt::Display for AppError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Application error: {}", self.message)
+    }
+}
+
+impl std::error::Error for AppError {}
 
 mod config;
 mod database;
@@ -30,14 +53,20 @@ use cosmos_sync::CosmosSyncManager;
 use polkadot_sync::PolkadotSyncManager;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), AppError> {
     // Initialize logging
     tracing_subscriber::fmt::init();
 
     info!("Starting DEFIMON blockchain node...");
 
     // Load configuration
-    let config = Config::load()?;
+    let config = match Config::load() {
+        Ok(config) => config,
+        Err(e) => {
+            error!("Failed to load config: {}", e);
+            return Err(AppError::new("Failed to load config"));
+        }
+    };
     info!("Configuration loaded successfully");
 
     // Initialize generic network registry (modular architecture scaffold)
@@ -51,11 +80,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         min_connections: 5,
         connection_timeout: 30,
     };
-    let db_manager = Arc::new(DatabaseManager::new(db_config).await?);
+    let db_manager = match DatabaseManager::new(db_config).await {
+        Ok(manager) => Arc::new(manager),
+        Err(e) => {
+            error!("Failed to initialize database: {}", e);
+            return Err(AppError::new("Failed to initialize database"));
+        }
+    };
     info!("Database connection established");
 
     // Initialize Kafka producer
-    let kafka_producer = Arc::new(KafkaProducer::new(&config.kafka_bootstrap_servers).await?);
+    let kafka_producer = match KafkaProducer::new(&config.kafka_bootstrap_servers).await {
+        Ok(producer) => Arc::new(producer),
+        Err(e) => {
+            error!("Failed to initialize Kafka: {}", e);
+            return Err(AppError::new("Failed to initialize Kafka"));
+        }
+    };
     info!("Kafka producer initialized");
 
     // Initialize metrics collector
@@ -63,11 +104,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Metrics collector initialized");
 
     // Initialize Ethereum node
-    let ethereum_node = Arc::new(Mutex::new(EthereumNode::new(&config.ethereum_node_url).await?));
+    let ethereum_node = match EthereumNode::new(&config.ethereum_node_url).await {
+        Ok(node) => Arc::new(Mutex::new(node)),
+        Err(e) => {
+            error!("Failed to initialize Ethereum node: {}", e);
+            return Err(AppError::new("Failed to initialize Ethereum node"));
+        }
+    };
     info!("Ethereum node initialized");
 
     // Initialize protocol monitor
-    let protocol_monitor = ProtocolMonitor::new(
+    let mut protocol_monitor = ProtocolMonitor::new(
         ethereum_node.clone(),
         db_manager.clone(),
         kafka_producer.clone(),
@@ -100,47 +147,49 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Start L2 sync if enabled
     if config.l2_sync_enabled {
+        let l2_networks = config.l2_networks.clone();
         let l2_sync_task = tokio::spawn(async move {
-            if let Err(e) = l2_sync_manager.start_sync(&config.l2_networks).await {
+            if let Err(e) = l2_sync_manager.start_sync(&l2_networks).await {
                 error!("L2 sync failed: {}", e);
             }
         });
         tasks.push(l2_sync_task);
     }
 
-    // Start EVM sync for configured networks (reuse L2 env list for now)
+    // Start EVM sync if enabled
     if config.evm_sync_enabled {
-        let mut evm_manager = evm_sync::EvmSyncManager::new(
-            generic_registry,
-            db_manager.clone(),
-            kafka_producer.clone(),
-            metrics_collector.clone(),
-            config.l2_sync_interval,
-            config.l2_batch_size,
-            config.l2_max_concurrent_requests,
-        );
-        let evm_enabled = config.evm_networks.clone();
-        let evm_task = tokio::spawn(async move {
-            if let Err(e) = evm_manager.start_sync(&evm_enabled).await {
-                error!("EVM sync failed: {}", e);
-            }
-        });
+        let evm_task = {
+            let db = db_manager.clone();
+            let kafka = kafka_producer.clone();
+            let metrics = metrics_collector.clone();
+            let evm_registry = generic_registry.clone();
+            let evm_networks = config.evm_networks.clone();
+            tokio::spawn(async move {
+                let mut manager = evm_sync::EvmSyncManager::new(
+                    evm_registry,
+                    db,
+                    kafka,
+                    metrics,
+                    12,
+                    100,
+                    10,
+                );
+                if let Err(e) = manager.start_sync(&evm_networks).await {
+                    error!("EVM sync failed: {}", e);
+                }
+            })
+        };
         tasks.push(evm_task);
     }
 
-    // Start Substrate (Polkadot ecosystem) sync using SUBSTRATE_NETWORKS
-    let substrate_networks: Vec<String> = std::env::var("SUBSTRATE_NETWORKS")
-        .unwrap_or_else(|_| "polkadot,moonbeam,moonriver,astar,acala,parallel,centrifuge,hydradx,bifrost,interlay,unique,phala,zeitgeist".to_string())
-        .split(',')
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
-        .collect();
-    if !substrate_networks.is_empty() {
-        let substrate_registry = network_registry::NetworkRegistry::new_from_env_or_default();
+    // Start Substrate sync if enabled
+    if config.substrate_sync_enabled {
         let substrate_task = {
             let db = db_manager.clone();
             let kafka = kafka_producer.clone();
             let metrics = metrics_collector.clone();
+            let substrate_registry = generic_registry.clone();
+            let substrate_networks = config.substrate_networks.clone();
             tokio::spawn(async move {
                 let manager = substrate_sync::SubstrateSyncManager::new(
                     substrate_registry,
@@ -233,6 +282,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for task in tasks {
         if let Err(e) = task.await {
             error!("Task failed: {}", e);
+            return Err(AppError::new(&format!("Task failed: {}", e)));
         }
     }
 

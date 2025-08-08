@@ -1,7 +1,7 @@
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use sqlx::Row; // for row.get(..)
 use serde::{Deserialize, Serialize};
-use tracing::{info, error, warn};
+use tracing::{info, error};
 use chrono::{DateTime, Utc};
 use crate::l2_sync::{L2BlockData, NetworkStats};
 use crate::evm_sync::EvmBlockData;
@@ -334,7 +334,7 @@ impl DatabaseManager {
             .bind(tx.hash.as_bytes())
             .bind(tx.block_number as i64)
             .bind(tx.from.as_bytes())
-            .bind(tx.to.map(|addr| addr.as_bytes()))
+            .bind(tx.to.as_ref().map(|addr| addr.as_bytes().to_vec()))
             .bind(tx.value.to_string())
             .bind(tx.gas_price.to_string())
             .bind(tx.gas_used.to_string())
@@ -441,7 +441,7 @@ impl DatabaseManager {
             .bind(tx.hash.as_bytes())
             .bind(tx.block_number as i64)
             .bind(tx.from.as_bytes())
-            .bind(tx.to.map(|a| a.as_bytes()))
+            .bind(tx.to.as_ref().map(|a| a.as_bytes().to_vec()))
             .bind(tx.value.to_string())
             .bind(tx.gas_price.to_string())
             .bind(tx.gas_used.to_string())
@@ -569,7 +569,7 @@ impl DatabaseManager {
             tvl: row.get("tvl"),
             volume_24h: row.get("volume_24h"),
             fees_24h: row.get("fees_24h"),
-            users_24h: row.get("users_24h"),
+            users_24h: row.get::<i64, _>("users_24h") as u64,
             timestamp: row.get("timestamp"),
         })
     }
@@ -651,7 +651,7 @@ impl DatabaseManager {
         sqlx::query(query)
             .bind(tx.hash.as_bytes())
             .bind(tx.from.as_bytes())
-            .bind(tx.to.map(|addr| addr.as_bytes()))
+            .bind(tx.to.as_ref().map(|addr| addr.as_bytes().to_vec()))
             .bind(tx.value.to_string())
             .bind(tx.gas_price.to_string())
             .bind(tx.gas_used.to_string())
@@ -729,7 +729,7 @@ impl DatabaseManager {
             JOIN l2_blocks b ON b.number = t.block_number
             WHERE b.network = $1
         "#;
-        let result: Option<sqlx::types::Decimal> = sqlx::query_scalar(query)
+        let result: Option<String> = sqlx::query_scalar(query)
             .bind(network)
             .fetch_one(&self.pool)
             .await?;
@@ -758,23 +758,26 @@ impl DatabaseManager {
             LEFT JOIN l2_transactions t ON b.network = t.network AND b.number = t.block_number
             WHERE b.network = $1 AND b.created_at >= NOW() - INTERVAL '1 day' * $2
         "#;
+        
+        let row = sqlx::query(query)
+            .bind(network)
+            .bind(days as i32)
+            .fetch_one(&self.pool)
+            .await?;
 
-        let row = sqlx::query_as!(
-            NetworkStatsRow,
-            query,
-            network,
-            days as i32
-        )
-        .fetch_one(&self.pool)
-        .await?;
-
+        // Parse the row manually since we can't use query_as! macro
+        let total_blocks: i64 = row.get("total_blocks");
+        let total_transactions: i64 = row.get("total_transactions");
+        let total_volume: Option<String> = row.get("total_volume");
+        let last_sync_time: Option<chrono::DateTime<chrono::Utc>> = row.get("last_sync_time");
+        
         Ok(NetworkStats {
             network_name: network.to_string(),
             chain_id: 0, // Will be filled by caller
-            total_blocks: row.total_blocks.unwrap_or(0) as u64,
-            total_transactions: row.total_transactions.unwrap_or(0) as u64,
-            total_volume: row.total_volume.map(|d| d.to_string().parse::<f64>().unwrap_or(0.0)).unwrap_or(0.0),
-            last_sync_time: row.last_sync_time,
+            total_blocks: total_blocks as u64,
+            total_transactions: total_transactions as u64,
+            total_volume: total_volume.and_then(|v| v.parse::<f64>().ok()).unwrap_or(0.0),
+            last_sync_time,
             tvl_usd: None, // Will be filled by caller
             volume_24h: None, // Will be filled by caller
         })
@@ -789,12 +792,22 @@ impl DatabaseManager {
 
         Ok(result.rows_affected())
     }
+
+    pub async fn cleanup_old_data(&self, retention_days: u32) -> Result<u64, Box<dyn std::error::Error>> {
+        let query = "DELETE FROM blockchain_blocks WHERE created_at < NOW() - INTERVAL '1 day' * $1";
+        let result = sqlx::query(query)
+            .bind(retention_days as i32)
+            .execute(&self.pool)
+            .await?;
+
+        Ok(result.rows_affected())
+    }
 }
 
 #[derive(Debug)]
 struct NetworkStatsRow {
     total_blocks: Option<i64>,
     total_transactions: Option<i64>,
-    total_volume: Option<sqlx::types::Decimal>,
+    total_volume: Option<String>,
     last_sync_time: Option<DateTime<Utc>>,
 }

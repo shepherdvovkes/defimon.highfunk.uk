@@ -1,6 +1,5 @@
 use std::sync::Arc;
-use tokio::sync::Mutex;
-use tracing::{info, error, warn};
+use tracing::{info, error};
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 
@@ -165,10 +164,11 @@ impl PolkadotSyncManager {
         networks
     }
 
-    pub async fn start_sync(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn start_sync(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         info!("Starting Polkadot sync for {} networks", self.networks.len());
 
-        for network in &self.networks {
+        let networks = self.networks.clone();
+        for network in &networks {
             if network.priority >= self.config.polkadot_priority_threshold {
                 info!("Starting sync for {} (priority: {})", network.name, network.priority);
                 self.sync_network(network).await?;
@@ -178,7 +178,7 @@ impl PolkadotSyncManager {
         Ok(())
     }
 
-    async fn sync_network(&mut self, network: &PolkadotNetworkInfo) -> Result<(), Box<dyn std::error::Error>> {
+    async fn sync_network(&mut self, network: &PolkadotNetworkInfo) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let last_block = self.last_processed_blocks.get(&network.name).unwrap_or(&0);
         
         // Get latest block number
@@ -209,7 +209,7 @@ impl PolkadotSyncManager {
         Ok(())
     }
 
-    async fn get_latest_block_number(&self, network: &PolkadotNetworkInfo) -> Result<u64, Box<dyn std::error::Error>> {
+    async fn get_latest_block_number(&self, network: &PolkadotNetworkInfo) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
         let client = reqwest::Client::new();
         let response: serde_json::Value = client
             .post(&network.rpc_url)
@@ -232,7 +232,7 @@ impl PolkadotSyncManager {
         Ok(block_number)
     }
 
-    async fn fetch_block(&self, network: &PolkadotNetworkInfo, block_number: u64) -> Result<PolkadotBlockData, Box<dyn std::error::Error>> {
+    async fn fetch_block(&self, network: &PolkadotNetworkInfo, block_number: u64) -> Result<PolkadotBlockData, Box<dyn std::error::Error + Send + Sync>> {
         let client = reqwest::Client::new();
         
         // Get block hash
@@ -294,7 +294,7 @@ impl PolkadotSyncManager {
         })
     }
 
-    async fn fetch_events(&self, network: &PolkadotNetworkInfo, block_hash: &str) -> Result<Vec<PolkadotEventData>, Box<dyn std::error::Error>> {
+    async fn fetch_events(&self, network: &PolkadotNetworkInfo, block_hash: &str) -> Result<Vec<PolkadotEventData>, Box<dyn std::error::Error + Send + Sync>> {
         let client = reqwest::Client::new();
         let response: serde_json::Value = client
             .post(&network.rpc_url)
@@ -326,7 +326,7 @@ impl PolkadotSyncManager {
         Ok(events)
     }
 
-    async fn fetch_validators(&self, network: &PolkadotNetworkInfo, block_number: u64) -> Result<Vec<PolkadotValidatorData>, Box<dyn std::error::Error>> {
+    async fn fetch_validators(&self, network: &PolkadotNetworkInfo, block_number: u64) -> Result<Vec<PolkadotValidatorData>, Box<dyn std::error::Error + Send + Sync>> {
         let client = reqwest::Client::new();
         let response: serde_json::Value = client
             .post(&network.rpc_url)
@@ -363,10 +363,10 @@ impl PolkadotSyncManager {
 
     async fn parse_extrinsics(
         &self,
-        network: &PolkadotNetworkInfo,
+        _network: &PolkadotNetworkInfo,
         block_number: u64,
         extrinsics: &serde_json::Value,
-    ) -> Result<Vec<PolkadotExtrinsicData>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<PolkadotExtrinsicData>, Box<dyn std::error::Error + Send + Sync>> {
         let mut parsed_extrinsics = Vec::new();
         
         if let Some(extrinsics_array) = extrinsics.as_array() {
@@ -392,7 +392,7 @@ impl PolkadotSyncManager {
         Ok(parsed_extrinsics)
     }
 
-    async fn process_block(&self, block_data: PolkadotBlockData) -> Result<(), Box<dyn std::error::Error>> {
+    async fn process_block(&self, block_data: PolkadotBlockData) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Store in database
         self.store_block_data(&block_data).await?;
 
@@ -406,31 +406,30 @@ impl PolkadotSyncManager {
         Ok(())
     }
 
-    async fn store_block_data(&self, block_data: &PolkadotBlockData) -> Result<(), Box<dyn std::error::Error>> {
+    async fn store_block_data(&self, block_data: &PolkadotBlockData) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Implementation for storing to PostgreSQL
         // This would include storing blocks, extrinsics, events, and validator data
         Ok(())
     }
 
-    async fn send_to_kafka(&self, block_data: &PolkadotBlockData) -> Result<(), Box<dyn std::error::Error>> {
+    async fn send_to_kafka(&self, block_data: &PolkadotBlockData) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let topic = format!("polkadot.blocks.{}", block_data.network);
         let message = serde_json::to_string(block_data)?;
         self.kafka_producer.send_message(&topic, &message).await?;
         Ok(())
     }
 
-    async fn update_metrics(&self, block_data: &PolkadotBlockData) -> Result<(), Box<dyn std::error::Error>> {
+    async fn update_metrics(&self, block_data: &PolkadotBlockData) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Update Prometheus metrics
         self.metrics_collector.increment_counter(
             "polkadot_blocks_processed_total",
-            &[("network", &block_data.network)],
-        );
+            1,
+        ).await;
 
         self.metrics_collector.set_gauge(
             "polkadot_latest_block_number",
             block_data.number as f64,
-            &[("network", &block_data.network)],
-        );
+        ).await;
 
         Ok(())
     }

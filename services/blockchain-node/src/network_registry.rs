@@ -11,6 +11,17 @@ impl NetworkRegistry {
         Self { modules: HashMap::new() }
     }
 
+    pub fn clone(&self) -> Self {
+        // Create a new registry with the same modules
+        let mut new_registry = Self::new();
+        for (key, module) in &self.modules {
+            // We can't clone the trait object, so we'll create a new SimpleModule
+            let desc = module.descriptor().clone();
+            new_registry.modules.insert(key.clone(), Box::new(SimpleModule { desc }));
+        }
+        new_registry
+    }
+
     pub fn register(&mut self, module: Box<dyn NetworkModule>) {
         let key = module.descriptor().key.clone();
         self.modules.insert(key, module);

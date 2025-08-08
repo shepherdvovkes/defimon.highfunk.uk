@@ -29,12 +29,13 @@ impl KafkaProducer {
         &self,
         topic: &str,
         data: &T,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let json_data = serde_json::to_string(data)?;
         
+        let key = format!("{}", chrono::Utc::now().timestamp());
         let record = FutureRecord::to(topic)
-            .payload(json_data.as_bytes())
-            .key(&format!("{}", chrono::Utc::now().timestamp()));
+            .payload(&json_data)
+            .key(&key);
 
         match self.producer.send(record, std::time::Duration::from_secs(5)).await {
             Ok(_) => {
@@ -52,13 +53,14 @@ impl KafkaProducer {
         &self,
         topic: &str,
         messages: &[T],
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         for (i, message) in messages.iter().enumerate() {
             let json_data = serde_json::to_string(message)?;
             
+            let key = format!("{}_{}", chrono::Utc::now().timestamp(), i);
             let record = FutureRecord::to(topic)
-                .payload(json_data.as_bytes())
-                .key(&format!("{}_{}", chrono::Utc::now().timestamp(), i));
+                .payload(&json_data)
+                .key(&key);
 
             match self.producer.send(record, std::time::Duration::from_secs(5)).await {
                 Ok(_) => {
