@@ -1,10 +1,11 @@
-FROM ubuntu:22.04
+# Используем multi-stage build для оптимизации
+FROM rust:1.75-slim-bullseye as builder
 
-# Установка системных зависимостей
+# Аргументы сборки
+ARG RUST_TARGET=x86_64-unknown-linux-gnu
+
+# Установка системных зависимостей для сборки
 RUN apt-get update && apt-get install -y \
-    curl \
-    wget \
-    git \
     build-essential \
     pkg-config \
     libssl-dev \
@@ -12,43 +13,55 @@ RUN apt-get update && apt-get install -y \
     cmake \
     && rm -rf /var/lib/apt/lists/*
 
-# Установка Rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-
-# Установка Go для Geth
-RUN wget https://go.dev/dl/go1.21.0.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz && \
-    rm go1.21.0.linux-amd64.tar.gz
-ENV PATH="/usr/local/go/bin:${PATH}"
-
-# Клонирование и сборка Geth
-RUN git clone https://github.com/ethereum/go-ethereum.git && \
-    cd go-ethereum && \
-    make geth && \
-    cp build/bin/geth /usr/local/bin/ && \
-    cd .. && \
-    rm -rf go-ethereum
+# Установка target для указанной архитектуры
+RUN rustup target add $RUST_TARGET
 
 # Создание рабочей директории
 WORKDIR /app
 
 # Копирование Rust зависимостей
 COPY Cargo.toml Cargo.lock ./
+
+# Создание dummy main.rs для кэширования зависимостей
+RUN mkdir src && echo "fn main() {}" > src/main.rs
+RUN cargo build --target $RUST_TARGET --release
+
+# Копирование исходного кода
 COPY src ./src
 
-# Сборка Rust приложения
-RUN cargo build --release
+# Сборка для указанной архитектуры
+RUN cargo build --target $RUST_TARGET --release
+
+# Финальный образ
+FROM ubuntu:22.04
+
+# Установка runtime зависимостей
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Создание пользователя для безопасности
+RUN useradd -m -u 1000 appuser
+
+# Создание рабочей директории
+WORKDIR /app
+
+# Копирование скомпилированного бинарного файла
+COPY --from=builder /app/target/$RUST_TARGET/release/blockchain-node /app/blockchain-node
 
 # Копирование скриптов
 COPY scripts ./scripts
 RUN chmod +x scripts/*.sh
 
 # Создание директории для данных
-RUN mkdir -p /data/ethereum
+RUN mkdir -p /data/ethereum && chown -R appuser:appuser /data
+
+# Переключение на пользователя
+USER appuser
 
 # Экспорт портов
 EXPOSE 8545 8546 30303 30303/udp
 
 # Запуск ноды
-CMD ["./scripts/start-node.sh"]
+CMD ["./blockchain-node"]

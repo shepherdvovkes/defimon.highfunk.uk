@@ -23,9 +23,14 @@ services:
 
   # Ethereum Node Service
   blockchain-node:
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/amd64}
     build: 
       context: ../../services/blockchain-node
       dockerfile: Dockerfile
+      args:
+        RUST_TARGET: ${RUST_TARGET:-x86_64-unknown-linux-gnu}
+      platforms:
+        - linux/amd64
     environment:
       ETHEREUM_NODE_URL: http://localhost:8545
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-defi_analytics}
