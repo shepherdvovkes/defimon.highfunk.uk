@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 echo "🚀 Deploying Ethereum Node for DEFIMON..."
 
@@ -28,47 +28,82 @@ print_header() {
     echo -e "${BLUE}[HEADER]${NC} $1"
 }
 
+# Требуются root-права
+if [ "${EUID:-$(id -u)}" -ne 0 ]; then
+  echo "This script must be run as root (sudo)."
+  exit 1
+fi
+
+# Определяем корень репозитория
+REPO_ROOT=$(cd "$(dirname "$0")/.." && pwd)
+NODE_DIR=/opt/defimon
+
 # Проверка системных требований
 print_header "Checking system requirements..."
 
-# Проверка Docker
-if ! command -v docker &> /dev/null; then
-    print_error "Docker is not installed. Please install Docker first."
-    exit 1
+# Docker
+if ! command -v docker >/dev/null 2>&1; then
+  print_status "Installing Docker..."
+  apt-get update -y
+  apt-get install -y docker.io
 fi
 
-# Проверка Docker Compose
-if ! command -v docker-compose &> /dev/null; then
-    print_error "Docker Compose is not installed. Please install Docker Compose first."
+# Docker Compose (поддержка и v2 'docker compose', и v1 'docker-compose')
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE_BIN="docker compose"
+elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE_BIN="docker-compose"
+else
+  print_status "Installing Docker Compose plugin..."
+  apt-get update -y
+  apt-get install -y docker-compose-plugin || apt-get install -y docker-compose || true
+  if docker compose version >/dev/null 2>&1; then
+    COMPOSE_BIN="docker compose"
+  elif command -v docker-compose >/dev/null 2>&1; then
+    COMPOSE_BIN="docker-compose"
+  else
+    print_error "Docker Compose is not installed. Install docker-compose-plugin or docker-compose."
     exit 1
+  fi
 fi
 
 # Проверка свободного места
-FREE_SPACE=$(df / | awk 'NR==2 {print $4}')
-FREE_SPACE_GB=$((FREE_SPACE / 1024 / 1024))
-
-if [ $FREE_SPACE_GB -lt 100 ]; then
-    print_warning "Low disk space: ${FREE_SPACE_GB}GB available. Recommended: 500GB+ for full node"
+FREE_SPACE_KB=$(df -kP / | awk 'NR==2 {print $4}')
+FREE_SPACE_GB=$((FREE_SPACE_KB / 1024 / 1024))
+if [ "$FREE_SPACE_GB" -lt 100 ]; then
+  print_warning "Low disk space: ${FREE_SPACE_GB}GB available. Recommended: 500GB+ for full node"
 fi
 
 # Проверка RAM
-TOTAL_RAM=$(free -g | awk 'NR==2{print $2}')
-if [ $TOTAL_RAM -lt 8 ]; then
-    print_warning "Low RAM: ${TOTAL_RAM}GB available. Recommended: 16GB+ for full node"
+TOTAL_RAM_GB=$(free -g | awk 'NR==2{print $2}')
+if [ "${TOTAL_RAM_GB:-0}" -lt 8 ]; then
+  print_warning "Low RAM: ${TOTAL_RAM_GB}GB available. Recommended: 16GB+ for full node"
 fi
 
 print_status "System requirements check completed"
 
-# Создание директорий
+# Создание директорий и копирование конфигов
 print_header "Creating directories..."
-mkdir -p /opt/defimon/ethereum
-mkdir -p /opt/defimon/logs
-mkdir -p /opt/defimon/config
-mkdir -p /opt/defimon/backup
+mkdir -p "$NODE_DIR/data/ethereum" "$NODE_DIR/logs" "$NODE_DIR/config" "$NODE_DIR/backup" \
+         "$NODE_DIR/monitoring/grafana/dashboards" "$NODE_DIR/monitoring/grafana/datasources"
+
+# Копируем необходимые конфиги из репозитория
+if [ -f "$REPO_ROOT/infrastructure/monitoring/prometheus.yml" ]; then
+  cp -f "$REPO_ROOT/infrastructure/monitoring/prometheus.yml" "$NODE_DIR/monitoring/prometheus.yml"
+fi
+if [ -d "$REPO_ROOT/infrastructure/monitoring/grafana/dashboards" ]; then
+  cp -rf "$REPO_ROOT/infrastructure/monitoring/grafana/dashboards/." "$NODE_DIR/monitoring/grafana/dashboards/"
+fi
+if [ -d "$REPO_ROOT/infrastructure/monitoring/grafana/datasources" ]; then
+  cp -rf "$REPO_ROOT/infrastructure/monitoring/grafana/datasources/." "$NODE_DIR/monitoring/grafana/datasources/"
+fi
+if [ -f "$REPO_ROOT/infrastructure/init.sql" ]; then
+  cp -f "$REPO_ROOT/infrastructure/init.sql" "$NODE_DIR/init.sql"
+fi
 
 # Создание .env файла для ноды
 print_header "Creating environment configuration..."
-cat > /opt/defimon/.env << EOF
+cat > "$NODE_DIR/.env" << EOF
 # Ethereum Node Configuration
 ETHEREUM_NODE_URL=http://localhost:8545
 DATABASE_URL=postgresql://postgres:password@localhost:5432/defi_analytics
@@ -98,69 +133,20 @@ EOF
 
 print_status "Environment configuration created"
 
-# Создание docker-compose для ноды
+# Создание docker-compose для ноды (один контейнер с Geth + Rust)
 print_header "Creating Docker Compose configuration..."
-cat > /opt/defimon/docker-compose.node.yml << EOF
+cat > "$NODE_DIR/docker-compose.node.yml" << EOF
 version: '3.8'
 
 services:
-  # Ethereum Node
-  ethereum-node:
-    image: ethereum/client-go:latest
-    container_name: defimon-ethereum-node
-    command: >
-      --datadir /data/ethereum
-      --syncmode full
-      --cache 8192
-      --maxpeers 50
-      --http
-      --http.addr 0.0.0.0
-      --http.port 8545
-      --http.corsdomain "*"
-      --http.api "eth,net,web3,debug,txpool,personal"
-      --ws
-      --ws.addr 0.0.0.0
-      --ws.port 8546
-      --ws.api "eth,net,web3"
-      --port 30303
-      --allow-insecure-unlock
-      --verbosity 3
-      --metrics
-      --metrics.addr 0.0.0.0
-      --metrics.port 6060
-      --pprof
-      --pprof.addr 0.0.0.0
-      --pprof.port 6061
-    volumes:
-      - ethereum_data:/data/ethereum
-      - /opt/defimon/logs:/var/log/ethereum
-    ports:
-      - "8545:8545"
-      - "8546:8546"
-      - "30303:30303"
-      - "30303:30303/udp"
-      - "6060:6060"
-      - "6061:6061"
-    environment:
-      - ETHEREUM_NODE_URL=http://localhost:8545
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 8G
-          cpus: '4.0'
-        reservations:
-          memory: 4G
-          cpus: '2.0'
-
-  # Blockchain Node Service (Rust)
+  # Blockchain Node Service (Geth + Rust)
   blockchain-service:
-    build: 
-      context: ./services/blockchain-node
+    build:
+      context: ${REPO_ROOT}/services/blockchain-node
       dockerfile: Dockerfile
     container_name: defimon-blockchain-service
     environment:
-      ETHEREUM_NODE_URL: http://ethereum-node:8545
+      ETHEREUM_NODE_URL: http://localhost:8545
       DATABASE_URL: postgresql://postgres:password@postgres:5432/defi_analytics
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       REDIS_URL: redis://redis:6379
@@ -168,11 +154,25 @@ services:
       SYNC_MODE: full
       CACHE_SIZE: 4096
       MAX_PEERS: 50
+      RPC_PORT: 8545
+      WS_PORT: 8546
+      P2P_PORT: 30303
+      NAT_EXTIP: 192.168.0.153
     volumes:
-      - ./services/blockchain-node:/app
-      - /opt/defimon/logs:/app/logs
+      - ${NODE_DIR}/data/ethereum:/data/ethereum
+      - ${REPO_ROOT}/services/blockchain-node:/app
+      - ${NODE_DIR}/logs:/app/logs
+    ports:
+      - "192.168.0.153:8545:8545"
+      - "192.168.0.153:8546:8546"
+      - "30303:30303"
+      - "30303:30303/udp"
+      - "127.0.0.1:6060:6060"
+      - "127.0.0.1:6061:6061"
     depends_on:
-      - ethereum-node
+      - postgres
+      - kafka
+      - redis
     restart: unless-stopped
 
   # PostgreSQL для локального хранения
@@ -185,9 +185,9 @@ services:
       POSTGRES_PASSWORD: password
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ${NODE_DIR}/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     restart: unless-stopped
 
   # Redis для кэширования
@@ -198,7 +198,7 @@ services:
     volumes:
       - redis_data:/data
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     restart: unless-stopped
 
   # Kafka для потоковой обработки
@@ -209,7 +209,7 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     ports:
-      - "2181:2181"
+      - "127.0.0.1:2181:2181"
     restart: unless-stopped
 
   kafka:
@@ -218,7 +218,7 @@ services:
     depends_on:
       - zookeeper
     ports:
-      - "9092:9092"
+      - "127.0.0.1:9092:9092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -236,7 +236,7 @@ services:
     image: prom/prometheus:latest
     container_name: defimon-prometheus
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ${NODE_DIR}/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -246,7 +246,7 @@ services:
       - '--storage.tsdb.retention.time=200h'
       - '--web.enable-lifecycle'
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     restart: unless-stopped
 
   grafana:
@@ -257,14 +257,33 @@ services:
       GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ${NODE_DIR}/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ${NODE_DIR}/monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
     ports:
-      - "3001:3000"
+      - "127.0.0.1:3001:3000"
+    restart: unless-stopped
+
+  # Admin Dashboard (локально на 127.0.0.1)
+  admin-dashboard:
+    build:
+      context: ${REPO_ROOT}/services/admin-dashboard
+      dockerfile: Dockerfile
+    container_name: defimon-admin-dashboard
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      - blockchain-service
+      - postgres
+      - redis
+      - kafka
+      - prometheus
+      - grafana
     restart: unless-stopped
 
 volumes:
-  ethereum_data:
   postgres_data:
   redis_data:
   prometheus_data:
@@ -275,64 +294,72 @@ print_status "Docker Compose configuration created"
 
 # Создание скрипта управления
 print_header "Creating management scripts..."
-cat > /opt/defimon/manage-node.sh << 'EOF'
+cat > "$NODE_DIR/manage-node.sh" << 'EOF'
 #!/bin/bash
-
-set -e
+set -euo pipefail
 
 NODE_DIR="/opt/defimon"
 COMPOSE_FILE="$NODE_DIR/docker-compose.node.yml"
 
-case "$1" in
-    start)
-        echo "Starting Ethereum node..."
-        cd $NODE_DIR
-        docker-compose -f $COMPOSE_FILE up -d
-        echo "Node started successfully"
-        ;;
-    stop)
-        echo "Stopping Ethereum node..."
-        cd $NODE_DIR
-        docker-compose -f $COMPOSE_FILE down
-        echo "Node stopped successfully"
-        ;;
-    restart)
-        echo "Restarting Ethereum node..."
-        cd $NODE_DIR
-        docker-compose -f $COMPOSE_FILE restart
-        echo "Node restarted successfully"
-        ;;
-    status)
-        echo "Checking node status..."
-        cd $NODE_DIR
-        docker-compose -f $COMPOSE_FILE ps
-        ;;
-    logs)
-        echo "Showing logs..."
-        cd $NODE_DIR
-        docker-compose -f $COMPOSE_FILE logs -f
-        ;;
-    backup)
-        echo "Creating backup..."
-        cd $NODE_DIR
-        tar -czf backup/ethereum-backup-$(date +%Y%m%d-%H%M%S).tar.gz data/
-        echo "Backup created successfully"
-        ;;
-    update)
-        echo "Updating node..."
-        cd $NODE_DIR
-        docker-compose -f $COMPOSE_FILE pull
-        docker-compose -f $COMPOSE_FILE up -d
-        echo "Node updated successfully"
-        ;;
-    *)
-        echo "Usage: $0 {start|stop|restart|status|logs|backup|update}"
-        exit 1
-        ;;
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE_BIN="docker compose"
+elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE_BIN="docker-compose"
+else
+  echo "Docker Compose is not installed"; exit 1
+fi
+
+case "${1:-}" in
+  start)
+    echo "Starting Ethereum node..."
+    cd "$NODE_DIR"
+    $COMPOSE_BIN -f "$COMPOSE_FILE" up -d
+    echo "Node started successfully"
+    ;;
+  stop)
+    echo "Stopping Ethereum node..."
+    cd "$NODE_DIR"
+    $COMPOSE_BIN -f "$COMPOSE_FILE" down
+    echo "Node stopped successfully"
+    ;;
+  restart)
+    echo "Restarting Ethereum node..."
+    cd "$NODE_DIR"
+    $COMPOSE_BIN -f "$COMPOSE_FILE" restart
+    echo "Node restarted successfully"
+    ;;
+  status)
+    echo "Checking node status..."
+    cd "$NODE_DIR"
+    $COMPOSE_BIN -f "$COMPOSE_FILE" ps
+    ;;
+  logs)
+    echo "Showing logs (press Ctrl+C to exit)..."
+    cd "$NODE_DIR"
+    $COMPOSE_BIN -f "$COMPOSE_FILE" logs -f --tail=200 blockchain-service
+    ;;
+  backup)
+    echo "Creating backup..."
+    mkdir -p "$NODE_DIR/backup"
+    tar -czf "$NODE_DIR/backup/ethereum-backup-$(date +%Y%m%d-%H%M%S).tar.gz" -C "$NODE_DIR" data/ethereum
+    echo "Backup created successfully"
+    ;;
+  update)
+    echo "Updating node..."
+    cd "$NODE_DIR"
+    $COMPOSE_BIN -f "$COMPOSE_FILE" pull || true
+    $COMPOSE_BIN -f "$COMPOSE_FILE" build
+    $COMPOSE_BIN -f "$COMPOSE_FILE" up -d
+    echo "Node updated successfully"
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|status|logs|backup|update}"
+    exit 1
+    ;;
 esac
 EOF
 
-chmod +x /opt/defimon/manage-node.sh
+chmod +x "$NODE_DIR/manage-node.sh"
 
 # Создание systemd сервиса
 print_header "Creating systemd service..."
@@ -345,16 +372,15 @@ Requires=docker.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-WorkingDirectory=/opt/defimon
-ExecStart=/opt/defimon/manage-node.sh start
-ExecStop=/opt/defimon/manage-node.sh stop
+WorkingDirectory=${NODE_DIR}
+ExecStart=${NODE_DIR}/manage-node.sh start
+ExecStop=${NODE_DIR}/manage-node.sh stop
 TimeoutStartSec=0
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# Перезагрузка systemd и включение сервиса
 systemctl daemon-reload
 systemctl enable defimon-node.service
 
@@ -362,59 +388,59 @@ print_status "Systemd service created and enabled"
 
 # Создание скрипта мониторинга
 print_header "Creating monitoring script..."
-cat > /opt/defimon/monitor-node.sh << 'EOF'
+cat > "$NODE_DIR/monitor-node.sh" << 'EOF'
 #!/bin/bash
+set -euo pipefail
 
 echo "=== DEFIMON Node Status ==="
 echo "Timestamp: $(date)"
 
-# Проверка Docker контейнеров
-echo -e "\n--- Docker Containers ---"
-docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-
-# Проверка использования ресурсов
-echo -e "\n--- Resource Usage ---"
-echo "CPU Usage:"
-docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
-
-# Проверка синхронизации ноды
-echo -e "\n--- Node Sync Status ---"
-if curl -s http://localhost:8545 > /dev/null; then
-    echo "Node is responding on port 8545"
-    # Здесь можно добавить проверку синхронизации через RPC
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE_BIN="docker compose"
+elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE_BIN="docker-compose"
 else
-    echo "Node is not responding on port 8545"
+  echo "Docker Compose is not installed"; exit 1
 fi
 
-# Проверка дискового пространства
+echo -e "\n--- Docker Containers ---"
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | (sed -u 1q; sort -u)
+
+echo -e "\n--- Resource Usage ---"
+docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
+
+echo -e "\n--- Node Sync Status ---"
+if curl -fsS http://localhost:8545 >/dev/null; then
+  echo "Node is responding on port 8545"
+else
+  echo "Node is not responding on port 8545"
+fi
+
 echo -e "\n--- Disk Usage ---"
 df -h /opt/defimon
 
-# Проверка логов
-echo -e "\n--- Recent Logs ---"
-tail -n 20 /opt/defimon/logs/ethereum.log 2>/dev/null || echo "No logs found"
+echo -e "\n--- Recent Logs (blockchain-service) ---"
+($COMPOSE_BIN -f /opt/defimon/docker-compose.node.yml logs --tail=50 blockchain-service 2>/dev/null) || echo "No logs available"
 EOF
 
-chmod +x /opt/defimon/monitor-node.sh
+chmod +x "$NODE_DIR/monitor-node.sh"
 
-# Создание cron задачи для мониторинга
+# Cron для мониторинга
 print_header "Setting up monitoring cron job..."
-(crontab -l 2>/dev/null; echo "*/5 * * * * /opt/defimon/monitor-node.sh >> /opt/defimon/logs/monitor.log 2>&1") | crontab -
+(crontab -l 2>/dev/null; echo "*/5 * * * * $NODE_DIR/monitor-node.sh >> $NODE_DIR/logs/monitor.log 2>&1") | crontab -
 
 print_status "Monitoring setup completed"
 
 # Запуск ноды
 print_header "Starting Ethereum node..."
-cd /opt/defimon
-docker-compose -f docker-compose.node.yml up -d
+cd "$NODE_DIR"
+$COMPOSE_BIN -f docker-compose.node.yml up -d
 
-# Ожидание запуска
 print_status "Waiting for services to start..."
 sleep 30
 
-# Проверка статуса
 print_header "Checking service status..."
-docker-compose -f docker-compose.node.yml ps
+$COMPOSE_BIN -f docker-compose.node.yml ps
 
 print_header "Deployment completed successfully!"
 echo ""
@@ -425,11 +451,11 @@ echo "Grafana:      http://localhost:3001 (admin/admin)"
 echo "Prometheus:   http://localhost:9090"
 echo ""
 echo "=== Management Commands ==="
-echo "Start node:   /opt/defimon/manage-node.sh start"
-echo "Stop node:    /opt/defimon/manage-node.sh stop"
-echo "Check status: /opt/defimon/manage-node.sh status"
-echo "View logs:    /opt/defimon/manage-node.sh logs"
-echo "Monitor:      /opt/defimon/monitor-node.sh"
+echo "Start node:   $NODE_DIR/manage-node.sh start"
+echo "Stop node:    $NODE_DIR/manage-node.sh stop"
+echo "Check status: $NODE_DIR/manage-node.sh status"
+echo "View logs:    $NODE_DIR/manage-node.sh logs"
+echo "Monitor:      $NODE_DIR/monitor-node.sh"
 echo ""
 echo "=== Important Notes ==="
 echo "1. Full sync may take 1-2 weeks depending on your hardware"
