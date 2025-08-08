@@ -133,3 +133,9 @@ grafana_data/
 *.bak
 *.backup
 secrets.env
+
+# Rust
+target/
+**/target/
+*.rs.bk
+Cargo.lock
