@@ -1,0 +1,60 @@
+[package]
+name = "blockchain-node"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Web3 и Ethereum
+web3 = "0.19"
+ethers = { version = "2.0", features = ["ws", "rustls"] }
+ethers-core = "0.8"
+ethers-providers = "0.8"
+ethers-signers = "0.8"
+ethers-contract = "0.8"
+subxt = "0.34"
+jsonrpsee = { version = "0.22", features = ["http-client", "jsonrpsee-types"] }
+futures-util = "0.3"
+
+# Асинхронность
+tokio = { version = "1.0", features = ["full"] }
+async-trait = "0.1"
+
+# HTTP клиент
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# База данных
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "chrono"] }
+redis = { version = "0.23", features = ["tokio-comp"] }
+
+# Kafka
+rdkafka = { version = "0.33", features = ["cmake-build"] }
+
+# Логирование
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Конфигурация
+config = "0.13"
+dotenv = "0.15"
+
+# Утилиты
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+hex = "0.4"
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Криптография
+sha3 = "0.10"
+sha2 = "0.10"
+secp256k1 = "0.27"
+base64 = "0.21"
+
+# Структуры данных
+dashmap = "5.4"
+crossbeam-channel = "0.5"
+
+[dev-dependencies]
+tokio-test = "0.4"
