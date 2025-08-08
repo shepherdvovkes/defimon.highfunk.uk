@@ -1,4 +1,5 @@
 use sqlx::{PgPool, postgres::PgPoolOptions};
+use sqlx::Row; // for row.get(..)
 use serde::{Deserialize, Serialize};
 use tracing::{info, error, warn};
 use chrono::{DateTime, Utc};
