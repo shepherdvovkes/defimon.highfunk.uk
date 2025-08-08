@@ -1,0 +1,119 @@
+[Eth]
+# Полная синхронизация
+SyncMode = "full"
+# Кэш для блоков
+Cache = 8192
+# Кэш для базы данных
+DatabaseCache = 4096
+# Кэш для триев
+TrieCache = 256
+# Кэш для snapshot
+SnapshotCache = 256
+# Кэш для state
+StateCache = 256
+
+[Node]
+# Максимальное количество пиров
+MaxPeers = 50
+# Порт для P2P
+HTTPPort = 8545
+# Порт для WebSocket
+WSPort = 8546
+# Порт для P2P
+P2P = 30303
+# Разрешить RPC
+HTTPEnabled = true
+# Разрешить WebSocket
+WSEnabled = true
+# Разрешить CORS
+HTTPCors = ["*"]
+# Разрешить виртуальные хосты
+HTTPVirtualHosts = ["*"]
+# Разрешить модули
+HTTPModules = ["eth", "net", "web3", "debug", "txpool"]
+# Разрешить модули для WebSocket
+WSModules = ["eth", "net", "web3", "debug", "txpool"]
+
+[Node.P2P]
+# Максимальное количество пиров
+MaxPeers = 50
+# Разрешить UPnP
+NAT = "any"
+# Разрешить discovery
+DiscoveryV5 = true
+# Разрешить light client
+LightClient = false
+
+[Node.HTTP]
+# Таймаут для RPC
+RPCTxFeeCap = 1
+# Разрешить личные API
+PersonalAPI = true
+
+[Node.WS]
+# Таймаут для WebSocket
+Origins = ["*"]
+
+[Metrics]
+# Включить метрики
+Enabled = true
+# Порт для метрик
+HTTP = ":6060"
+# Разрешить CORS для метрик
+HTTPCors = ["*"]
+
+[Ethash]
+# Кэш для DAG
+CacheDir = "/data/ethereum/ethash"
+# Количество потоков для майнинга
+DatasetDir = "/data/ethereum/ethash"
+# Размер кэша DAG
+Cache = 1024
+
+[Eth.Miner]
+# Разрешить майнинг
+Enabled = false
+# Количество потоков
+Threads = 0
+# Адрес для получения наград
+Etherbase = "0x0000000000000000000000000000000000000000"
+# Газовый лимит
+GasLimit = 30000000
+# Газовый потолок
+GasCeil = 30000000
+# Цена газа
+GasPrice = 1000000000
+
+[Eth.GPO]
+# Блоки для расчета цены газа
+Blocks = 20
+# Процент для расчета цены газа
+Percentile = 60
+# Максимальная цена газа
+MaxPrice = 50000000000
+
+[Node.Database]
+# Тип базы данных
+Ancients = "/data/ethereum/chaindata/ancient"
+# Кэш для базы данных
+Cache = 4096
+# Размер кэша
+Handles = 512
+# Таймаут для базы данных
+ReadOnly = false
+
+[Node.Log]
+# Уровень логирования
+Level = "info"
+# Формат логов
+Format = "json"
+# Файл для логов
+File = "/data/ethereum/geth.log"
+# Максимальный размер файла
+MaxSize = 100
+# Максимальное количество файлов
+MaxBackups = 10
+# Максимальный возраст файлов
+MaxAge = 30
+# Сжать старые файлы
+Compress = true

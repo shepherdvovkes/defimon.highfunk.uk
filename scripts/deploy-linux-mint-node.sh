@@ -195,15 +195,45 @@ if command -v cpupower >/dev/null 2>&1; then
     cpupower frequency-set -g performance
 fi
 
-# Настройка swappiness
-print_status "Optimizing memory management..."
+# Специальные настройки для полной Ethereum ноды
+print_header "Applying Ethereum full node optimizations..."
+
+# Настройка swappiness для Ethereum ноды
+print_status "Optimizing memory management for Ethereum node..."
 echo 'vm.swappiness=10' >> /etc/sysctl.conf
 echo 'vm.dirty_ratio=15' >> /etc/sysctl.conf
 echo 'vm.dirty_background_ratio=5' >> /etc/sysctl.conf
+
+# Специальные настройки для Ethereum
+echo 'vm.max_map_count=262144' >> /etc/sysctl.conf
+echo 'net.core.rmem_max=134217728' >> /etc/sysctl.conf
+echo 'net.core.wmem_max=134217728' >> /etc/sysctl.conf
+echo 'net.core.rmem_default=67108864' >> /etc/sysctl.conf
+echo 'net.core.wmem_default=67108864' >> /etc/sysctl.conf
+echo 'net.ipv4.tcp_rmem=4096 87380 67108864' >> /etc/sysctl.conf
+echo 'net.ipv4.tcp_wmem=4096 65536 67108864' >> /etc/sysctl.conf
+echo 'net.ipv4.tcp_congestion_control=bbr' >> /etc/sysctl.conf
+echo 'net.core.netdev_max_backlog=5000' >> /etc/sysctl.conf
+echo 'net.ipv4.tcp_max_syn_backlog=65536' >> /etc/sysctl.conf
+
+# Настройки для больших файлов
+echo 'fs.file-max=2097152' >> /etc/sysctl.conf
+echo 'fs.nr_open=2097152' >> /etc/sysctl.conf
+
+# Настройки для SSD (если используется)
+if command -v lsblk >/dev/null 2>&1; then
+    SSD_DISKS=$(lsblk -d -n -o NAME,TYPE | grep -E '^(nvme|ssd)' | awk '{print $1}')
+    if [ -n "$SSD_DISKS" ]; then
+        print_status "Detected SSD disks, applying SSD optimizations..."
+        echo 'vm.dirty_ratio=10' >> /etc/sysctl.conf
+        echo 'vm.dirty_background_ratio=3' >> /etc/sysctl.conf
+    fi
+fi
+
 sysctl -p
 
-# Настройка файрвола
-print_status "Configuring firewall..."
+# Настройка файрвола для Ethereum ноды
+print_status "Configuring firewall for Ethereum node..."
 ufw --force enable
 ufw default deny incoming
 ufw default allow outgoing
@@ -213,6 +243,12 @@ ufw allow from 127.0.0.1 to any port 8546
 ufw allow from 127.0.0.1 to any port 3001
 ufw allow from 127.0.0.1 to any port 9090
 ufw allow from 127.0.0.1 to any port 8080
+
+# Разрешение P2P портов для Ethereum
+ufw allow 30303/tcp
+ufw allow 30303/udp
+ufw allow 8545/tcp
+ufw allow 8546/tcp
 
 print_success "System optimization completed"
 
@@ -299,15 +335,19 @@ services:
       REDIS_URL: redis://redis:6379
       RUST_LOG: info
       SYNC_MODE: full
-      CACHE_SIZE: 4096
+      CACHE_SIZE: 8192
       MAX_PEERS: 50
       RPC_PORT: 8545
       WS_PORT: 8546
       P2P_PORT: 30303
       NAT_EXTIP: \$(hostname -I | awk '{print \$1}')
+      DATA_DIR: /data/ethereum
+      CONFIG_FILE: /app/config/geth-config.toml
+      LOG_FILE: /data/ethereum/geth.log
     volumes:
       - ${DATA_DIR}/ethereum:/data/ethereum
       - ${REPO_ROOT}/services/blockchain-node:/app
+      - ${REPO_ROOT}/config:/app/config
       - ${NODE_DIR}/logs:/app/logs
     ports:
       - "127.0.0.1:8545:8545"
@@ -324,11 +364,21 @@ services:
     deploy:
       resources:
         limits:
-          memory: 8G
-          cpus: '4.0'
+          memory: 12G
+          cpus: '6.0'
         reservations:
-          memory: 4G
-          cpus: '2.0'
+          memory: 6G
+          cpus: '3.0'
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    sysctls:
+      - net.core.rmem_max=134217728
+      - net.core.wmem_max=134217728
+      - net.core.rmem_default=67108864
+      - net.core.wmem_default=67108864
+      - vm.max_map_count=262144
 
   # PostgreSQL для локального хранения
   postgres:
