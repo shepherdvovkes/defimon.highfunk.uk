@@ -27,6 +27,15 @@ esac
 echo "🔧 Using platform: $DOCKER_DEFAULT_PLATFORM"
 echo "🔧 Using Rust target: $RUST_TARGET"
 
+# Проверка системных параметров
+echo "🔍 Checking system parameters..."
+CURRENT_MAX_MAP_COUNT=$(sysctl -n vm.max_map_count 2>/dev/null || echo "0")
+if [ "$CURRENT_MAX_MAP_COUNT" -lt 262144 ]; then
+    echo "⚠️  Warning: vm.max_map_count is too low ($CURRENT_MAX_MAP_COUNT)"
+    echo "💡 Run: sudo ./scripts/setup-system.sh to fix this"
+    echo "   Or manually: sudo sysctl -w vm.max_map_count=262144"
+fi
+
 # Остановка существующих контейнеров
 echo "🛑 Stopping existing containers..."
 docker-compose -f infrastructure/docker-compose.yml down --remove-orphans || true

@@ -70,6 +70,27 @@ esac
 
 print_status "Setting up environment for $ARCH..."
 
+# Настройка параметров ядра для ClickHouse/Elasticsearch
+print_status "Configuring kernel parameters..."
+if [ "$(id -u)" -eq 0 ]; then
+    # Если запущено от root, настраиваем параметры ядра
+    sysctl -w vm.max_map_count=262144
+    sysctl -w fs.file-max=65536
+    sysctl -w vm.swappiness=1
+    print_status "Kernel parameters configured"
+else
+    # Если не root, проверяем текущие значения
+    CURRENT_MAX_MAP_COUNT=$(sysctl -n vm.max_map_count)
+    if [ "$CURRENT_MAX_MAP_COUNT" -lt 262144 ]; then
+        print_warning "vm.max_map_count is too low ($CURRENT_MAX_MAP_COUNT). Please run as root or set:"
+        print_warning "sudo sysctl -w vm.max_map_count=262144"
+        print_warning "sudo sysctl -w fs.file-max=65536"
+        print_warning "sudo sysctl -w vm.swappiness=1"
+    else
+        print_status "Kernel parameters are sufficient"
+    fi
+fi
+
 # Экспорт переменных окружения для Docker
 export COMPOSE_DOCKER_CLI_BUILD=1
 export DOCKER_BUILDKIT=1
