@@ -9,12 +9,13 @@ services:
       - "30303:30303"
       - "30303:30303/udp"
       - "6060:6060"
+      - "8551:8551"
     volumes:
       - geth_data:/root/.ethereum
     command: >
       /bin/sh -c '
         dd if=/dev/urandom bs=1 count=32 2>/dev/null | xxd -p > /jwtsecret &&
-        exec /usr/local/bin/geth --http --http.addr=0.0.0.0 --http.port=8545 --http.api=eth,net,web3,debug,txpool,personal,admin --http.vhosts=* --http.corsdomain=* --ws --ws.addr=0.0.0.0 --ws.port=8546 --ws.origins=* --ws.api=eth,net,web3,debug,txpool,personal,admin --datadir=/root/.ethereum --syncmode=full --cache=8192 --maxpeers=50 --discovery.v5 --metrics --metrics.addr=0.0.0.0 --metrics.port=6060
+        exec /usr/local/bin/geth --http --http.addr=0.0.0.0 --http.port=8545 --http.api=eth,net,web3,debug,txpool,personal,admin --http.vhosts=* --http.corsdomain=* --ws --ws.addr=0.0.0.0 --ws.port=8546 --ws.origins=* --ws.api=eth,net,web3,debug,txpool,personal,admin --datadir=/root/.ethereum --syncmode=full --cache=8192 --maxpeers=50 --discovery.v5 --metrics --metrics.addr=0.0.0.0 --metrics.port=6060 --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts=* --authrpc.jwtsecret=/jwtsecret
       '
     restart: unless-stopped
     profiles:
@@ -28,7 +29,7 @@ services:
         lighthouse bn \
           --network mainnet \
           --datadir /root/.lighthouse \
-          --execution-endpoint $${EXECUTION_ENDPOINT:-http://geth:8551} \
+          --execution-endpoint $${EXECUTION_ENDPOINT:-http://geth-full-node:8551} \
           --execution-jwt /jwtsecret \
           $${CHECKPOINT_SYNC_URL:+--checkpoint-sync-url $${CHECKPOINT_SYNC_URL}} \
           --http \
