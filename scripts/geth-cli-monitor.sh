@@ -10,7 +10,7 @@ GETH_CONTAINER="${GETH_CONTAINER:-geth-full-node}"
 ENABLE_SPLIT="${ENABLE_SPLIT:-1}"
 LOG_PANE_LINES="${LOG_PANE_LINES:-auto}"
 SESSION_NAME="${SESSION_NAME:-gethmon}"
-KILL_EXISTING="${KILL_EXISTING:-0}"
+KILL_EXISTING="${KILL_EXISTING:-1}"
 
 # Resolve LOG_PANE_LINES when set to auto (default): use half of terminal height
 if [ "${LOG_PANE_LINES}" = "auto" ]; then
@@ -32,7 +32,6 @@ if [ "${MONITOR_ONLY:-0}" != "1" ] && [ "$ENABLE_SPLIT" = "1" ] && command -v tm
     if [ "$KILL_EXISTING" = "1" ]; then
       tmux kill-session -t "$SESSION_NAME"
     else
-      # Reuse existing session to avoid duplicate-session error
       tmux attach-session -t "$SESSION_NAME"
       exit 0
     fi
@@ -192,10 +191,8 @@ while true; do
   if [ "${MONITOR_ONLY:-0}" = "1" ]; then
     echo "Logs are shown in the bottom pane (tmux)."
   else
-    echo "Tip: tmux split enabled by default (SESSION_NAME=$SESSION_NAME)."
-    echo "- Reuse session if exists; set KILL_EXISTING=1 to recreate."
-    echo "- Change height: LOG_PANE_LINES=auto|<lines>"
-    echo "Example: ENABLE_SPLIT=1 SESSION_NAME=gethmon KILL_EXISTING=1 ./scripts/geth-cli-monitor.sh"
+    echo "tmux split enabled (SESSION_NAME=$SESSION_NAME). Existing session will be killed automatically."
+    echo "Tuning: LOG_PANE_LINES=auto|<lines>, SESSION_NAME=<name>"
   fi
   echo "Ctrl+C to exit | Refresh every ${INTERVAL_SECONDS}s"
   sleep "$INTERVAL_SECONDS"
