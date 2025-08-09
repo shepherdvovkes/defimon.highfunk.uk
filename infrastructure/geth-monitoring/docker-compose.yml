@@ -15,7 +15,7 @@ services:
       --authrpc.vhosts=*
       --authrpc.addr=0.0.0.0
       --authrpc.port=8551
-      --authrpc.jwtsecret=/root/.ethereum/jwtsecret
+      --authrpc.jwtsecret=/jwtsecret
       --datadir=/root/.ethereum
       --syncmode=full
       --gcmode=full
@@ -31,8 +31,8 @@ services:
     volumes:
       - geth_data:/root/.ethereum
       - type: bind
-        source: ${JWTSECRET_PATH:-./jwtsecret}
-        target: /root/.ethereum/jwtsecret
+        source: ${JWTSECRET_PATH:-./jwtsecret.raw}
+        target: /jwtsecret
         read_only: true
     restart: unless-stopped
     profiles:
@@ -57,7 +57,7 @@ services:
     # No hard depends_on to allow external execution client mode
     volumes:
       - lighthouse_data:/root/.lighthouse
-      - ${JWTSECRET_PATH:-./jwtsecret}:/jwtsecret:ro
+      - ${JWTSECRET_PATH:-./jwtsecret.raw}:/jwtsecret:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped

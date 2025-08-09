@@ -67,16 +67,16 @@ COMPOSE_FILE="./infrastructure/geth-monitoring/docker-compose.yml"
 if [ "$USE_INTERNAL_GETH" = "1" ]; then
     echo "Режим: внутренний Geth (profile: internal-geth)"
     echo "Генерирую/проверяю JWT секрет (ровно 32 байта RAW)..."
-    ./scripts/generate-jwtsecret.sh
+    ./scripts/generate-jwtsecret.sh infrastructure/geth-monitoring/jwtsecret
     echo "Проверяю файл секрета..."
-    test "$(wc -c < infrastructure/geth-monitoring/jwtsecret)" -eq 32 || { echo "JWT secret size != 32 bytes" >&2; exit 1; }
+    test "$(wc -c < infrastructure/geth-monitoring/jwtsecret.raw)" -eq 32 || { echo "JWT RAW secret size != 32 bytes" >&2; exit 1; }
     echo "Очищаю возможные нездоровые остатки прошлого запуска..."
     $COMPOSE_BIN -f "$COMPOSE_FILE" down --remove-orphans || true
     docker rm -f geth-full-node lighthouse-beacon 2>/dev/null || true
     docker volume rm $(docker volume ls -q | grep -E 'geth-monitoring_|_geth_data|_lighthouse_data') 2>/dev/null || true
 
     echo "Перезапускаю стек мониторинга (Geth, Lighthouse, Prometheus, Grafana)..."
-    export JWTSECRET_PATH="$(realpath infrastructure/geth-monitoring/jwtsecret)"
+    export JWTSECRET_PATH="$(realpath infrastructure/geth-monitoring/jwtsecret.raw)"
     echo "Использую JWTSECRET_PATH=$JWTSECRET_PATH"
     $COMPOSE_BIN -f "$COMPOSE_FILE" --profile internal-geth up -d --build
     echo "Проверяю запуск контейнеров..."
