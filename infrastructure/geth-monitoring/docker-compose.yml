@@ -26,6 +26,7 @@ services:
     container_name: lighthouse-beacon
     command: >-
       sh -lc '
+        dd if=/dev/urandom bs=1 count=32 2>/dev/null | xxd -p -c 32 > /jwtsecret &&
         lighthouse bn \
           --network mainnet \
           --datadir /root/.lighthouse \
@@ -40,11 +41,10 @@ services:
           --metrics-port 5054
       '
     environment:
-      - CHECKPOINT_SYNC_URL=https://sync.infra.tools
+      - CHECKPOINT_SYNC_URL=${CHECKPOINT_SYNC_URL}
     # No hard depends_on to allow external execution client mode
     volumes:
       - ${LIGHTHOUSE_DATA_PATH:-lighthouse_data}:/root/.lighthouse
-      - ./jwtsecret.hex:/jwtsecret:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
