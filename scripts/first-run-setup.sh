@@ -52,6 +52,9 @@ docker rm -f geth-full-node lighthouse-beacon prometheus-monitor grafana-dashboa
 log "Exporting env and starting stack (internal geth)"
 export JWTSECRET_RAW_PATH="$RAW_PATH"
 export JWTSECRET_HEX_PATH="$HEX_PATH"
+# Default checkpoint sync URL for Lighthouse (can be overridden by env)
+export CHECKPOINT_SYNC_URL="${CHECKPOINT_SYNC_URL:-https://mainnet.checkpoint.sigp.io}"
+log "Using CHECKPOINT_SYNC_URL=$CHECKPOINT_SYNC_URL"
 $COMPOSE_BIN -f "$COMPOSE_FILE" --profile internal-geth up -d --build
 
 log "Waiting for containers to initialize..."
