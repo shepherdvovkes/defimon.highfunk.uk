@@ -68,12 +68,17 @@ if [ "$USE_INTERNAL_GETH" = "1" ]; then
     echo "Режим: внутренний Geth (profile: internal-geth)"
     echo "Генерирую JWT секрет для связи Execution<->Consensus (если отсутствует)..."
     ./scripts/generate-jwtsecret.sh
-    echo "Перезапускаю стек мониторинга (Geth, Lighthouse, Prometheus, Grafana)..."
-    JWTSECRET_PATH="$(realpath infrastructure/geth-monitoring/jwtsecret)" \
+    echo "Очищаю возможные нездоровые остатки прошлого запуска..."
     $COMPOSE_BIN -f "$COMPOSE_FILE" down --remove-orphans || true
-    # Включаем профиль internal-geth, чтобы стартовал geth
-    JWTSECRET_PATH="$(realpath infrastructure/geth-monitoring/jwtsecret)" \
+    docker rm -f geth-full-node lighthouse-beacon 2>/dev/null || true
+    docker volume rm $(docker volume ls -q | grep -E 'geth-monitoring_|_geth_data|_lighthouse_data') 2>/dev/null || true
+
+    echo "Перезапускаю стек мониторинга (Geth, Lighthouse, Prometheus, Grafana)..."
+    export JWTSECRET_PATH="$(realpath infrastructure/geth-monitoring/jwtsecret)"
     $COMPOSE_BIN -f "$COMPOSE_FILE" --profile internal-geth up -d --build
+    echo "Проверяю запуск контейнеров..."
+    sleep 5
+    $COMPOSE_BIN -f "$COMPOSE_FILE" ps || true
 else
     echo "Режим: внешний Geth"
     : "${EXECUTION_ENDPOINT:?EXECUTION_ENDPOINT не задан (пример: http://host.docker.internal:8551 или http://<HOST_IP>:8551)}"
@@ -107,7 +112,12 @@ if curl -fsS http://localhost:8545 >/dev/null 2>&1; then
     --data '{"jsonrpc":"2.0","method":"eth_syncing","params":[],"id":1}' \
     http://localhost:8545 | jq -r '.result' || true
 else
-  echo "Execution RPC (8545) недоступен"
+  echo "Execution RPC (8545) недоступен — пробую docker exec..."
+  if docker ps --format '{{.Names}}' | grep -qx geth-full-node; then
+    docker exec geth-full-node curl -s -X POST -H 'Content-Type: application/json' \
+      --data '{"jsonrpc":"2.0","method":"eth_syncing","params":[],"id":1}' \
+      http://127.0.0.1:8545 | jq -r '.result' || true
+  fi
 fi
 
 if curl -fsS http://localhost:5052/eth/v1/node/health >/dev/null 2>&1; then
