@@ -93,3 +93,7 @@ volumes:
   prometheus_data:
   grafana_data:
   lighthouse_data:
+ 
+networks:
+  default:
+    name: geth-monitoring
