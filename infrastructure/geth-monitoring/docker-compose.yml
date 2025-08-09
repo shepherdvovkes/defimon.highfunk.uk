@@ -20,7 +20,7 @@ services:
       --authrpc.jwtsecret=/root/.ethereum/jwtsecret
       --datadir=/root/.ethereum
       --syncmode=full
-      --gcmode=archive
+      --gcmode=full
       --metrics
       --metrics.addr=0.0.0.0
       --metrics.port=6060
@@ -34,6 +34,8 @@ services:
       - geth_data:/root/.ethereum
       - ./jwtsecret:/root/.ethereum/jwtsecret:ro
     restart: unless-stopped
+    profiles:
+      - internal-geth
 
   lighthouse:
     image: sigp/lighthouse:latest
@@ -42,8 +44,8 @@ services:
       lighthouse bn
       --network mainnet
       --datadir /root/.lighthouse
-      --execution-endpoint http://geth:8551
-      --execution-jwt /root/.ethereum/jwtsecret
+      --execution-endpoint ${EXECUTION_ENDPOINT:-http://geth:8551}
+      --execution-jwt /jwtsecret
       --disable-deposit-contract-sync
       --http
       --http-address 0.0.0.0
@@ -54,9 +56,10 @@ services:
     depends_on:
       - geth
     volumes:
-      - geth_data:/root/.ethereum
       - lighthouse_data:/root/.lighthouse
-      - ./jwtsecret:/root/.ethereum/jwtsecret:ro
+      - ${JWTSECRET_PATH:-./jwtsecret}:/jwtsecret:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
   prometheus:
