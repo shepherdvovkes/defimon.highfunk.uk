@@ -33,11 +33,16 @@ fi
 # 3. Создание директории для данных, если ее нет
 mkdir -p ./data/geth
 
-# 4. Запуск Docker Compose
-echo "Запускаю Docker контейнеры (Geth, Prometheus, Grafana)..."
-docker-compose -f ./infrastructure/geth-monitoring/docker-compose.yml up -d
+# 4. Генерация JWT секрета для Engine API (если отсутствует)
+echo "Генерирую JWT секрет для связи Execution<->Consensus (если отсутствует)..."
+./scripts/generate-jwtsecret.sh
+
+# 5. Перезапуск Docker Compose с Lighthouse (Consensus)
+echo "Запускаю Docker контейнеры (Geth, Lighthouse, Prometheus, Grafana)..."
+docker-compose -f ./infrastructure/geth-monitoring/docker-compose.yml down --remove-orphans || true
+docker-compose -f ./infrastructure/geth-monitoring/docker-compose.yml up -d --build
 
 echo -e "${GREEN}### ДЕПЛОЙ УСПЕШНО ЗАВЕРШЕН ###${NC}"
-echo "Geth нода запущена и синхронизируется."
-echo "Prometheus доступен по адресу: http://localhost:9090"
-echo "Grafana доступна по адресу: http://localhost:3000 (логин/пароль: admin/admin)"
+echo "Geth (Execution) и Lighthouse (Consensus) запущены и синхронизируются."
+echo "Prometheus: http://localhost:9090"
+echo "Grafana: http://localhost:3000 (логин/пароль: admin/admin)"
