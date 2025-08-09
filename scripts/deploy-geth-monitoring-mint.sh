@@ -103,7 +103,7 @@ if [ "$USE_INTERNAL_GETH" = "1" ]; then
 else
   echo "Lighthouse (Consensus) запущен и подключается к внешнему Execution: $EXECUTION_ENDPOINT"
 fi
-echo "Prometheus: http://localhost:9090"
+echo "Prometheus: http://localhost:9091"
 echo "Grafana: http://localhost:3000 (логин/пароль: admin/admin)"
 
 # 7. Быстрая проверка доступности RPC и Beacon API
