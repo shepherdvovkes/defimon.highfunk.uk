@@ -1,0 +1,260 @@
+# =============================================================================
+# OPTIMIZED GETH CONFIGURATION FOR DEFIMON
+# =============================================================================
+# Оптимизированная конфигурация Geth для работы с DeFi Analytics Platform
+# Избегает ошибок Kafka, использует Google Cloud Pub/Sub
+
+[Eth]
+# Полная синхронизация для максимальной совместимости
+SyncMode = "full"
+# Оптимизированные кэши для производительности
+Cache = 8192
+DatabaseCache = 4096
+TrieCache = 256
+SnapshotCache = 256
+StateCache = 256
+# Настройки для работы с L2 сетями
+TxPool = "local"
+TxPoolLocals = []
+TxPoolNoLocals = false
+TxPoolJournal = "transactions.rlp"
+TxPoolRejournal = 3600000000000
+TxPoolPriceLimit = 1
+TxPoolPriceBump = 10
+TxPoolAccountSlots = 16
+TxPoolGlobalSlots = 4096
+TxPoolAccountQueue = 64
+TxPoolGlobalQueue = 1024
+TxPoolLifetime = 10800000000000
+
+[Node]
+# Сетевые настройки
+MaxPeers = 50
+HTTPPort = 8545
+WSPort = 8546
+P2P = 30303
+# RPC настройки
+HTTPEnabled = true
+WSEnabled = true
+HTTPCors = ["*"]
+HTTPVirtualHosts = ["*"]
+HTTPModules = ["eth", "net", "web3", "debug", "txpool", "personal", "admin"]
+WSModules = ["eth", "net", "web3", "debug", "txpool", "personal", "admin"]
+# Дополнительные API для мониторинга
+HTTPApi = ["eth", "net", "web3", "debug", "txpool", "personal", "admin", "miner", "clique", "les", "les2"]
+WSApi = ["eth", "net", "web3", "debug", "txpool", "personal", "admin", "miner", "clique", "les", "les2"]
+
+[Node.P2P]
+# P2P настройки для стабильности
+MaxPeers = 50
+NAT = "any"
+DiscoveryV5 = true
+LightClient = false
+# Настройки для работы с L2 сетями
+EnableMsgEvents = true
+MaxPendingPeers = 0
+NoDiscovery = false
+DialRatio = 3
+ListenAddr = ":30303"
+EnableMsgEvents = true
+
+[Node.HTTP]
+# HTTP настройки
+RPCTxFeeCap = 1
+PersonalAPI = true
+# Дополнительные настройки для API
+HTTPTimeouts = "30s"
+HTTPIdleTimeout = "120s"
+HTTPReadTimeout = "30s"
+HTTPWriteTimeout = "30s"
+HTTPMaxHeaderBytes = 4096
+
+[Node.WS]
+# WebSocket настройки
+Origins = ["*"]
+# Дополнительные настройки для WebSocket
+WSReadDeadline = "60s"
+WSWriteDeadline = "10s"
+WSMaxConnections = 1000
+
+[Metrics]
+# Метрики для мониторинга
+Enabled = true
+HTTP = ":6060"
+HTTPCors = ["*"]
+# Дополнительные настройки метрик
+InfluxDB = true
+InfluxDBEndpoint = "http://localhost:8086"
+InfluxDBDatabase = "geth"
+InfluxDBUsername = "geth"
+InfluxDBPassword = "geth"
+InfluxDBTags = "host=localhost"
+
+[Ethash]
+# Настройки для майнинга (отключен)
+CacheDir = "/data/ethereum/ethash"
+DatasetDir = "/data/ethereum/ethash"
+Cache = 1024
+# Дополнительные настройки
+PowMode = 0
+Notify = []
+NotifyFull = false
+Log = 3
+# Настройки для работы с L2
+Etherbase = "0x0000000000000000000000000000000000000000"
+
+[Eth.Miner]
+# Майнинг отключен для ноды
+Enabled = false
+Threads = 0
+Etherbase = "0x0000000000000000000000000000000000000000"
+GasLimit = 30000000
+GasCeil = 30000000
+GasPrice = 1000000000
+# Дополнительные настройки
+Recommit = 3000000000
+Noverify = false
+
+[Eth.GPO]
+# Настройки Gas Price Oracle
+Blocks = 20
+Percentile = 60
+MaxPrice = 50000000000
+# Дополнительные настройки
+Default = 20000000000
+MaxPrice = 50000000000
+IgnorePrice = 20000000000
+
+[Node.Database]
+# Настройки базы данных
+Ancients = "/data/ethereum/chaindata/ancient"
+Cache = 4096
+Handles = 512
+ReadOnly = false
+# Дополнительные настройки
+Freezer = "/data/ethereum/chaindata/ancient"
+# Настройки для оптимизации
+TrieDirtyCache = 256
+TrieCleanCache = 256
+TrieCleanCacheJournal = "triecache"
+TrieCleanCacheRejournal = 3600000000000
+TrieDirtyCacheLimit = 134217728
+TrieTimeLimit = 60000000000
+SnapshotCache = 256
+Preimages = false
+
+[Node.Log]
+# Настройки логирования
+Level = "info"
+Format = "json"
+File = "/data/ethereum/geth.log"
+MaxSize = 100
+MaxBackups = 10
+MaxAge = 30
+Compress = true
+# Дополнительные настройки
+Vmodule = ""
+BacktraceAt = ""
+# Настройки для мониторинга
+Verbosity = 3
+
+# =============================================================================
+# ADDITIONAL OPTIMIZATIONS FOR L2 NETWORKS
+# =============================================================================
+
+[Node.IPC]
+# IPC настройки (отключены для безопасности)
+Enabled = false
+Path = "geth.ipc"
+
+[Node.GraphQL]
+# GraphQL API (опционально)
+Enabled = false
+Cors = ["*"]
+VirtualHosts = ["*"]
+
+[Node.Accounts]
+# Настройки аккаунтов
+Unlock = []
+Password = []
+LightKDF = false
+
+[Node.Developer]
+# Настройки для разработки (отключены в продакшене)
+Enabled = false
+Period = 0
+GasLimit = 8000000
+
+[Node.Ethash]
+# Настройки Ethash (для совместимости)
+CacheDir = "/data/ethereum/ethash"
+DatasetDir = "/data/ethereum/ethash"
+PowMode = 0
+
+[Node.TxPool]
+# Дополнительные настройки пула транзакций
+Locals = []
+NoLocals = false
+Journal = "transactions.rlp"
+Rejournal = 3600000000000
+PriceLimit = 1
+PriceBump = 10
+AccountSlots = 16
+GlobalSlots = 4096
+AccountQueue = 64
+GlobalQueue = 1024
+Lifetime = 10800000000000
+
+[Node.GPO]
+# Дополнительные настройки Gas Price Oracle
+Blocks = 20
+Percentile = 60
+Default = 20000000000
+MaxPrice = 50000000000
+IgnorePrice = 20000000000
+
+# =============================================================================
+# PERFORMANCE TUNING
+# =============================================================================
+
+[Node.Performance]
+# Настройки производительности
+MaxConcurrentRequests = 1000
+MaxConcurrentDownloads = 8
+MaxConcurrentUploads = 4
+MaxConcurrentLightPeers = 100
+MaxConcurrentFullPeers = 50
+MaxConcurrentSyncPeers = 8
+MaxConcurrentLightSyncPeers = 4
+MaxConcurrentFullSyncPeers = 2
+
+[Node.Network]
+# Сетевые настройки
+MaxPeers = 50
+MaxLightPeers = 100
+MaxConcurrentRequests = 1000
+MaxConcurrentDownloads = 8
+MaxConcurrentUploads = 4
+MaxConcurrentLightPeers = 100
+MaxConcurrentFullPeers = 50
+MaxConcurrentSyncPeers = 8
+MaxConcurrentLightSyncPeers = 4
+MaxConcurrentFullSyncPeers = 2
+
+# =============================================================================
+# SECURITY SETTINGS
+# =============================================================================
+
+[Node.Security]
+# Настройки безопасности
+HTTPCors = ["*"]
+HTTPVirtualHosts = ["*"]
+HTTPModules = ["eth", "net", "web3", "debug", "txpool", "personal", "admin"]
+WSModules = ["eth", "net", "web3", "debug", "txpool", "personal", "admin"]
+HTTPApi = ["eth", "net", "web3", "debug", "txpool", "personal", "admin", "miner", "clique", "les", "les2"]
+WSApi = ["eth", "net", "web3", "debug", "txpool", "personal", "admin", "miner", "clique", "les", "les2"]
+HTTPTimeouts = "30s"
+HTTPIdleTimeout = "120s"
+HTTPReadTimeout = "30s"
+HTTPWriteTimeout = "30s"
+HTTPMaxHeaderBytes = 4096

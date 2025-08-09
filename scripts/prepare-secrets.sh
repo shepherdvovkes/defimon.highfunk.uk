@@ -61,10 +61,11 @@ AI_ML_SERVICE_SECRET_KEY=$(generate_random_secret 32)
 GOOGLE_CLOUD_SQL_PASSWORD=your-secure-password
 
 # External API Keys (replace with your actual keys)
-ETHERSCAN_API_KEY=your-etherscan-api-key
-POLYGONSCAN_API_KEY=your-polygonscan-api-key
-ARBISCAN_API_KEY=your-arbiscan-api-key
-OPTIMISTIC_ETHERSCAN_API_KEY=your-optimistic-etherscan-api-key
+# External API Keys (Optional - commented out as we use our own nodes)
+# ETHERSCAN_API_KEY=your-etherscan-api-key
+# POLYGONSCAN_API_KEY=your-polygonscan-api-key
+# ARBISCAN_API_KEY=your-arbiscan-api-key
+# OPTIMISTIC_ETHERSCAN_API_KEY=your-optimistic-etherscan-api-key
 
 # Notification Services (optional)
 SLACK_WEBHOOK_URL=your-slack-webhook-url

@@ -113,10 +113,11 @@ CLICKHOUSE_DB=analytics
 CLICKHOUSE_USER=default
 CLICKHOUSE_PASSWORD=password
 
-# API Keys (fill these in)
-THE_GRAPH_API_KEY=your_the_graph_api_key
-ALCHEMY_API_KEY=your_alchemy_api_key
-COINGECKO_API_KEY=your_coingecko_api_key
+# External API Keys (Optional - for additional data sources)
+# These are not required as we use our own nodes
+# THE_GRAPH_API_KEY=your_the_graph_api_key
+# ALCHEMY_API_KEY=your_alchemy_api_key
+# COINGECKO_API_KEY=your_coingecko_api_key
 
 # Ethereum Node Configuration
 ETHEREUM_NODE_URL=http://localhost:8545

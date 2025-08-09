@@ -128,7 +128,7 @@ GRAFANA_PORT=3001
 
 # Security
 JWT_SECRET=your_jwt_secret_here
-API_KEY_SECRET=your_api_key_secret_here
+# API_KEY_SECRET=your_api_key_secret_here  # Optional - for external API access
 EOF
 
 print_status "Environment configuration created"

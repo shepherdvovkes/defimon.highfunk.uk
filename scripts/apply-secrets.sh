@@ -29,10 +29,11 @@ kubectl -n $NAMESPACE create secret generic defimon-secrets \
   --from-literal=ANALYTICS_API_SECRET_KEY="$ANALYTICS_API_SECRET_KEY" \
   --from-literal=AI_ML_SERVICE_SECRET_KEY="$AI_ML_SERVICE_SECRET_KEY" \
   --from-literal=GOOGLE_CLOUD_SQL_PASSWORD="$GOOGLE_CLOUD_SQL_PASSWORD" \
-  --from-literal=ETHERSCAN_API_KEY="${ETHERSCAN_API_KEY:-}" \
-  --from-literal=POLYGONSCAN_API_KEY="${POLYGONSCAN_API_KEY:-}" \
-  --from-literal=ARBISCAN_API_KEY="${ARBISCAN_API_KEY:-}" \
-  --from-literal=OPTIMISTIC_ETHERSCAN_API_KEY="${OPTIMISTIC_ETHERSCAN_API_KEY:-}" \
+  # External API Keys (Optional - commented out as we use our own nodes)
+# --from-literal=ETHERSCAN_API_KEY="${ETHERSCAN_API_KEY:-}" \
+# --from-literal=POLYGONSCAN_API_KEY="${POLYGONSCAN_API_KEY:-}" \
+# --from-literal=ARBISCAN_API_KEY="${ARBISCAN_API_KEY:-}" \
+# --from-literal=OPTIMISTIC_ETHERSCAN_API_KEY="${OPTIMISTIC_ETHERSCAN_API_KEY:-}" \
   --from-literal=SLACK_WEBHOOK_URL="${SLACK_WEBHOOK_URL:-}" \
   --from-literal=TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}" \
   --from-literal=TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}" \

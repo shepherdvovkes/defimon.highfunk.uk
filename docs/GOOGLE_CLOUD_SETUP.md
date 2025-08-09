@@ -32,7 +32,7 @@
 - Хранит чувствительные значения в обычном виде (не base64). Примеры ключей:
   - `JWT_SECRET_KEY`, `ADMIN_DASHBOARD_SECRET_KEY`, `ANALYTICS_API_SECRET_KEY`, `AI_ML_SERVICE_SECRET_KEY`
   - `GOOGLE_CLOUD_SQL_PASSWORD` (должен совпадать с паролем пользователя Cloud SQL)
-  - API-ключи сканеров/уведомлений: `ETHERSCAN_API_KEY`, `POLYGONSCAN_API_KEY`, `ARBISCAN_API_KEY`, `OPTIMISTIC_ETHERSCAN_API_KEY`, `SLACK_WEBHOOK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
+  - API-ключи уведомлений (опционально): `SLACK_WEBHOOK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
 
 ## 5) Подготовка секретов
 - Сгенерировать файл секретов:

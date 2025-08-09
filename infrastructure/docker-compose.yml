@@ -184,9 +184,10 @@ services:
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       REDIS_URL: redis://redis:6379
-      THE_GRAPH_API_KEY: ${THE_GRAPH_API_KEY}
-      ALCHEMY_API_KEY: ${ALCHEMY_API_KEY}
-      COINGECKO_API_KEY: ${COINGECKO_API_KEY}
+      # External API Keys (Optional - commented out as we use our own nodes)
+      # THE_GRAPH_API_KEY: ${THE_GRAPH_API_KEY}
+      # ALCHEMY_API_KEY: ${ALCHEMY_API_KEY}
+      # COINGECKO_API_KEY: ${COINGECKO_API_KEY}
       POSTGRES_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-defi_analytics}
     depends_on:
       kafka:

@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  geth:
+    image: ethereum/client-go:stable
+    container_name: geth-full-node
+    command:
+      --http
+      --http.addr=0.0.0.0
+      --http.port=8545
+      --http.api=eth,net,web3
+      --http.vhosts=*
+      --ws
+      --ws.addr=0.0.0.0
+      --ws.port=8546
+      --ws.origins=*
+      --authrpc.vhosts=*
+      --authrpc.addr=0.0.0.0
+      --authrpc.jwtsecret=/root/.ethereum/jwtsecret
+      --datadir=/root/.ethereum
+      --syncmode=full
+      --gcmode=archive
+      --metrics
+      --metrics.addr=0.0.0.0
+      --metrics.port=6060
+    ports:
+      - "8545:8545"
+      - "8546:8546"
+      - "30303:30303"
+      - "30303:30303/udp"
+      - "6060:6060"
+    volumes:
+      - geth_data:/root/.ethereum
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.37.0
+    container_name: prometheus-monitor
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    depends_on:
+      - geth
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana-oss:8.5.2
+    container_name: grafana-dashboard
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  geth_data:
+  prometheus_data:
+  grafana_data:

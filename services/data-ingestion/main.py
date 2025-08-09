@@ -43,28 +43,30 @@ class DataIngestionService:
     
     def _load_data_sources(self) -> List[DataSource]:
         """Load data sources configuration"""
+        # Note: External API keys are commented out as we use our own nodes
+        # These data sources are optional and can be enabled if needed
         return [
-            DataSource(
-                name="the_graph",
-                endpoint="https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3",
-                api_key=os.getenv("THE_GRAPH_API_KEY", ""),
-                rate_limit=60,
-                priority=1
-            ),
-            DataSource(
-                name="coingecko",
-                endpoint="https://api.coingecko.com/api/v3",
-                api_key=os.getenv("COINGECKO_API_KEY", ""),
-                rate_limit=50,
-                priority=2
-            ),
-            DataSource(
-                name="defillama",
-                endpoint="https://api.llama.fi",
-                api_key=os.getenv("DEFILLAMA_API_KEY", ""),
-                rate_limit=100,
-                priority=3
-            )
+            # DataSource(
+            #     name="the_graph",
+            #     endpoint="https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3",
+            #     api_key=os.getenv("THE_GRAPH_API_KEY", ""),
+            #     rate_limit=60,
+            #     priority=1
+            # ),
+            # DataSource(
+            #     name="coingecko",
+            #     endpoint="https://api.coingecko.com/api/v3",
+            #     api_key=os.getenv("COINGECKO_API_KEY", ""),
+            #     rate_limit=50,
+            #     priority=2
+            # ),
+            # DataSource(
+            #     name="defillama",
+            #     endpoint="https://api.llama.fi",
+            #     api_key=os.getenv("DEFILLAMA_API_KEY", ""),
+            #     rate_limit=100,
+            #     priority=3
+            # )
         ]
     
     async def start_ingestion(self):

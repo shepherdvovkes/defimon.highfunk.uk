@@ -135,11 +135,12 @@ plugins:
           - X-Response-Time: ${response_time}
           - X-Service: ${service_name}
 
-consumers:
-  - username: api_user
-    keyauth_credentials:
-      - key: your_api_key_here
+# API Authentication (Optional - for external API access)
+# consumers:
+#   - username: api_user
+#     keyauth_credentials:
+#       - key: your_api_key_here
 
-keyauth_credentials:
-  - consumer: api_user
-    key: your_api_key_here
+# keyauth_credentials:
+#   - consumer: api_user
+#     key: your_api_key_here
