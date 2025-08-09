@@ -76,8 +76,10 @@ if [ "$USE_INTERNAL_GETH" = "1" ]; then
     docker volume rm $(docker volume ls -q | grep -E 'geth-monitoring_|_geth_data|_lighthouse_data') 2>/dev/null || true
 
     echo "Перезапускаю стек мониторинга (Geth, Lighthouse, Prometheus, Grafana)..."
-    export JWTSECRET_PATH="$(realpath infrastructure/geth-monitoring/jwtsecret.raw)"
-    echo "Использую JWTSECRET_PATH=$JWTSECRET_PATH"
+    export JWTSECRET_RAW_PATH="$(realpath infrastructure/geth-monitoring/jwtsecret.raw)"
+    export JWTSECRET_HEX_PATH="$(realpath infrastructure/geth-monitoring/jwtsecret.hex)"
+    echo "JWT RAW: $JWTSECRET_RAW_PATH"
+    echo "JWT HEX: $JWTSECRET_HEX_PATH"
     $COMPOSE_BIN -f "$COMPOSE_FILE" --profile internal-geth up -d --build
     echo "Проверяю запуск контейнеров..."
     sleep 5
