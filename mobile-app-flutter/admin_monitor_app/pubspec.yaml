@@ -1,0 +1,34 @@
+name: admin_monitor_app
+description: Admin monitoring app for Ethereum nodes and system metrics
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  http: ^1.1.0
+  provider: ^6.1.1
+  shared_preferences: ^2.2.2
+  fl_chart: ^0.65.0
+  intl: ^0.18.1
+  connectivity_plus: ^5.0.2
+  flutter_secure_storage: ^9.0.0
+  web_socket_channel: ^2.4.0
+  json_annotation: ^4.8.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  build_runner: ^2.4.7
+  json_serializable: ^6.7.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
