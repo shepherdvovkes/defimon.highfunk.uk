@@ -33,6 +33,29 @@ services:
       - geth_data:/root/.ethereum
     restart: unless-stopped
 
+  lighthouse:
+    image: sigp/lighthouse:latest
+    container_name: lighthouse-beacon
+    command: >-
+      lighthouse bn
+      --network mainnet
+      --datadir /root/.lighthouse
+      --execution-endpoint http://geth:8551
+      --execution-jwt /root/.ethereum/jwtsecret
+      --disable-deposit-contract-sync
+      --http
+      --http-address 0.0.0.0
+      --http-port 5052
+      --metrics
+      --metrics-address 0.0.0.0
+      --metrics-port 5054
+    depends_on:
+      - geth
+    volumes:
+      - geth_data:/root/.ethereum
+      - lighthouse_data:/root/.lighthouse
+    restart: unless-stopped
+
   prometheus:
     image: prom/prometheus:v2.37.0
     container_name: prometheus-monitor
@@ -63,3 +86,4 @@ volumes:
   geth_data:
   prometheus_data:
   grafana_data:
+  lighthouse_data:
