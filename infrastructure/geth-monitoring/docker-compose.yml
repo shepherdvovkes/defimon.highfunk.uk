@@ -2,6 +2,7 @@ services:
   geth:
     image: ethereum/client-go:stable
     container_name: geth-full-node
+    entrypoint: []
     ports:
       - "8545:8545"
       - "8546:8546"
