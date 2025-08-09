@@ -16,6 +16,10 @@ TMUX_SOCKET="${TMUX_SOCKET:-gethmon}"
 # Ensure TERM is sane for tmux
 export TERM="${TERM:-xterm-256color}"
 
+# Resolve script absolute path for tmux spawned pane
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_PATH="$SCRIPT_DIR/$(basename "$0")"
+
 # Resolve LOG_PANE_LINES when set to auto (default): use half of terminal height
 if [ "${LOG_PANE_LINES}" = "auto" ]; then
   if command -v tput >/dev/null 2>&1; then
@@ -34,17 +38,21 @@ fi
 if [ "${MONITOR_ONLY:-0}" != "1" ] && [ "$ENABLE_SPLIT" = "1" ] && command -v tmux >/dev/null 2>&1 && [ -z "${TMUX:-}" ]; then
   # Wrap tmux operations to gracefully fallback on any error
   {
-    if tmux -L "$TMUX_SOCKET" has-session -t "$SESSION_NAME" 2>/dev/null; then
-      if [ "$KILL_EXISTING" = "1" ]; then
-        tmux -L "$TMUX_SOCKET" kill-session -t "$SESSION_NAME"
-      else
-        tmux -L "$TMUX_SOCKET" attach-session -t "$SESSION_NAME"
-        exit 0
-      fi
+    # Kill existing session if requested
+    if tmux -L "$TMUX_SOCKET" has-session -t "$SESSION_NAME" 2>/dev/null && [ "$KILL_EXISTING" = "1" ]; then
+      tmux -L "$TMUX_SOCKET" kill-session -t "$SESSION_NAME" || true
     fi
-    tmux -L "$TMUX_SOCKET" new-session -d -s "$SESSION_NAME" "MONITOR_ONLY=1 RPC_URL=$RPC_URL INTERVAL_SECONDS=$INTERVAL_SECONDS GETH_CONTAINER=$GETH_CONTAINER ENABLE_SPLIT=0 LOG_PANE_LINES=$LOG_PANE_LINES SESSION_NAME=$SESSION_NAME KILL_EXISTING=$KILL_EXISTING TMUX_SOCKET=$TMUX_SOCKET \"$0\""
-    tmux -L "$TMUX_SOCKET" split-window -t "$SESSION_NAME":0 -v -l "$LOG_PANE_LINES" "docker logs -f --tail 200 $GETH_CONTAINER | sed -u -e 's/\x1b\[[0-9;]*[a-zA-Z]//g'"
-    tmux -L "$TMUX_SOCKET" select-pane -t "$SESSION_NAME":0.0
+
+    # Ensure session exists (create if missing)
+    if ! tmux -L "$TMUX_SOCKET" has-session -t "$SESSION_NAME" 2>/dev/null; then
+      tmux -L "$TMUX_SOCKET" new-session -d -s "$SESSION_NAME" \
+        "MONITOR_ONLY=1 RPC_URL=$RPC_URL INTERVAL_SECONDS=$INTERVAL_SECONDS GETH_CONTAINER=$GETH_CONTAINER ENABLE_SPLIT=0 LOG_PANE_LINES=$LOG_PANE_LINES SESSION_NAME=$SESSION_NAME KILL_EXISTING=$KILL_EXISTING TMUX_SOCKET=$TMUX_SOCKET bash -c '$SCRIPT_PATH'"
+      tmux -L "$TMUX_SOCKET" split-window -t "$SESSION_NAME":0 -v -l "$LOG_PANE_LINES" \
+        "docker logs -f --tail 200 $GETH_CONTAINER | sed -u -e 's/\x1b\[[0-9;]*[a-zA-Z]//g'"
+      tmux -L "$TMUX_SOCKET" select-pane -t "$SESSION_NAME":0.0 || true
+    fi
+
+    # Attach (if fails due to no sessions, we fallback below)
     tmux -L "$TMUX_SOCKET" attach-session -t "$SESSION_NAME"
     exit 0
   } || {
