@@ -8,13 +8,15 @@ RPC_URL="${RPC_URL:-http://localhost:8545}"
 INTERVAL_SECONDS="${INTERVAL_SECONDS:-5}"
 GETH_CONTAINER="${GETH_CONTAINER:-geth-full-node}"
 ENABLE_SPLIT="${ENABLE_SPLIT:-1}"
+LOG_PANE_LINES="${LOG_PANE_LINES:-20}"
 
 # If split requested and tmux is available and we're not already inside tmux, launch split view
 if [ "${MONITOR_ONLY:-0}" != "1" ] && [ "$ENABLE_SPLIT" = "1" ] && command -v tmux >/dev/null 2>&1 && [ -z "${TMUX:-}" ]; then
   # Start a new tmux session with two panes: top monitor, bottom logs
   session_name="gethmon"
-  tmux new-session -d -s "$session_name" "MONITOR_ONLY=1 RPC_URL=$RPC_URL INTERVAL_SECONDS=$INTERVAL_SECONDS GETH_CONTAINER=$GETH_CONTAINER ENABLE_SPLIT=0 \"$0\""
-  tmux split-window -v -p 60 "docker logs -f --tail 200 $GETH_CONTAINER | sed -u -e 's/\x1b\[[0-9;]*[a-zA-Z]//g'"
+  tmux new-session -d -s "$session_name" "MONITOR_ONLY=1 RPC_URL=$RPC_URL INTERVAL_SECONDS=$INTERVAL_SECONDS GETH_CONTAINER=$GETH_CONTAINER ENABLE_SPLIT=0 LOG_PANE_LINES=$LOG_PANE_LINES \"$0\""
+  # Use fixed line size to avoid older tmux 'size missing' or unsupported -p
+  tmux split-window -v -l "$LOG_PANE_LINES" "docker logs -f --tail 200 $GETH_CONTAINER | sed -u -e 's/\x1b\[[0-9;]*[a-zA-Z]//g'"
   tmux select-pane -t 0
   tmux attach-session -t "$session_name"
   exit 0
@@ -176,7 +178,7 @@ while true; do
     echo "Logs are shown in the bottom pane (tmux)."
   else
     echo "Tip: Install tmux to see live logs below. Set ENABLE_SPLIT=1 to auto-split."
-    echo "Example: ENABLE_SPLIT=1 ./scripts/geth-cli-monitor.sh"
+    echo "Example: ENABLE_SPLIT=1 LOG_PANE_LINES=20 ./scripts/geth-cli-monitor.sh"
   fi
   echo "Ctrl+C to exit | Refresh every ${INTERVAL_SECONDS}s"
   sleep "$INTERVAL_SECONDS"
