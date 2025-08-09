@@ -138,7 +138,7 @@ check_health() {
 show_urls() {
     echo ""
     print_status "Service URLs:"
-    echo "  📊 Grafana Dashboard: http://localhost:3001 (admin/admin)"
+    echo "  📊 Grafana Dashboard: http://localhost:3001 (admin/Cal1f0rn1a@2025)"
     echo "  📈 Prometheus: http://localhost:9090"
     echo "  🔗 API Gateway: http://localhost:8000"
     echo "  🌐 Frontend: http://localhost:3000"

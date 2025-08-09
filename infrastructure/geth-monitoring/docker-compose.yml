@@ -70,7 +70,7 @@ services:
       - grafana_data:/var/lib/grafana
       - ./grafana/datasources:/etc/grafana/provisioning/datasources
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=Cal1f0rn1a@2025
       - GF_INSTALL_PLUGINS=grafana-clickhouse-datasource
     restart: unless-stopped
 

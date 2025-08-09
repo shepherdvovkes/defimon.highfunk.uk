@@ -742,7 +742,7 @@ services:
     image: grafana/grafana:latest
     container_name: defimon-grafana
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_SECURITY_ADMIN_PASSWORD=Cal1f0rn1a@2025
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - grafana_data:/var/lib/grafana
@@ -869,7 +869,7 @@ print_status "✅ Restarted all services"
 print_status "Next steps:"
 print_status "1. Monitor logs: docker-compose logs -f"
 print_status "2. Check metrics: http://localhost:9090"
-print_status "3. View Grafana: http://localhost:3002 (admin/admin123)"
+print_status "3. View Grafana: http://localhost:3002 (admin/Cal1f0rn1a@2025)"
 print_status "4. Test API: http://localhost:8000/docs"
 print_status "5. Access frontend: http://localhost:3000"
 

@@ -52,12 +52,12 @@ docker ps
 - **Prometheus**: `http://localhost:9090`
 - **Grafana**: `http://localhost:3000`
   - **Логин**: `admin`
-  - **Пароль**: `admin`
+  - **Пароль**: `Cal1f0rn1a@2025`
 
 ## 5. Мониторинг в Grafana
 
 1.  **Откройте Grafana** в вашем браузере: `http://localhost:3000`.
-2.  **Войдите**, используя `admin`/`admin`.
+2.  **Войдите**, используя `admin`/`Cal1f0rn1a@2025`.
 3.  **Добавьте Prometheus** как источник данных:
     *   **Configuration** (шестеренка) -> **Data Sources**.
     *   **Add data source** -> **Prometheus**.

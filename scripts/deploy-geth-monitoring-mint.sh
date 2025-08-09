@@ -106,7 +106,7 @@ else
   echo "Lighthouse (Consensus) запущен и подключается к внешнему Execution: $EXECUTION_ENDPOINT"
 fi
 echo "Prometheus: http://localhost:9091"
-echo "Grafana: http://localhost:3000 (логин/пароль: admin/admin)"
+echo "Grafana: http://localhost:3000 (логин/пароль: admin/Cal1f0rn1a@2025)"
 
 # 7. Быстрая проверка доступности RPC и Beacon API
 echo "Проверка RPC и Beacon API..."

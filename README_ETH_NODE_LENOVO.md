@@ -82,7 +82,7 @@ sudo /opt/defimon/manage-node.sh logs
 
 - **Ethereum RPC**: http://localhost:8545
 - **Ethereum WebSocket**: ws://localhost:8546
-- **Grafana мониторинг**: http://localhost:3001 (admin/admin)
+- **Grafana мониторинг**: http://localhost:3001 (admin/Cal1f0rn1a@2025)
 - **Prometheus**: http://localhost:9090
 - **Админ дашборд**: http://localhost:8080
 

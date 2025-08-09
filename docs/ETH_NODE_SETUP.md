@@ -129,7 +129,7 @@ sudo ufw allow from 127.0.0.1 to any port 8546
 
 - **Ethereum RPC**: http://localhost:8545
 - **Ethereum WebSocket**: ws://localhost:8546
-- **Grafana мониторинг**: http://localhost:3001 (admin/admin)
+- **Grafana мониторинг**: http://localhost:3001 (admin/Cal1f0rn1a@2025)
 - **Prometheus**: http://localhost:9090
 - **Админ дашборд**: http://localhost:8080
 

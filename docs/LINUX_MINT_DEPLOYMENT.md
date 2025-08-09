@@ -216,7 +216,7 @@ docker-compose up -d
 - **API Gateway**: http://localhost:8000
 
 ### Мониторинг
-- **Grafana**: http://localhost:3001 (admin/admin)
+- **Grafana**: http://localhost:3001 (admin/Cal1f0rn1a@2025)
 - **Prometheus**: http://localhost:9090
 - **Kong Admin**: http://localhost:8001
 

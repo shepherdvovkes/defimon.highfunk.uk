@@ -27,7 +27,7 @@ cd DEFIMON
 
 - **Административный дашборд**: http://localhost:8080
 - **Основной интерфейс**: http://localhost:3000
-- **Grafana мониторинг**: http://localhost:3001 (admin/admin)
+- **Grafana мониторинг**: http://localhost:3001 (admin/Cal1f0rn1a@2025)
 - **API Gateway**: http://localhost:8000
 
 ## 📊 Мониторинг

@@ -253,7 +253,7 @@ services:
     image: grafana/grafana:latest
     container_name: defimon-grafana
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_PASSWORD: Cal1f0rn1a@2025
       GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
     volumes:
       - grafana_data:/var/lib/grafana
@@ -447,7 +447,7 @@ echo ""
 echo "=== Access Information ==="
 echo "Ethereum RPC: http://localhost:8545"
 echo "Ethereum WS:  ws://localhost:8546"
-echo "Grafana:      http://localhost:3001 (admin/admin)"
+echo "Grafana:      http://localhost:3001 (admin/Cal1f0rn1a@2025)"
 echo "Prometheus:   http://localhost:9090"
 echo ""
 echo "=== Management Commands ==="

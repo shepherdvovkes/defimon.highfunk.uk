@@ -275,7 +275,7 @@ docker-compose logs -f geth
 
 # Мониторинг метрик
 # Prometheus: http://localhost:9090
-# Grafana: http://localhost:3002 (admin/admin123)
+# Grafana: http://localhost:3002 (admin/Cal1f0rn1a@2025)
 ```
 
 ### Тестирование интеграции

@@ -124,7 +124,7 @@ chmod +x scripts/start-admin-dashboard.sh
 - **Analytics API**: http://localhost:8002/docs
 - **AI/ML Service**: http://localhost:8001/docs
 - **Admin Dashboard**: http://localhost:8080
-- **Grafana**: http://localhost:3001 (admin/admin)
+- **Grafana**: http://localhost:3001 (admin/Cal1f0rn1a@2025)
 - **Prometheus**: http://localhost:9090
 
 ## 🔗 Поддерживаемые блокчейны
@@ -329,7 +329,7 @@ defimon.highfunk.uk/
   - Экспорт данных
 
 ### Инструменты мониторинга
-- **Grafana**: http://localhost:3001 (admin/admin)
+- **Grafana**: http://localhost:3001 (admin/Cal1f0rn1a@2025)
 - **Prometheus**: http://localhost:9090
 - **Kong Admin**: http://localhost:8001
 

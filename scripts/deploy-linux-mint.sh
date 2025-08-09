@@ -335,7 +335,7 @@ show_service_urls() {
     echo ""
     
     echo "📊 Monitoring:"
-    echo "   Grafana: http://localhost:3001 (admin/admin)"
+    echo "   Grafana: http://localhost:3001 (admin/Cal1f0rn1a@2025)"
     echo "   Prometheus: http://localhost:9090"
     echo "   Kong Admin: http://localhost:8001"
     echo ""
@@ -471,7 +471,7 @@ main() {
     echo ""
     print_status "Next steps:"
     echo "  1. Open Admin Dashboard: http://localhost:8080"
-    echo "  2. Check Grafana: http://localhost:3001 (admin/admin)"
+    echo "  2. Check Grafana: http://localhost:3001 (admin/Cal1f0rn1a@2025)"
     echo "  3. Monitor logs: docker-compose -f infrastructure/docker-compose.yml logs -f"
     echo "  4. Run monitoring: $data_dir/monitor.sh"
     echo "  5. Create backup: $data_dir/backup.sh"

@@ -15,7 +15,7 @@
 
 ## 🌐 Доступные интерфейсы
 
-- **Grafana**: http://localhost:3001 (admin/admin)
+- **Grafana**: http://localhost:3001 (admin/Cal1f0rn1a@2025)
 - **Prometheus**: http://localhost:9090
 - **Node Exporter**: http://localhost:9100/metrics
 
@@ -374,7 +374,7 @@ netstat -tuln | grep -E ':(8545|8546|3001|9090|8080)'
 ### Импорт дашбордов в Grafana
 
 1. Откройте Grafana: http://localhost:3001
-2. Войдите с учетными данными: admin/admin
+2. Войдите с учетными данными: admin/Cal1f0rn1a@2025
 3. Перейдите в Settings → Data Sources
 4. Добавьте Prometheus как источник данных
 5. Перейдите в Dashboards → Import

@@ -99,7 +99,7 @@ fi
 log "If both lines above show 32, JWT secrets are correctly mounted."
 
 warn "To view Geth logs (no tmux): ./scripts/geth-cli-monitor.sh"
-warn "Prometheus: http://localhost:9091 | Grafana: http://localhost:3000 (admin/admin)"
+warn "Prometheus: http://localhost:9091 | Grafana: http://localhost:3000 (admin/Cal1f0rn1a@2025)"
 
 if [[ "$USE_SDA1" == "1" ]]; then
     log "Lighthouse настроен для использования /mnt/sda1/lighthouse"

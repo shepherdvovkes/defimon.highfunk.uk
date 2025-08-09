@@ -88,7 +88,7 @@ echo ""
 echo "=== Access Information ==="
 echo "Ethereum RPC: http://localhost:8545"
 echo "Ethereum WS:  ws://localhost:8546"
-echo "Grafana:      http://localhost:3001 (admin/admin)"
+echo "Grafana:      http://localhost:3001 (admin/Cal1f0rn1a@2025)"
 echo "Prometheus:   http://localhost:9090"
 echo "Admin Dashboard: http://localhost:8080"
 

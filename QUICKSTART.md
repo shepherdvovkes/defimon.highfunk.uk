@@ -52,7 +52,7 @@ docker-compose ps
 - **API Gateway**: http://localhost:8000
 - **Analytics API**: http://localhost:8002/docs
 - **ML Service**: http://localhost:8001/docs
-- **Grafana**: http://localhost:3001 (admin/admin)
+- **Grafana**: http://localhost:3001 (admin/Cal1f0rn1a@2025)
 - **Prometheus**: http://localhost:9090
 
 ## Шаг 4: Тестирование API
@@ -162,7 +162,7 @@ cd services/ai-ml-service && python -m uvicorn main:app --reload --port 8001
 
 ## Мониторинг
 
-- **Grafana**: http://localhost:3001 (admin/admin)
+- **Grafana**: http://localhost:3001 (admin/Cal1f0rn1a@2025)
   - Дашборды для всех сервисов
   - Метрики производительности
   - Алерты
