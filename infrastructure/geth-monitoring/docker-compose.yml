@@ -13,8 +13,8 @@ services:
       - jwt_secret:/jwtsecret
     command: >
       /bin/sh -c '
-        openssl rand -hex 32 > /jwtsecret &&
-        exec geth
+        dd if=/dev/urandom bs=1 count=32 2>/dev/null | xxd -p > /jwtsecret &&
+        exec /usr/local/bin/geth
           --http
           --http.addr=0.0.0.0
           --http.port=8545
