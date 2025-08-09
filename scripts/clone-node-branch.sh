@@ -108,6 +108,18 @@ else
     print_warning "ETH_NODE_SETUP.md not found"
 fi
 
+if [ -f ".env.infura" ]; then
+    print_status "✓ .env.infura found (with real Infura keys)"
+else
+    print_warning ".env.infura not found - you'll need to add your Infura keys manually"
+fi
+
+if [ -f "env.infura.example" ]; then
+    print_status "✓ env.infura.example found (template available)"
+else
+    print_warning "env.infura.example not found"
+fi
+
 # Показ следующих шагов
 print_header "Next Steps:"
 echo ""
@@ -117,10 +129,13 @@ echo ""
 echo "2. Read the documentation:"
 echo "   cat README_ETH_NODE_LENOVO.md"
 echo ""
-echo "3. Check system requirements:"
+echo "3. Check Infura configuration:"
+echo "   ./scripts/check-infura-config.sh"
+echo ""
+echo "4. Check system requirements:"
 echo "   ./scripts/deploy-linux-mint-node.sh --check-only"
 echo ""
-echo "4. Deploy the node (requires sudo):"
+echo "5. Deploy the node (requires sudo):"
 echo "   sudo ./scripts/deploy-linux-mint-node.sh"
 echo ""
 echo "5. Monitor the deployment:"

@@ -8,6 +8,13 @@ log() { echo -e "\033[0;32m$*\033[0m"; }
 warn() { echo -e "\033[0;33m$*\033[0m"; }
 err() { echo -e "\033[0;31m$*\033[0m" 1>&2; }
 
+# Парсинг аргументов
+USE_SDA1="${USE_SDA1:-0}"
+if [[ "$*" == *"--sda1"* ]]; then
+    USE_SDA1=1
+    log "Включена настройка для диска sda1"
+fi
+
 REPO_DIR=${REPO_DIR:-$(pwd)}
 COMPOSE_FILE="$REPO_DIR/infrastructure/geth-monitoring/docker-compose.yml"
 JWT_BASE="$REPO_DIR/infrastructure/geth-monitoring/jwtsecret"
@@ -28,6 +35,17 @@ net.core.rmem_default=67108864
 net.core.wmem_default=67108864
 EOF
 sudo sysctl --system || true
+
+# Настройка sda1 если требуется
+if [[ "$USE_SDA1" == "1" ]]; then
+    log "Настраиваем lighthouse для использования диска sda1"
+    if [[ -f "$REPO_DIR/scripts/setup-sda1-lighthouse.sh" ]]; then
+        "$REPO_DIR/scripts/setup-sda1-lighthouse.sh"
+    else
+        err "Скрипт setup-sda1-lighthouse.sh не найден"
+        exit 1
+    fi
+fi
 
 log "Selecting Docker Compose binary"
 if docker compose version >/dev/null 2>&1; then
@@ -55,6 +73,15 @@ export JWTSECRET_HEX_PATH="$HEX_PATH"
 # Default checkpoint sync URL for Lighthouse (can be overridden by env)
 export CHECKPOINT_SYNC_URL="${CHECKPOINT_SYNC_URL:-https://mainnet.checkpoint.sigp.io}"
 log "Using CHECKPOINT_SYNC_URL=$CHECKPOINT_SYNC_URL"
+
+# Устанавливаем путь для lighthouse данных
+if [[ "$USE_SDA1" == "1" ]]; then
+    export LIGHTHOUSE_DATA_PATH="/mnt/sda1/lighthouse"
+    log "Using LIGHTHOUSE_DATA_PATH=$LIGHTHOUSE_DATA_PATH"
+else
+    log "Using default lighthouse_data volume"
+fi
+
 $COMPOSE_BIN -f "$COMPOSE_FILE" --profile internal-geth up -d --build
 
 log "Waiting for containers to initialize..."
@@ -73,3 +100,8 @@ log "If both lines above show 32, JWT secrets are correctly mounted."
 
 warn "To view Geth logs (no tmux): ./scripts/geth-cli-monitor.sh"
 warn "Prometheus: http://localhost:9091 | Grafana: http://localhost:3000 (admin/admin)"
+
+if [[ "$USE_SDA1" == "1" ]]; then
+    log "Lighthouse настроен для использования /mnt/sda1/lighthouse"
+    log "Проверьте статус синхронизации: docker logs lighthouse-beacon"
+fi

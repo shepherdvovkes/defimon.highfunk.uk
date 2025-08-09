@@ -2,26 +2,6 @@ services:
   geth:
     image: ethereum/client-go:stable
     container_name: geth-full-node
-    command:
-      --http
-      --http.addr=0.0.0.0
-      --http.port=8545
-      --http.api=eth,net,web3
-      --http.vhosts=*
-      --ws
-      --ws.addr=0.0.0.0
-      --ws.port=8546
-      --ws.origins=*
-      --authrpc.vhosts=*
-      --authrpc.addr=0.0.0.0
-      --authrpc.port=8551
-      --authrpc.jwtsecret=/jwtsecret
-      --datadir=/root/.ethereum
-      --syncmode=full
-      --gcmode=full
-      --metrics
-      --metrics.addr=0.0.0.0
-      --metrics.port=6060
     ports:
       - "8545:8545"
       - "8546:8546"
@@ -30,10 +10,41 @@ services:
       - "6060:6060"
     volumes:
       - geth_data:/root/.ethereum
-      - type: bind
-        source: ${JWTSECRET_RAW_PATH:-./jwtsecret.raw}
-        target: /jwtsecret
-        read_only: true
+      - jwt_secret:/jwtsecret
+    command: >
+      sh -c '
+        openssl rand -hex 32 > /jwtsecret &&
+        exec geth 
+          --http 
+          --http.addr=0.0.0.0 
+          --http.port=8545 
+          --http.api=eth,net,web3,debug,txpool,personal,admin 
+          --http.vhosts=* 
+          --http.corsdomain=*
+          --ws 
+          --ws.addr=0.0.0.0 
+          --ws.port=8546 
+          --ws.origins=* 
+          --ws.api=eth,net,web3,debug,txpool,personal,admin
+          --datadir=/root/.ethereum 
+          --syncmode=full
+          --cache=8192
+          --database.cache=4096
+          --trie.cache=256
+          --snapshot.cache=256
+          --state.cache=256
+          --maxpeers=50
+          --discovery.v5
+          --metrics 
+          --metrics.addr=0.0.0.0 
+          --metrics.port=6060 
+          --authrpc.disable 
+          --override.terminaltotaldifficulty=0 
+          --override.mergeforkblock=0 
+          --override.shanghaiblock=0 
+          --override.cancunblock=0 
+          --override.pragueblock=0
+      '
     restart: unless-stopped
     profiles:
       - internal-geth
@@ -48,7 +59,7 @@ services:
           --datadir /root/.lighthouse \
           --execution-endpoint ${EXECUTION_ENDPOINT:-http://geth:8551} \
           --execution-jwt /jwtsecret \
-          $${CHECKPOINT_SYNC_URL:+--checkpoint-sync-url $${CHECKPOINT_SYNC_URL}} \
+          ${CHECKPOINT_SYNC_URL:+--checkpoint-sync-url ${CHECKPOINT_SYNC_URL}} \
           --http \
           --http-address 0.0.0.0 \
           --http-port 5052 \
@@ -60,7 +71,7 @@ services:
       - CHECKPOINT_SYNC_URL=${CHECKPOINT_SYNC_URL}
     # No hard depends_on to allow external execution client mode
     volumes:
-      - lighthouse_data:/root/.lighthouse
+      - ${LIGHTHOUSE_DATA_PATH:-lighthouse_data}:/root/.lighthouse
       - ${JWTSECRET_HEX_PATH:-./jwtsecret.hex}:/jwtsecret:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -93,6 +104,7 @@ volumes:
   prometheus_data:
   grafana_data:
   lighthouse_data:
+  jwt_secret:
  
 networks:
   default:

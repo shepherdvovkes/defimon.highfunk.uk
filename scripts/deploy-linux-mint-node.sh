@@ -281,8 +281,47 @@ if [ -f "$REPO_ROOT/infrastructure/init.sql" ]; then
     cp -f "$REPO_ROOT/infrastructure/init.sql" "$NODE_DIR/init.sql"
 fi
 
-# Создание .env файла
-print_header "Creating environment configuration..."
+# Создание .env файла с Infura конфигурацией
+print_header "Creating environment configuration with Infura support..."
+
+# Проверяем наличие .env.infura с реальными ключами
+if [ -f "$REPO_ROOT/.env.infura" ]; then
+    print_status "Found existing .env.infura with real Infura keys..."
+    cp "$REPO_ROOT/.env.infura" "$NODE_DIR/.env.infura"
+    
+    # Извлекаем Project ID из файла для использования в основном .env
+    INFURA_PROJECT_ID=$(grep "^INFURA_PROJECT_ID=" "$NODE_DIR/.env.infura" | cut -d'=' -f2)
+    if [ -n "$INFURA_PROJECT_ID" ]; then
+        print_success "Using Infura Project ID from .env.infura: $INFURA_PROJECT_ID"
+    else
+        print_warning "INFURA_PROJECT_ID not found in .env.infura"
+    fi
+elif [ -f "$REPO_ROOT/env.infura.example" ]; then
+    print_warning "Using env.infura.example template (no real keys found)"
+    cp "$REPO_ROOT/env.infura.example" "$NODE_DIR/.env.infura"
+    
+    # Запрашиваем Infura Project ID
+    print_header "Infura Configuration"
+    echo ""
+    echo "Для синхронизации ноды через Infura необходимо указать Project ID."
+    echo "Получите его на https://infura.io/"
+    echo ""
+    read -p "Введите ваш Infura Project ID: " INFURA_PROJECT_ID
+    
+    if [ -n "$INFURA_PROJECT_ID" ]; then
+        # Обновляем Project ID в .env.infura
+        sed -i "s/INFURA_PROJECT_ID=.*/INFURA_PROJECT_ID=$INFURA_PROJECT_ID/" "$NODE_DIR/.env.infura"
+        sed -i "s/your-infura-project-id/$INFURA_PROJECT_ID/g" "$NODE_DIR/.env.infura"
+        
+        print_success "Infura Project ID настроен: $INFURA_PROJECT_ID"
+    else
+        print_warning "Infura Project ID не указан. Используется локальная конфигурация."
+    fi
+else
+    print_warning "Neither .env.infura nor env.infura.example found. Creating basic configuration..."
+fi
+
+# Создаем основной .env файл
 cat > "$NODE_DIR/.env" << EOF
 # Ethereum Node Configuration
 ETHEREUM_NODE_URL=http://localhost:8545
@@ -312,6 +351,10 @@ JWT_SECRET=your_jwt_secret_here
 
 # Data Directory
 DATA_DIR=$DATA_DIR
+
+# Infura Configuration (if available)
+INFURA_PROJECT_ID=${INFURA_PROJECT_ID:-}
+INFURA_ENABLED=${INFURA_PROJECT_ID:+true}
 EOF
 
 print_success "Environment configuration created"
@@ -328,6 +371,8 @@ services:
       context: ${REPO_ROOT}/services/blockchain-node
       dockerfile: Dockerfile
     container_name: defimon-blockchain-service
+    env_file:
+      - ${NODE_DIR}/.env.infura
     environment:
       ETHEREUM_NODE_URL: http://localhost:8545
       DATABASE_URL: postgresql://postgres:password@postgres:5432/defi_analytics
