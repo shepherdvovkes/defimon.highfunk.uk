@@ -11,6 +11,10 @@ ENABLE_SPLIT="${ENABLE_SPLIT:-1}"
 LOG_PANE_LINES="${LOG_PANE_LINES:-auto}"
 SESSION_NAME="${SESSION_NAME:-gethmon}"
 KILL_EXISTING="${KILL_EXISTING:-1}"
+TMUX_SOCKET="${TMUX_SOCKET:-gethmon}"
+
+# Ensure TERM is sane for tmux
+export TERM="${TERM:-xterm-256color}"
 
 # Resolve LOG_PANE_LINES when set to auto (default): use half of terminal height
 if [ "${LOG_PANE_LINES}" = "auto" ]; then
@@ -28,20 +32,26 @@ fi
 
 # If split requested and tmux is available and we're not already inside tmux, launch split view
 if [ "${MONITOR_ONLY:-0}" != "1" ] && [ "$ENABLE_SPLIT" = "1" ] && command -v tmux >/dev/null 2>&1 && [ -z "${TMUX:-}" ]; then
-  if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-    if [ "$KILL_EXISTING" = "1" ]; then
-      tmux kill-session -t "$SESSION_NAME"
-    else
-      tmux attach-session -t "$SESSION_NAME"
-      exit 0
+  # Wrap tmux operations to gracefully fallback on any error
+  {
+    if tmux -L "$TMUX_SOCKET" has-session -t "$SESSION_NAME" 2>/dev/null; then
+      if [ "$KILL_EXISTING" = "1" ]; then
+        tmux -L "$TMUX_SOCKET" kill-session -t "$SESSION_NAME"
+      else
+        tmux -L "$TMUX_SOCKET" attach-session -t "$SESSION_NAME"
+        exit 0
+      fi
     fi
-  fi
-  # Start a new tmux session with two panes: top monitor, bottom logs
-  tmux new-session -d -s "$SESSION_NAME" "MONITOR_ONLY=1 RPC_URL=$RPC_URL INTERVAL_SECONDS=$INTERVAL_SECONDS GETH_CONTAINER=$GETH_CONTAINER ENABLE_SPLIT=0 LOG_PANE_LINES=$LOG_PANE_LINES SESSION_NAME=$SESSION_NAME KILL_EXISTING=$KILL_EXISTING \"$0\""
-  tmux split-window -t "$SESSION_NAME":0 -v -l "$LOG_PANE_LINES" "docker logs -f --tail 200 $GETH_CONTAINER | sed -u -e 's/\x1b\[[0-9;]*[a-zA-Z]//g'"
-  tmux select-pane -t "$SESSION_NAME":0.0
-  tmux attach-session -t "$SESSION_NAME"
-  exit 0
+    tmux -L "$TMUX_SOCKET" new-session -d -s "$SESSION_NAME" "MONITOR_ONLY=1 RPC_URL=$RPC_URL INTERVAL_SECONDS=$INTERVAL_SECONDS GETH_CONTAINER=$GETH_CONTAINER ENABLE_SPLIT=0 LOG_PANE_LINES=$LOG_PANE_LINES SESSION_NAME=$SESSION_NAME KILL_EXISTING=$KILL_EXISTING TMUX_SOCKET=$TMUX_SOCKET \"$0\""
+    tmux -L "$TMUX_SOCKET" split-window -t "$SESSION_NAME":0 -v -l "$LOG_PANE_LINES" "docker logs -f --tail 200 $GETH_CONTAINER | sed -u -e 's/\x1b\[[0-9;]*[a-zA-Z]//g'"
+    tmux -L "$TMUX_SOCKET" select-pane -t "$SESSION_NAME":0.0
+    tmux -L "$TMUX_SOCKET" attach-session -t "$SESSION_NAME"
+    exit 0
+  } || {
+    echo "[warn] tmux split failed (server may have exited unexpectedly). Falling back to single-pane monitor." >&2
+    MONITOR_ONLY=1
+    ENABLE_SPLIT=0
+  }
 fi
 
 if ! command -v curl >/dev/null 2>&1; then
