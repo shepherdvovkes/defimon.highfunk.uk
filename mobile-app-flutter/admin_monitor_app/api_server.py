@@ -9,8 +9,11 @@ import time
 import psutil
 import subprocess
 import requests
+import hashlib
+import sqlite3
+import jwt
 from datetime import datetime, timedelta
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -20,6 +23,41 @@ CORS(app)
 GETH_RPC_URL = "http://localhost:8545"
 LIGHTHOUSE_URL = "http://localhost:5052"
 PROMETHEUS_URL = "http://localhost:9090"
+JWT_SECRET = "your-secret-key-change-in-production"
+
+# Инициализация базы данных
+def init_database():
+    conn = sqlite3.connect('admin_monitor.db')
+    cursor = conn.cursor()
+    
+    # Создаем таблицу пользователей
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            email TEXT,
+            role TEXT DEFAULT 'admin',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_login TIMESTAMP
+        )
+    ''')
+    
+    # Проверяем, есть ли уже админ
+    cursor.execute('SELECT * FROM users WHERE username = ?', ('admin',))
+    if not cursor.fetchone():
+        # Создаем админа с паролем admin123123
+        password_hash = hashlib.sha256('admin123123'.encode()).hexdigest()
+        cursor.execute('''
+            INSERT INTO users (username, password_hash, email, role)
+            VALUES (?, ?, ?, ?)
+        ''', ('admin', password_hash, 'admin@defimon.com', 'admin'))
+    
+    conn.commit()
+    conn.close()
+
+# Инициализируем базу данных при запуске
+init_database()
 
 def get_system_metrics():
     """Получение системных метрик"""
@@ -218,7 +256,111 @@ def generate_mock_history(metric, hours=24):
     
     return list(reversed(data))
 
+def verify_token(token):
+    """Проверка JWT токена"""
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+        return payload
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
+
+def require_auth(f):
+    """Декоратор для защиты endpoints"""
+    def decorated_function(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'No token provided'}), 401
+        
+        token = auth_header.split(' ')[1]
+        payload = verify_token(token)
+        if not payload:
+            return jsonify({'error': 'Invalid token'}), 401
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """API endpoint для аутентификации"""
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not username or not password:
+            return jsonify({
+                'success': False,
+                'error': 'Username and password are required'
+            }), 400
+        
+        # Проверяем пользователя в базе данных
+        conn = sqlite3.connect('admin_monitor.db')
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
+        user = cursor.fetchone()
+        
+        if user:
+            user_id, db_username, password_hash, email, role, created_at, last_login = user
+            
+            # Проверяем пароль
+            if hashlib.sha256(password.encode()).hexdigest() == password_hash:
+                # Обновляем время последнего входа
+                cursor.execute('UPDATE users SET last_login = ? WHERE id = ?', 
+                             (datetime.now().isoformat(), user_id))
+                conn.commit()
+                
+                # Создаем JWT токен
+                token = jwt.encode({
+                    'user_id': user_id,
+                    'username': username,
+                    'role': role,
+                    'exp': datetime.utcnow() + timedelta(days=7)
+                }, JWT_SECRET, algorithm='HS256')
+                
+                conn.close()
+                
+                return jsonify({
+                    'success': True,
+                    'token': token,
+                    'user': {
+                        'id': str(user_id),
+                        'username': username,
+                        'email': email,
+                        'role': role,
+                        'createdAt': created_at,
+                        'lastLogin': datetime.now().isoformat()
+                    }
+                })
+        
+        conn.close()
+        return jsonify({
+            'success': False,
+            'error': 'Invalid username or password'
+        }), 401
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Login error: {str(e)}'
+        }), 500
+
+@app.route('/api/auth/logout', methods=['POST'])
+@require_auth
+def logout():
+    """API endpoint для выхода из системы"""
+    return jsonify({'success': True, 'message': 'Logged out successfully'})
+
+@app.route('/api/auth/verify', methods=['GET'])
+@require_auth
+def verify():
+    """API endpoint для проверки токена"""
+    return jsonify({'success': True, 'message': 'Token is valid'})
+
 @app.route('/api/nodes/status')
+@require_auth
 def nodes_status():
     """API endpoint для получения статуса всех нод"""
     nodes = []
@@ -269,6 +411,7 @@ def nodes_status():
     return jsonify(nodes)
 
 @app.route('/api/system/metrics')
+@require_auth
 def system_metrics():
     """API endpoint для получения системных метрик"""
     metrics = get_system_metrics()
@@ -307,6 +450,7 @@ def system_metrics():
         })
 
 @app.route('/api/nodes/<node_id>')
+@require_auth
 def node_details(node_id):
     """API endpoint для получения детальной информации о ноде"""
     # Ищем ноду в списке
@@ -320,9 +464,9 @@ def node_details(node_id):
     return jsonify({"error": "Node not found"}), 404
 
 @app.route('/api/nodes/<node_id>/history')
+@require_auth
 def node_history(node_id):
     """API endpoint для получения исторических данных"""
-    import request
     metric = request.args.get('metric', 'cpu')
     hours = int(request.args.get('hours', 24))
     
@@ -330,6 +474,7 @@ def node_history(node_id):
     return jsonify(history)
 
 @app.route('/api/alerts')
+@require_auth
 def alerts():
     """API endpoint для получения алертов"""
     # Простые моковые алерты
@@ -367,14 +512,20 @@ def health():
     return jsonify({"status": "healthy", "timestamp": datetime.now().isoformat()})
 
 if __name__ == '__main__':
-    print("Starting Admin Monitor API Server...")
+    print("Starting DEFIMON Admin Monitor API Server...")
     print("API endpoints:")
-    print("  GET /api/nodes/status - Node status")
-    print("  GET /api/system/metrics - System metrics")
-    print("  GET /api/nodes/<id> - Node details")
-    print("  GET /api/nodes/<id>/history - Node history")
-    print("  GET /api/alerts - Alerts")
-    print("  GET /health - Health check")
+    print("  POST /api/auth/login - Authentication")
+    print("  POST /api/auth/logout - Logout")
+    print("  GET  /api/auth/verify - Verify token")
+    print("  GET  /api/nodes/status - Node status")
+    print("  GET  /api/system/metrics - System metrics")
+    print("  GET  /api/nodes/<id> - Node details")
+    print("  GET  /api/nodes/<id>/history - Node history")
+    print("  GET  /api/alerts - Alerts")
+    print("  GET  /health - Health check")
+    print("\nDefault admin credentials:")
+    print("  Username: admin")
+    print("  Password: admin123123")
     print("\nServer will start on http://0.0.0.0:3000")
     
     app.run(host='0.0.0.0', port=3000, debug=True)
