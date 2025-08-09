@@ -32,7 +32,7 @@ services:
       - "6060:6060"
     volumes:
       - geth_data:/root/.ethereum
-      - ./jwtsecret:/root/.ethereum/jwtsecret:ro
+      - ${JWTSECRET_PATH:-./jwtsecret}:/root/.ethereum/jwtsecret:ro
     restart: unless-stopped
     profiles:
       - internal-geth

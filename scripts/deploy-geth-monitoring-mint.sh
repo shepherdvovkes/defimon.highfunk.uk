@@ -69,8 +69,10 @@ if [ "$USE_INTERNAL_GETH" = "1" ]; then
     echo "Генерирую JWT секрет для связи Execution<->Consensus (если отсутствует)..."
     ./scripts/generate-jwtsecret.sh
     echo "Перезапускаю стек мониторинга (Geth, Lighthouse, Prometheus, Grafana)..."
+    JWTSECRET_PATH="$(realpath infrastructure/geth-monitoring/jwtsecret)" \
     $COMPOSE_BIN -f "$COMPOSE_FILE" down --remove-orphans || true
     # Включаем профиль internal-geth, чтобы стартовал geth
+    JWTSECRET_PATH="$(realpath infrastructure/geth-monitoring/jwtsecret)" \
     $COMPOSE_BIN -f "$COMPOSE_FILE" --profile internal-geth up -d --build
 else
     echo "Режим: внешний Geth"
