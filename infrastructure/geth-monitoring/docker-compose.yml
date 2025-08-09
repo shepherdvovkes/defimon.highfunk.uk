@@ -39,7 +39,7 @@ services:
           --metrics-port 5054
       '
     environment:
-      - CHECKPOINT_SYNC_URL=${CHECKPOINT_SYNC_URL}
+      - CHECKPOINT_SYNC_URL=https://sync.infra.tools
     # No hard depends_on to allow external execution client mode
     volumes:
       - ${LIGHTHOUSE_DATA_PATH:-lighthouse_data}:/root/.lighthouse
