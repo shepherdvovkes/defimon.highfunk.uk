@@ -8,7 +8,25 @@ RPC_URL="${RPC_URL:-http://localhost:8545}"
 INTERVAL_SECONDS="${INTERVAL_SECONDS:-5}"
 GETH_CONTAINER="${GETH_CONTAINER:-geth-full-node}"
 ENABLE_SPLIT="${ENABLE_SPLIT:-1}"
-LOG_PANE_LINES="${LOG_PANE_LINES:-20}"
+LOG_PANE_LINES="${LOG_PANE_LINES:-auto}"
+
+# Resolve LOG_PANE_LINES when set to auto (default): use half of terminal height
+if [ "${LOG_PANE_LINES}" = "auto" ]; then
+  if command -v tput >/dev/null 2>&1; then
+    total_lines=$(tput lines 2>/dev/null || echo 24)
+  else
+    total_lines=24
+  fi
+  # Ensure numeric and sensible fallback
+  case "$total_lines" in
+    ''|*[!0-9]*) total_lines=24 ;;
+  esac
+  LOG_PANE_LINES=$(( total_lines / 2 ))
+  # Minimal height for readability
+  if [ "$LOG_PANE_LINES" -lt 10 ]; then
+    LOG_PANE_LINES=10
+  fi
+fi
 
 # If split requested and tmux is available and we're not already inside tmux, launch split view
 if [ "${MONITOR_ONLY:-0}" != "1" ] && [ "$ENABLE_SPLIT" = "1" ] && command -v tmux >/dev/null 2>&1 && [ -z "${TMUX:-}" ]; then
@@ -178,7 +196,7 @@ while true; do
     echo "Logs are shown in the bottom pane (tmux)."
   else
     echo "Tip: Install tmux to see live logs below. Set ENABLE_SPLIT=1 to auto-split."
-    echo "Example: ENABLE_SPLIT=1 LOG_PANE_LINES=20 ./scripts/geth-cli-monitor.sh"
+    echo "Example: ENABLE_SPLIT=1 LOG_PANE_LINES=auto ./scripts/geth-cli-monitor.sh"
   fi
   echo "Ctrl+C to exit | Refresh every ${INTERVAL_SECONDS}s"
   sleep "$INTERVAL_SECONDS"
