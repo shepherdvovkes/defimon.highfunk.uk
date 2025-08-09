@@ -1,0 +1,329 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: l2_analytics_postgres
+    environment:
+      POSTGRES_DB: l2_analytics
+      POSTGRES_USER: l2user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-l2password}
+      POSTGRES_MAX_CONNECTIONS: 200
+      POSTGRES_SHARED_BUFFERS: 512MB
+      POSTGRES_EFFECTIVE_CACHE_SIZE: 2GB
+      POSTGRES_WORK_MEM: 8MB
+      POSTGRES_MAINTENANCE_WORK_MEM: 128MB
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./l2_schema.sql:/docker-entrypoint-initdb.d/l2_schema.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - l2_analytics_network
+    restart: unless-stopped
+
+  # ClickHouse for Analytics
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.8-alpine
+    container_name: l2_analytics_clickhouse
+    environment:
+      CLICKHOUSE_DB: l2_analytics
+      CLICKHOUSE_USER: l2user
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-l2password}
+      CLICKHOUSE_MAX_MEMORY_USAGE: 17179869184  # 16GB
+      CLICKHOUSE_MAX_MEMORY_USAGE_FOR_USER: 17179869184
+      CLICKHOUSE_MAX_CONCURRENT_QUERIES: 200
+      CLICKHOUSE_MAX_CONNECTIONS: 8192
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./clickhouse_schema.sql:/docker-entrypoint-initdb.d/clickhouse_schema.sql
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    networks:
+      - l2_analytics_network
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: l2_analytics_redis
+    command: redis-server --maxmemory 4gb --maxmemory-policy allkeys-lru --save 900 1 --save 300 10 --save 60 10000
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - l2_analytics_network
+    restart: unless-stopped
+
+  # Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: l2_analytics_zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - l2_analytics_network
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: l2_analytics_kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_NUM_PARTITIONS: 8
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    networks:
+      - l2_analytics_network
+    restart: unless-stopped
+
+  # L2 Analytics API
+  l2_analytics_api:
+    build:
+      context: ../../services/analytics-api
+      dockerfile: Dockerfile
+    container_name: l2_analytics_api
+    environment:
+      DATABASE_URL: postgresql://l2user:${POSTGRES_PASSWORD:-l2password}@postgres:5432/l2_analytics
+      CLICKHOUSE_URL: clickhouse://l2user:${CLICKHOUSE_PASSWORD:-l2password}@clickhouse:9000/l2_analytics
+      REDIS_URL: redis://redis:6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      RUST_LOG: info
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      CORS_ORIGINS: "*"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - clickhouse
+      - redis
+      - kafka
+    networks:
+      - l2_analytics_network
+    restart: unless-stopped
+
+  # Admin Dashboard
+  admin_dashboard:
+    build:
+      context: ../../services/admin-dashboard
+      dockerfile: Dockerfile
+    container_name: l2_analytics_admin_dashboard
+    environment:
+      NODE_ENV: production
+      API_BASE_URL: http://l2_analytics_api:8000
+      PORT: 3000
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "3000:3000"
+    depends_on:
+      - l2_analytics_api
+      - redis
+    networks:
+      - l2_analytics_network
+    restart: unless-stopped
+
+  # AI/ML Service
+  ai_ml_service:
+    build:
+      context: ../../services/ai-ml-service
+      dockerfile: Dockerfile
+    container_name: l2_analytics_ai_ml
+    environment:
+      DATABASE_URL: postgresql://l2user:${POSTGRES_PASSWORD:-l2password}@postgres:5432/l2_analytics
+      REDIS_URL: redis://redis:6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      MODEL_CACHE_DIR: /app/models
+      PYTHONPATH: /app
+    volumes:
+      - ai_models:/app/models
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+    networks:
+      - l2_analytics_network
+    restart: unless-stopped
+
+  # Blockchain Node (L2 Sync)
+  blockchain_node:
+    build:
+      context: ../../services/blockchain-node
+      dockerfile: Dockerfile
+    container_name: l2_analytics_blockchain_node
+    environment:
+      DATABASE_URL: postgresql://l2user:${POSTGRES_PASSWORD:-l2password}@postgres:5432/l2_analytics
+      REDIS_URL: redis://redis:6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      RUST_LOG: info
+      
+      # L2 Networks Configuration
+      L2_SYNC_ENABLED: true
+      L2_NETWORKS: optimism,arbitrum_one,polygon_zkevm,base,zksync_era,starknet,linea,scroll,polygon_pos,bsc,avalanche,solana,mantle,metis,loopring
+      L2_SYNC_INTERVAL: 12
+      L2_BATCH_SIZE: 100
+      L2_MAX_CONCURRENT_REQUESTS: 20
+      L2_DATA_RETENTION_DAYS: 90
+      L2_PRIORITY_THRESHOLD: 6
+      
+      # RPC Configuration
+      L2_RPC_TIMEOUT: 30
+      L2_RPC_RETRY_ATTEMPTS: 3
+      L2_RPC_RETRY_DELAY: 5
+      L2_RPC_RATE_LIMIT: 200
+      L2_RPC_RATE_LIMIT_WINDOW: 60
+    ports:
+      - "8545:8545"
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+    networks:
+      - l2_analytics_network
+    restart: unless-stopped
+
+  # Data Ingestion Service
+  data_ingestion:
+    build:
+      context: ../../services/data-ingestion
+      dockerfile: Dockerfile
+    container_name: l2_analytics_data_ingestion
+    environment:
+      DATABASE_URL: postgresql://l2user:${POSTGRES_PASSWORD:-l2password}@postgres:5432/l2_analytics
+      CLICKHOUSE_URL: clickhouse://l2user:${CLICKHOUSE_PASSWORD:-l2password}@clickhouse:9000/l2_analytics
+      REDIS_URL: redis://redis:6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      PYTHONPATH: /app
+    depends_on:
+      - postgres
+      - clickhouse
+      - redis
+      - kafka
+    networks:
+      - l2_analytics_network
+    restart: unless-stopped
+
+  # Stream Processing Service
+  stream_processing:
+    build:
+      context: ../../services/stream-processing
+      dockerfile: Dockerfile
+    container_name: l2_analytics_stream_processing
+    environment:
+      DATABASE_URL: postgresql://l2user:${POSTGRES_PASSWORD:-l2password}@postgres:5432/l2_analytics
+      CLICKHOUSE_URL: clickhouse://l2user:${CLICKHOUSE_PASSWORD:-l2password}@clickhouse:9000/l2_analytics
+      REDIS_URL: redis://redis:6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      PYTHONPATH: /app
+    depends_on:
+      - postgres
+      - clickhouse
+      - redis
+      - kafka
+    networks:
+      - l2_analytics_network
+    restart: unless-stopped
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: l2_analytics_prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - l2_analytics_network
+    restart: unless-stopped
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: l2_analytics_grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: false
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+      - postgres
+      - clickhouse
+    networks:
+      - l2_analytics_network
+    restart: unless-stopped
+
+  # Kong API Gateway
+  kong:
+    image: kong:3.4
+    container_name: l2_analytics_kong
+    environment:
+      KONG_DATABASE: "off"
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_ADMIN_GUI_URL: http://localhost:8002
+      KONG_DECLARATIVE_CONFIG: /var/lib/kong/kong.yml
+    volumes:
+      - ./kong.yml:/var/lib/kong/kong.yml
+    ports:
+      - "8001:8001"
+      - "8002:8002"
+      - "8443:8443"
+      - "8444:8444"
+    depends_on:
+      - l2_analytics_api
+      - admin_dashboard
+    networks:
+      - l2_analytics_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  clickhouse_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+  ai_models:
+
+networks:
+  l2_analytics_network:
+    driver: bridge

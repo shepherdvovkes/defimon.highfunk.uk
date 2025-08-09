@@ -1,0 +1,197 @@
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: l2_analytics_api
+    url: http://l2_analytics_api:8000
+    routes:
+      - name: l2_analytics_api_route
+        protocols:
+          - http
+          - https
+        paths:
+          - /api/v1
+        strip_path: false
+        preserve_host: true
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - OPTIONS
+          headers:
+            - Content-Type
+            - Authorization
+            - X-Requested-With
+          exposed_headers:
+            - X-Total-Count
+          credentials: true
+          max_age: 3600
+      - name: rate-limiting
+        config:
+          minute: 1000
+          hour: 10000
+          day: 100000
+          policy: local
+      - name: prometheus
+        config:
+          status_codes: true
+          latency: true
+          bandwidth: true
+          upstream_health: true
+
+  - name: admin_dashboard
+    url: http://admin_dashboard:3000
+    routes:
+      - name: admin_dashboard_route
+        protocols:
+          - http
+          - https
+        paths:
+          - /admin
+        strip_path: false
+        preserve_host: true
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - OPTIONS
+          headers:
+            - Content-Type
+            - Authorization
+            - X-Requested-With
+          exposed_headers:
+            - X-Total-Count
+          credentials: true
+          max_age: 3600
+      - name: rate-limiting
+        config:
+          minute: 500
+          hour: 5000
+          day: 50000
+          policy: local
+
+  - name: grafana
+    url: http://grafana:3000
+    routes:
+      - name: grafana_route
+        protocols:
+          - http
+          - https
+        paths:
+          - /grafana
+        strip_path: true
+        preserve_host: true
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - OPTIONS
+          headers:
+            - Content-Type
+            - Authorization
+            - X-Requested-With
+          exposed_headers:
+            - X-Total-Count
+          credentials: true
+          max_age: 3600
+
+  - name: prometheus
+    url: http://prometheus:9090
+    routes:
+      - name: prometheus_route
+        protocols:
+          - http
+          - https
+        paths:
+          - /prometheus
+        strip_path: true
+        preserve_host: true
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - OPTIONS
+          headers:
+            - Content-Type
+            - Authorization
+            - X-Requested-With
+          exposed_headers:
+            - X-Total-Count
+          credentials: true
+          max_age: 3600
+
+  - name: kong_admin
+    url: http://kong:8001
+    routes:
+      - name: kong_admin_route
+        protocols:
+          - http
+          - https
+        paths:
+          - /kong-admin
+        strip_path: true
+        preserve_host: true
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - OPTIONS
+          headers:
+            - Content-Type
+            - Authorization
+            - X-Requested-With
+          exposed_headers:
+            - X-Total-Count
+          credentials: true
+          max_age: 3600
+
+# Global plugins
+plugins:
+  - name: prometheus
+    config:
+      status_codes: true
+      latency: true
+      bandwidth: true
+      upstream_health: true
+      http_requests: true
+      http_status_codes: true
+      http_latency_histogram: true
+      http_latency_histogram_buckets: [0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10]
+      http_requests_total: true
+      http_request_duration_seconds: true
+      http_request_size_bytes: true
+      http_response_size_bytes: true
+      http_requests_total: true
+      http_request_duration_seconds: true
+      http_request_size_bytes: true
+      http_response_size_bytes: true

@@ -1,0 +1,107 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alert_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # L2 Analytics API
+  - job_name: 'l2_analytics_api'
+    static_configs:
+      - targets: ['l2_analytics_api:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # Blockchain Node
+  - job_name: 'blockchain_node'
+    static_configs:
+      - targets: ['blockchain_node:8545']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # Admin Dashboard
+  - job_name: 'admin_dashboard'
+    static_configs:
+      - targets: ['admin_dashboard:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # AI/ML Service
+  - job_name: 'ai_ml_service'
+    static_configs:
+      - targets: ['ai_ml_service:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Data Ingestion Service
+  - job_name: 'data_ingestion'
+    static_configs:
+      - targets: ['data_ingestion:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Stream Processing Service
+  - job_name: 'stream_processing'
+    static_configs:
+      - targets: ['stream_processing:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # PostgreSQL
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # ClickHouse
+  - job_name: 'clickhouse'
+    static_configs:
+      - targets: ['clickhouse:8123']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Redis
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Kafka
+  - job_name: 'kafka'
+    static_configs:
+      - targets: ['kafka:9101']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Kong API Gateway
+  - job_name: 'kong'
+    static_configs:
+      - targets: ['kong:8001']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Node Exporter (if available)
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets: ['node_exporter:9100']
+    scrape_interval: 15s
+
+  # Docker containers
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 15s
