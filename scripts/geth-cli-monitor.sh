@@ -6,8 +6,9 @@ set -euo pipefail
 
 RPC_URL="${RPC_URL:-http://localhost:8545}"
 INTERVAL_SECONDS="${INTERVAL_SECONDS:-5}"
-GETH_CONTAINER="${GETH_CONTAINER:-geth-full-node}"
-ENABLE_SPLIT="${ENABLE_SPLIT:-1}"
+GETH_CONTAINER="${GETH_CONTAINER:-}" # will auto-detect below if empty
+ENABLE_SPLIT="${ENABLE_SPLIT:-0}"   # default: no tmux
+LOGS_ONLY="${LOGS_ONLY:-1}"         # default: just stream geth logs
 LOG_PANE_LINES="${LOG_PANE_LINES:-auto}"
 SESSION_NAME="${SESSION_NAME:-gethmon}"
 KILL_EXISTING="${KILL_EXISTING:-1}"
@@ -34,7 +35,45 @@ if [ "${LOG_PANE_LINES}" = "auto" ]; then
   [ "$LOG_PANE_LINES" -lt 10 ] && LOG_PANE_LINES=10
 fi
 
+# Helper: choose best container for logs
+detect_container() {
+  # Respect explicit env
+  if [ -n "${GETH_CONTAINER}" ]; then
+    if docker ps --format '{{.Names}}' | grep -qx "${GETH_CONTAINER}"; then
+      echo "${GETH_CONTAINER}"; return 0
+    fi
+  fi
+  # Common service names
+  for name in defimon-blockchain-service geth-full-node blockchain-service geth; do
+    if docker ps --format '{{.Names}}' | grep -qx "$name"; then
+      echo "$name"; return 0
+    fi
+  done
+  return 1
+}
+
+tail_geth_logs() {
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "docker не установлен — не могу показать логи контейнера" >&2
+    exit 1
+  fi
+  local container
+  if ! container=$(detect_container); then
+    echo "Не найден контейнер Geth. Проверьте, что стек запущен." >&2
+    docker ps --format '{{.Names}}\t{{.Status}}' || true
+    exit 1
+  fi
+  echo "Показываю логи контейнера: $container (Ctrl+C для выхода)"
+  docker logs -f --tail 200 "$container"
+}
+
 # If split requested and tmux is available and we're not already inside tmux, launch split view
+# If user asked for logs-only (default), just stream logs and exit
+if [ "$LOGS_ONLY" = "1" ]; then
+  tail_geth_logs
+  exit 0
+fi
+
 if [ "${MONITOR_ONLY:-0}" != "1" ] && [ "$ENABLE_SPLIT" = "1" ] && command -v tmux >/dev/null 2>&1 && [ -z "${TMUX:-}" ]; then
   # Wrap tmux operations to gracefully fallback on any error
   {
@@ -79,12 +118,20 @@ hex_to_dec() {
   printf "%d\n" $((16#$hex))
 }
 
+# Perform JSON-RPC either to host RPC_URL or via docker exec inside the Geth container
+_rpc_call() {
+  local payload="$1"
+  if [ "${USE_DOCKER_EXEC:-0}" = "1" ] && command -v docker >/dev/null 2>&1; then
+    docker exec -i "$GETH_CONTAINER" curl -s -X POST -H 'Content-Type: application/json' --data "$payload" http://127.0.0.1:8545 || true
+  else
+    curl -s -X POST -H 'Content-Type: application/json' --data "$payload" "$RPC_URL" || true
+  fi
+}
+
 get_rpc() {
   local method="$1"; shift
   local params_json="$1"
-  curl -s -X POST -H 'Content-Type: application/json' \
-    --data "{\"jsonrpc\":\"2.0\",\"method\":\"${method}\",\"params\":${params_json},\"id\":1}" \
-    "$RPC_URL"
+  _rpc_call "{\"jsonrpc\":\"2.0\",\"method\":\"${method}\",\"params\":${params_json},\"id\":1}"
 }
 
 # Safer formatting: passthrough unless numfmt is available
@@ -121,15 +168,39 @@ while true; do
   now_ts=$(date +%s)
 
   syncing_json=$(get_rpc eth_syncing '[]')
-  syncing_result=$(echo "$syncing_json" | jq -r '.result')
+  # Fallback to docker exec if host RPC is unreachable
+  if [ -z "${syncing_json}" ]; then
+    if command -v docker >/dev/null 2>&1 && docker ps --format '{{.Names}}' | grep -qx "$GETH_CONTAINER"; then
+      echo "[info] RPC $RPC_URL not responding. Falling back to docker exec in $GETH_CONTAINER" >&2
+      USE_DOCKER_EXEC=1
+      syncing_json=$(get_rpc eth_syncing '[]')
+    fi
+  fi
+  # If still empty, show unreachable status and retry
+  if [ -z "${syncing_json}" ]; then
+    clear
+    tput civis 2>/dev/null || true
+    echo "Geth CLI Monitor (RPC: $RPC_URL)"
+    echo "Chain ID: - | Peers: - | Gas Price: -"
+    echo "Time: $(date)"
+    echo "------------------------------------------------------------"
+    echo "Status: RPC UNREACHABLE"
+    echo "Hint: ensure Geth RPC is listening on $RPC_URL or container $GETH_CONTAINER is running."
+    echo "------------------------------------------------------------"
+    echo "Ctrl+C to exit | Refresh every ${INTERVAL_SECONDS}s"
+    sleep "$INTERVAL_SECONDS"
+    continue
+  fi
 
-  chain_id_hex=$(get_rpc eth_chainId '[]' | jq -r '.result')
+  syncing_result=$(echo "$syncing_json" | jq -r '.result // empty')
+
+  chain_id_hex=$(get_rpc eth_chainId '[]' | jq -r '.result // empty')
   chain_id=$(hex_to_dec "$chain_id_hex")
 
-  peers_hex=$(get_rpc net_peerCount '[]' | jq -r '.result')
+  peers_hex=$(get_rpc net_peerCount '[]' | jq -r '.result // empty')
   peers=$(hex_to_dec "$peers_hex")
 
-  gas_price_hex=$(get_rpc eth_gasPrice '[]' | jq -r '.result')
+  gas_price_hex=$(get_rpc eth_gasPrice '[]' | jq -r '.result // empty')
   gas_price_wei=$(hex_to_dec "$gas_price_hex")
   gas_price_gwei=$(awk -v w=$gas_price_wei 'BEGIN { printf("%.2f", w/1000000000) }')
 
@@ -141,7 +212,7 @@ while true; do
   echo "Time: $(date)"
   echo "------------------------------------------------------------"
 
-  if [ "$syncing_result" = "false" ]; then
+  if [ -n "$syncing_result" ] && [ "$syncing_result" = "false" ]; then
     head_hex=$(get_rpc eth_blockNumber '[]' | jq -r '.result')
     head_block=$(hex_to_dec "$head_hex")
     echo "Status: SYNCED"
@@ -150,9 +221,9 @@ while true; do
     echo "Speed: -"
     echo "ETA: -"
   else
-    starting_hex=$(echo "$syncing_result" | jq -r '.startingBlock')
-    current_hex=$(echo "$syncing_result" | jq -r '.currentBlock')
-    highest_hex=$(echo "$syncing_result" | jq -r '.highestBlock')
+    starting_hex=$(echo "$syncing_result" | jq -r '.startingBlock // "0x0"')
+    current_hex=$(echo "$syncing_result" | jq -r '.currentBlock // "0x0"')
+    highest_hex=$(echo "$syncing_result" | jq -r '.highestBlock // "0x0"')
 
     starting=$(hex_to_dec "$starting_hex")
     current=$(hex_to_dec "$current_hex")
