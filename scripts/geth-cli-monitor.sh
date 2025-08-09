@@ -9,6 +9,8 @@ INTERVAL_SECONDS="${INTERVAL_SECONDS:-5}"
 GETH_CONTAINER="${GETH_CONTAINER:-geth-full-node}"
 ENABLE_SPLIT="${ENABLE_SPLIT:-1}"
 LOG_PANE_LINES="${LOG_PANE_LINES:-auto}"
+SESSION_NAME="${SESSION_NAME:-gethmon}"
+KILL_EXISTING="${KILL_EXISTING:-0}"
 
 # Resolve LOG_PANE_LINES when set to auto (default): use half of terminal height
 if [ "${LOG_PANE_LINES}" = "auto" ]; then
@@ -17,26 +19,29 @@ if [ "${LOG_PANE_LINES}" = "auto" ]; then
   else
     total_lines=24
   fi
-  # Ensure numeric and sensible fallback
   case "$total_lines" in
     ''|*[!0-9]*) total_lines=24 ;;
   esac
   LOG_PANE_LINES=$(( total_lines / 2 ))
-  # Minimal height for readability
-  if [ "$LOG_PANE_LINES" -lt 10 ]; then
-    LOG_PANE_LINES=10
-  fi
+  [ "$LOG_PANE_LINES" -lt 10 ] && LOG_PANE_LINES=10
 fi
 
 # If split requested and tmux is available and we're not already inside tmux, launch split view
 if [ "${MONITOR_ONLY:-0}" != "1" ] && [ "$ENABLE_SPLIT" = "1" ] && command -v tmux >/dev/null 2>&1 && [ -z "${TMUX:-}" ]; then
+  if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+    if [ "$KILL_EXISTING" = "1" ]; then
+      tmux kill-session -t "$SESSION_NAME"
+    else
+      # Reuse existing session to avoid duplicate-session error
+      tmux attach-session -t "$SESSION_NAME"
+      exit 0
+    fi
+  fi
   # Start a new tmux session with two panes: top monitor, bottom logs
-  session_name="gethmon"
-  tmux new-session -d -s "$session_name" "MONITOR_ONLY=1 RPC_URL=$RPC_URL INTERVAL_SECONDS=$INTERVAL_SECONDS GETH_CONTAINER=$GETH_CONTAINER ENABLE_SPLIT=0 LOG_PANE_LINES=$LOG_PANE_LINES \"$0\""
-  # Use fixed line size to avoid older tmux 'size missing' or unsupported -p
-  tmux split-window -v -l "$LOG_PANE_LINES" "docker logs -f --tail 200 $GETH_CONTAINER | sed -u -e 's/\x1b\[[0-9;]*[a-zA-Z]//g'"
-  tmux select-pane -t 0
-  tmux attach-session -t "$session_name"
+  tmux new-session -d -s "$SESSION_NAME" "MONITOR_ONLY=1 RPC_URL=$RPC_URL INTERVAL_SECONDS=$INTERVAL_SECONDS GETH_CONTAINER=$GETH_CONTAINER ENABLE_SPLIT=0 LOG_PANE_LINES=$LOG_PANE_LINES SESSION_NAME=$SESSION_NAME KILL_EXISTING=$KILL_EXISTING \"$0\""
+  tmux split-window -t "$SESSION_NAME":0 -v -l "$LOG_PANE_LINES" "docker logs -f --tail 200 $GETH_CONTAINER | sed -u -e 's/\x1b\[[0-9;]*[a-zA-Z]//g'"
+  tmux select-pane -t "$SESSION_NAME":0.0
+  tmux attach-session -t "$SESSION_NAME"
   exit 0
 fi
 
@@ -51,9 +56,7 @@ fi
 
 hex_to_dec() {
   local hex="$1"
-  # strip 0x
   hex=${hex#0x}
-  # default to 0 if empty
   if [ -z "$hex" ]; then echo 0; return; fi
   printf "%d\n" $((16#$hex))
 }
@@ -110,7 +113,6 @@ while true; do
 
   gas_price_hex=$(get_rpc eth_gasPrice '[]' | jq -r '.result')
   gas_price_wei=$(hex_to_dec "$gas_price_hex")
-  # gwei = wei / 1e9
   gas_price_gwei=$(awk -v w=$gas_price_wei 'BEGIN { printf("%.2f", w/1000000000) }')
 
   clear
@@ -122,7 +124,6 @@ while true; do
   echo "------------------------------------------------------------"
 
   if [ "$syncing_result" = "false" ]; then
-    # Fully synced
     head_hex=$(get_rpc eth_blockNumber '[]' | jq -r '.result')
     head_block=$(hex_to_dec "$head_hex")
     echo "Status: SYNCED"
@@ -131,7 +132,6 @@ while true; do
     echo "Speed: -"
     echo "ETA: -"
   else
-    # Syncing object
     starting_hex=$(echo "$syncing_result" | jq -r '.startingBlock')
     current_hex=$(echo "$syncing_result" | jq -r '.currentBlock')
     highest_hex=$(echo "$syncing_result" | jq -r '.highestBlock')
@@ -153,10 +153,8 @@ while true; do
       delta_blocks=$(( current - previous_block ))
       delta_time=$(( now_ts - previous_ts ))
       if [ $delta_time -gt 0 ] && [ $delta_blocks -ge 0 ]; then
-        # blocks per second
         speed=$(awk -v b=$delta_blocks -v t=$delta_time 'BEGIN { if (t>0) printf("%.2f", b/t); else print 0 }')
         speed_bps="$speed blk/s"
-        # eta seconds
         if [ $lag_blocks -gt 0 ]; then
           eta=$(awk -v lag=$lag_blocks -v s=$speed 'BEGIN { if (s>0) printf("%d", lag/s); else print -1 }')
           if [ "$eta" -ge 0 ] 2>/dev/null; then
@@ -171,7 +169,6 @@ while true; do
     previous_block=$current
     previous_ts=$now_ts
 
-    # progress percent
     progress="-"
     if [ $highest -gt 0 ]; then
       progress=$(awk -v c=$current -v h=$highest 'BEGIN { if (h>0) printf("%.2f", (c*100.0)/h); else print 0 }')
@@ -195,8 +192,10 @@ while true; do
   if [ "${MONITOR_ONLY:-0}" = "1" ]; then
     echo "Logs are shown in the bottom pane (tmux)."
   else
-    echo "Tip: Install tmux to see live logs below. Set ENABLE_SPLIT=1 to auto-split."
-    echo "Example: ENABLE_SPLIT=1 LOG_PANE_LINES=auto ./scripts/geth-cli-monitor.sh"
+    echo "Tip: tmux split enabled by default (SESSION_NAME=$SESSION_NAME)."
+    echo "- Reuse session if exists; set KILL_EXISTING=1 to recreate."
+    echo "- Change height: LOG_PANE_LINES=auto|<lines>"
+    echo "Example: ENABLE_SPLIT=1 SESSION_NAME=gethmon KILL_EXISTING=1 ./scripts/geth-cli-monitor.sh"
   fi
   echo "Ctrl+C to exit | Refresh every ${INTERVAL_SECONDS}s"
   sleep "$INTERVAL_SECONDS"
