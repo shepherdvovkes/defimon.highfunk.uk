@@ -19,7 +19,15 @@ else
     echo "Docker уже установлен."
 fi
 
-# 2. Проверка и установка Docker Compose (v2 предпочтительно)
+# 2. Базовые утилиты (jq, curl, tmux) и синхронизация времени
+sudo apt-get update -y
+sudo apt-get install -y jq curl tmux || true
+# (опционально) синхронизация времени повышает стабильность консенсуса
+if command -v timedatectl >/dev/null 2>&1; then
+  sudo timedatectl set-ntp true || true
+fi
+
+# 3. Проверка и установка Docker Compose (v2 предпочтительно)
 if docker compose version >/dev/null 2>&1; then
     COMPOSE_BIN="docker compose"
     echo "Найден современный Docker Compose (v2)"
@@ -33,13 +41,26 @@ else
     COMPOSE_BIN="docker-compose"
 fi
 
-# 3. Создание директории для данных, если ее нет
+# 4. Системные параметры хоста (исключаем ошибки sysctl в контейнерах)
+echo "Настраиваю системные параметры ядра (sysctl)..."
+SYSCTL_FILE="/etc/sysctl.d/99-defimon.conf"
+sudo bash -c "cat > $SYSCTL_FILE" << 'EOF'
+vm.max_map_count=262144
+net.core.rmem_max=134217728
+net.core.wmem_max=134217728
+net.core.rmem_default=67108864
+net.core.wmem_default=67108864
+EOF
+sudo sysctl --system || true
+
+# 5. Создание директории для данных, если ее нет
 mkdir -p ./data/geth
 
-# Настройка режима запуска
+# 6. Настройка режима запуска
 # USE_INTERNAL_GETH=1 (по умолчанию) — поднимаем внутренний geth
 # USE_INTERNAL_GETH=0 + EXECUTION_ENDPOINT + JWTSECRET_PATH — используем внешний geth
 USE_INTERNAL_GETH="${USE_INTERNAL_GETH:-1}"
+RUN_MONITOR="${RUN_MONITOR:-0}"
 
 COMPOSE_FILE="./infrastructure/geth-monitoring/docker-compose.yml"
 
@@ -74,3 +95,27 @@ else
 fi
 echo "Prometheus: http://localhost:9090"
 echo "Grafana: http://localhost:3000 (логин/пароль: admin/admin)"
+
+# 7. Быстрая проверка доступности RPC и Beacon API
+echo "Проверка RPC и Beacon API..."
+sleep 5
+if curl -fsS http://localhost:8545 >/dev/null 2>&1; then
+  echo "Execution RPC (8545) отвечает"
+  curl -s -X POST -H 'Content-Type: application/json' \
+    --data '{"jsonrpc":"2.0","method":"eth_syncing","params":[],"id":1}' \
+    http://localhost:8545 | jq -r '.result' || true
+else
+  echo "Execution RPC (8545) недоступен"
+fi
+
+if curl -fsS http://localhost:5052/eth/v1/node/health >/dev/null 2>&1; then
+  echo "Consensus (Lighthouse) API (5052) отвечает"
+else
+  echo "Consensus (Lighthouse) API (5052) недоступен (нормально на старте, подождите)"
+fi
+
+# 8. Необязательный автозапуск монитора в tmux (верх статус, низ логи)
+if [ "$RUN_MONITOR" = "1" ]; then
+  echo "Запускаю мониторинг ноды (Ctrl+C для выхода из tmux)..."
+  ENABLE_SPLIT=1 ./scripts/geth-cli-monitor.sh || true
+fi
