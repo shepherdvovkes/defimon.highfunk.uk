@@ -16,6 +16,7 @@ services:
       --ws.origins=*
       --authrpc.vhosts=*
       --authrpc.addr=0.0.0.0
+      --authrpc.port=8551
       --authrpc.jwtsecret=/root/.ethereum/jwtsecret
       --datadir=/root/.ethereum
       --syncmode=full
@@ -31,6 +32,7 @@ services:
       - "6060:6060"
     volumes:
       - geth_data:/root/.ethereum
+      - ./jwtsecret:/root/.ethereum/jwtsecret:ro
     restart: unless-stopped
 
   lighthouse:
@@ -54,6 +56,7 @@ services:
     volumes:
       - geth_data:/root/.ethereum
       - lighthouse_data:/root/.lighthouse
+      - ./jwtsecret:/root/.ethereum/jwtsecret:ro
     restart: unless-stopped
 
   prometheus:
