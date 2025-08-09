@@ -2,11 +2,22 @@
 set -euo pipefail
 
 TARGET_BASE=${1:-infrastructure/geth-monitoring/jwtsecret}
-DIR_PATH="$(dirname "$TARGET_BASE")"
-RAW_PATH="$TARGET_BASE.raw"
-HEX_PATH="$TARGET_BASE.hex"
+# If TARGET_BASE is a directory, drop files inside it; else use it as base path
+if [ -d "$TARGET_BASE" ]; then
+  DIR_PATH="$TARGET_BASE"
+  RAW_PATH="$TARGET_BASE/jwtsecret.raw"
+  HEX_PATH="$TARGET_BASE/jwtsecret.hex"
+else
+  DIR_PATH="$(dirname "$TARGET_BASE")"
+  RAW_PATH="$TARGET_BASE.raw"
+  HEX_PATH="$TARGET_BASE.hex"
+fi
 
 mkdir -p "$DIR_PATH" || sudo mkdir -p "$DIR_PATH"
+
+# If previous runs created directories instead of files, clean them up
+if [ -d "$RAW_PATH" ]; then sudo rm -rf "$RAW_PATH"; fi
+if [ -d "$HEX_PATH" ]; then sudo rm -rf "$HEX_PATH"; fi
 
 # RAW secret: exactly 32 bytes
 need_gen=1
