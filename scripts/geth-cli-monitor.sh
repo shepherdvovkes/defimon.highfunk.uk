@@ -33,9 +33,14 @@ get_rpc() {
     "$RPC_URL"
 }
 
+# Safer formatting: passthrough unless numfmt is available
 format_num() {
-  # thousands separators
-  awk '{printf "%'")}{print}' 2>/dev/null || echo "$1"
+  local n="$1"
+  if command -v numfmt >/dev/null 2>&1; then
+    numfmt --grouping "$n" 2>/dev/null || echo "$n"
+  else
+    echo "$n"
+  fi
 }
 
 human_time() {
