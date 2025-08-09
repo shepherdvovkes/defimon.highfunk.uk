@@ -11,7 +11,6 @@ services:
       - "6060:6060"
     volumes:
       - geth_data:/root/.ethereum
-      - jwt_secret:/jwtsecret
     command: >
       /bin/sh -c '
         dd if=/dev/urandom bs=1 count=32 2>/dev/null | xxd -p > /jwtsecret &&
