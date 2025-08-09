@@ -12,7 +12,7 @@ services:
       - geth_data:/root/.ethereum
       - jwt_secret:/jwtsecret
       - ./start-geth.sh:/start-geth.sh:ro
-    command: ["/start-geth.sh"]
+    command: ["bash", "/start-geth.sh"]
     restart: unless-stopped
     profiles:
       - internal-geth
