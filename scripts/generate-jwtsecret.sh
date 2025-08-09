@@ -4,8 +4,14 @@ set -euo pipefail
 TARGET=${1:-infrastructure/geth-monitoring/jwtsecret}
 mkdir -p "$(dirname "$TARGET")"
 if [ -f "$TARGET" ]; then
-  echo "JWT secret already exists at $TARGET"
-  exit 0
+  # Validate size exactly 32 bytes; otherwise re-generate
+  if [ "$(wc -c < "$TARGET" 2>/dev/null || echo 0)" = "32" ]; then
+    echo "JWT secret already exists at $TARGET (32 bytes)"
+    exit 0
+  else
+    echo "Existing JWT secret at $TARGET is invalid size; regenerating..."
+    rm -f "$TARGET"
+  fi
 fi
 # Generate 32 random bytes RAW (not hex). Both Geth and Lighthouse accept raw 32B file.
 if command -v openssl >/dev/null 2>&1; then

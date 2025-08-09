@@ -32,7 +32,10 @@ services:
       - "6060:6060"
     volumes:
       - geth_data:/root/.ethereum
-      - ${JWTSECRET_PATH:-./jwtsecret}:/root/.ethereum/jwtsecret:ro
+      - type: bind
+        source: ${JWTSECRET_PATH:-./jwtsecret}
+        target: /root/.ethereum/jwtsecret
+        read_only: true
     restart: unless-stopped
     profiles:
       - internal-geth
