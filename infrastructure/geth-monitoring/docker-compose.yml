@@ -26,7 +26,7 @@ services:
     container_name: lighthouse-beacon
     command: >-
       sh -lc '
-        dd if=/dev/urandom bs=1 count=32 2>/dev/null | hexdump -ve "1/1 \"%02x\"" > /jwtsecret &&
+        dd if=/dev/urandom bs=1 count=32 2>/dev/null | base64 | tr -d "=+/" | cut -c1-64 > /jwtsecret &&
         lighthouse bn \
           --network mainnet \
           --datadir /root/.lighthouse \
