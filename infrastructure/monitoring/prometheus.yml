@@ -6,43 +6,56 @@ rule_files:
   - "alert_rules.yml"
 
 scrape_configs:
-  - job_name: 'analytics-api'
+  # Ethereum Node (Geth)
+  - job_name: 'geth'
     static_configs:
-      - targets: ['analytics-api:8002']
-    metrics_path: '/metrics'
-    scrape_interval: 10s
+      - targets: ['geth-full-node:8545']
+    metrics_path: '/debug/metrics/prometheus'
+    scrape_interval: 30s
 
-  - job_name: 'ai-ml-service'
+  # Lighthouse Beacon
+  - job_name: 'lighthouse'
     static_configs:
-      - targets: ['ai-ml-service:8001']
+      - targets: ['lighthouse-beacon:5052']
     metrics_path: '/metrics'
     scrape_interval: 30s
 
-  - job_name: 'data-ingestion'
+  # Node Exporter (System metrics)
+  - job_name: 'node-exporter'
     static_configs:
-      - targets: ['data-ingestion:8080']
-    metrics_path: '/metrics'
-    scrape_interval: 10s
+      - targets: ['localhost:9100']
+    scrape_interval: 15s
 
-  - job_name: 'stream-processor'
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
     static_configs:
-      - targets: ['stream-processor:8080']
-    metrics_path: '/metrics'
-    scrape_interval: 10s
+      - targets: ['localhost:9090']
+    scrape_interval: 15s
 
+  # Grafana
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana-dashboard:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # PostgreSQL
   - job_name: 'postgres'
     static_configs:
-      - targets: ['postgres-exporter:9187']
+      - targets: ['defimon-postgres:5432']
+    scrape_interval: 30s
 
+  # Redis
   - job_name: 'redis'
     static_configs:
-      - targets: ['redis-exporter:9121']
+      - targets: ['defimon-redis:6379']
+    scrape_interval: 30s
 
-  - job_name: 'kong'
+  # Docker containers
+  - job_name: 'docker'
     static_configs:
-      - targets: ['api-gateway:8001']
-    metrics_path: '/metrics'
-    scrape_interval: 10s
+      - targets: ['localhost:9323']
+    scrape_interval: 15s
 
 alerting:
   alertmanagers:
