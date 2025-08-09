@@ -43,7 +43,7 @@ services:
     # No hard depends_on to allow external execution client mode
     volumes:
       - ${LIGHTHOUSE_DATA_PATH:-lighthouse_data}:/root/.lighthouse
-      - ${JWTSECRET_HEX_PATH:-./jwtsecret.hex}:/jwtsecret:ro
+      - ./jwtsecret.hex:/jwtsecret:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
