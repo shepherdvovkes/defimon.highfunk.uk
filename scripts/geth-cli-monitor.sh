@@ -43,10 +43,11 @@ if [ "${MONITOR_ONLY:-0}" != "1" ] && [ "$ENABLE_SPLIT" = "1" ] && command -v tm
       tmux -L "$TMUX_SOCKET" kill-session -t "$SESSION_NAME" || true
     fi
 
-    # Ensure session exists (create if missing)
+    # Ensure session exists (create if missing) and start monitor via send-keys
     if ! tmux -L "$TMUX_SOCKET" has-session -t "$SESSION_NAME" 2>/dev/null; then
-      tmux -L "$TMUX_SOCKET" new-session -d -s "$SESSION_NAME" \
-        "MONITOR_ONLY=1 RPC_URL=$RPC_URL INTERVAL_SECONDS=$INTERVAL_SECONDS GETH_CONTAINER=$GETH_CONTAINER ENABLE_SPLIT=0 LOG_PANE_LINES=$LOG_PANE_LINES SESSION_NAME=$SESSION_NAME KILL_EXISTING=$KILL_EXISTING TMUX_SOCKET=$TMUX_SOCKET bash -c '$SCRIPT_PATH'"
+      tmux -L "$TMUX_SOCKET" new-session -d -s "$SESSION_NAME"
+      tmux -L "$TMUX_SOCKET" send-keys -t "$SESSION_NAME":0 \
+        "MONITOR_ONLY=1 RPC_URL=$RPC_URL INTERVAL_SECONDS=$INTERVAL_SECONDS GETH_CONTAINER=$GETH_CONTAINER ENABLE_SPLIT=0 LOG_PANE_LINES=$LOG_PANE_LINES SESSION_NAME=$SESSION_NAME KILL_EXISTING=$KILL_EXISTING TMUX_SOCKET=$TMUX_SOCKET \"$SCRIPT_PATH\"" C-m
       tmux -L "$TMUX_SOCKET" split-window -t "$SESSION_NAME":0 -v -l "$LOG_PANE_LINES" \
         "docker logs -f --tail 200 $GETH_CONTAINER | sed -u -e 's/\x1b\[[0-9;]*[a-zA-Z]//g'"
       tmux -L "$TMUX_SOCKET" select-pane -t "$SESSION_NAME":0.0 || true
