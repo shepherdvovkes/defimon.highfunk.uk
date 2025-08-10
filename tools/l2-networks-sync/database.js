@@ -199,6 +199,16 @@ class Database {
     }
   }
 
+  async healthCheck() {
+    try {
+      // Simple query to test database connectivity
+      const result = await this.query('SELECT 1 as status');
+      return { status: 'Connected', timestamp: new Date() };
+    } catch (error) {
+      return { status: 'Error', error: error.message, timestamp: new Date() };
+    }
+  }
+
   async close() {
     await this.pool.end();
     console.log('Database connection closed');
