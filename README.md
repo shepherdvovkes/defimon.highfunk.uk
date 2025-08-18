@@ -432,20 +432,4 @@ sudo ./scripts/deploy-node.sh
 4. Push в branch (`git push origin feature/amazing-feature`)
 5. Откройте Pull Request
 
-## 📄 Лицензия
-
-MIT License - см. файл [LICENSE](LICENSE) для деталей.
-
-## 🆘 Поддержка
-
-- **Issues**: Создайте Issue для багов или feature requests
-- **Документация**: `/docs` - Подробная документация
-- **Email**: support@defimon.com
-
-## 📈 Roadmap
-
-См. [ROADMAP_NETWORK_EXPANSION.md](docs/ROADMAP_NETWORK_EXPANSION.md) для планов развития платформы.
-
----
-
 **DeFi Analytics Platform** - Мощная платформа для аналитики и мониторинга DeFi экосистемы с поддержкой мультиблокчейн архитектуры и AI/ML возможностями.
