@@ -1,0 +1,914 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage[russian]{babel}
+\usepackage{geometry}
+\usepackage{tikz}
+\usepackage{tikz-uml}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{booktabs}
+
+% Настройка геометрии страницы для A4
+\geometry{
+    a4paper,
+    left=20mm,
+    right=20mm,
+    top=25mm,
+    bottom=25mm
+}
+
+% Настройка цветов для торговой стратегии
+\definecolor{arbitragecolor}{RGB}{255, 140, 0}
+\definecolor{deficolor}{RGB}{138, 43, 226}
+\definecolor{cexcolor}{RGB}{255, 69, 0}
+\definecolor{websocketcolor}{RGB}{0, 150, 136}
+\definecolor{clickhousecolor}{RGB}{0, 100, 200}
+\definecolor{mlcolor}{RGB}{52, 168, 83}
+\definecolor{darkblue}{RGB}{0, 51, 102}
+\definecolor{lightgray}{RGB}{240, 240, 240}
+
+% Настройка TikZ
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds, calc, shadows, patterns}
+\tikzset{
+    component/.style={
+        rectangle,
+        rounded corners=5pt,
+        draw=darkblue,
+        fill=lightgray,
+        text width=3.2cm,
+        minimum height=1.2cm,
+        text centered,
+        font=\small,
+        line width=1pt
+    },
+    database/.style={
+        cylinder,
+        draw=darkblue,
+        fill=lightgray,
+        text width=2.5cm,
+        minimum height=1.5cm,
+        text centered,
+        font=\small,
+        line width=1pt,
+        shape border rotate=90,
+        aspect=0.25
+    },
+    service/.style={
+        rectangle,
+        rounded corners=3pt,
+        draw=darkblue,
+        fill=white,
+        text width=2.8cm,
+        minimum height=0.9cm,
+        text centered,
+        font=\footnotesize,
+        line width=0.8pt
+    },
+    arrow/.style={
+        ->,
+        >=Stealth,
+        line width=1.2pt,
+        darkblue
+    },
+    dataflow/.style={
+        ->,
+        >=Stealth,
+        line width=1pt,
+        arbitragecolor,
+        dashed
+    },
+    container/.style={
+        rectangle,
+        draw=gray,
+        dashed,
+        rounded corners=10pt,
+        inner sep=10pt
+    },
+    exchange/.style={
+        rectangle,
+        rounded corners=5pt,
+        draw=cexcolor,
+        fill=cexcolor!20,
+        text width=2.8cm,
+        minimum height=1cm,
+        text centered,
+        font=\small,
+        line width=1pt
+    }
+}
+
+\title{Торговая стратегия арбитража между биржами/DeFi-протоколами\\
+\large Arbitrage Strategy Documentation}
+\author{Система автоматического арбитража DEFIMON}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Введение}
+
+Торговая стратегия арбитража между биржами и DeFi-протоколами представляет собой автоматизированную систему для выявления и исполнения прибыльных сделок при ценовых расхождениях между различными торговыми площадками.
+
+\subsection{Ключевые характеристики стратегии}
+
+\begin{itemize}
+    \item \textbf{Тип стратегии}: Межбиржевой арбитраж
+    \item \textbf{Потенциальная доходность}: 0.1-1\% на сделку
+    \item \textbf{Риски}: Комиссии, газовые сборы, slippage
+    \item \textbf{Временные рамки}: Миллисекунды - секунды
+    \item \textbf{Автоматизация}: Полностью автоматическое исполнение
+\end{itemize}
+
+\subsection{Поддерживаемые платформы}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Тип} & \textbf{Платформы} & \textbf{Особенности} \\
+\hline
+DEX & Uniswap V3, SushiSwap, PancakeSwap & AMM, Liquidity Pools \\
+CEX & Binance, Coinbase, Kraken & Order Book, High Volume \\
+L2 & Arbitrum, Optimism, Polygon & Low Gas, Fast Execution \\
+\hline
+\end{tabular}
+\caption{Поддерживаемые торговые платформы}
+\end{table}
+
+\newpage
+
+\section{Анализ необходимых данных}
+
+\subsection{Типы данных для арбитража}
+
+\subsubsection{Рыночные данные (Market Data)}
+\begin{itemize}
+    \item \textbf{Цены активов} в реальном времени
+    \item \textbf{Объемы торгов} (24h, 1h, 5min)
+    \item \textbf{Глубина рынка} (order book)
+    \item \textbf{Исторические цены} для анализа трендов
+    \item \textbf{Волатильность} активов
+\end{itemize}
+
+\subsubsection{Данные ликвидности (Liquidity Data)}
+\begin{itemize}
+    \item \textbf{Размер пулов ликвидности} (для DEX)
+    \item \textbf{Распределение ликвидности} по ценовым уровням
+    \item \textbf{Концентрация ликвидности} в определенных диапазонах
+    \item \textbf{Динамика изменения} пулов ликвидности
+\end{itemize}
+
+\subsubsection{Транзакционные данные (Transaction Data)}
+\begin{itemize}
+    \item \textbf{Комиссии} за торговлю на каждой платформе
+    \item \textbf{Газовые сборы} для блокчейн транзакций
+    \item \textbf{Время подтверждения} транзакций
+    \item \textbf{Статус транзакций} (pending, confirmed, failed)
+\end{itemize}
+
+\subsubsection{Метаданные (Metadata)}
+\begin{itemize}
+    \item \textbf{Информация об активах} (токены, контракты)
+    \item \textbf{Сетевые параметры} (gas limits, block times)
+    \item \textbf{Регулятивная информация} по юрисдикциям
+    \item \textbf{Время работы} бирж и протоколов
+\end{itemize}
+
+\subsection{Источники данных}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Источник} & \textbf{Тип данных} & \textbf{Частота обновления} \\
+\hline
+WebSocket API & Real-time prices & 100-1000ms \\
+REST API & Historical data & 1-5 минут \\
+Blockchain RPC & Transaction status & 1-15 секунд \\
+Indexers & Event logs & 1-30 секунд \\
+\hline
+\end{tabular}
+\caption{Источники данных и частота обновления}
+\end{table}
+
+\subsection{Требования к качеству данных}
+
+\begin{enumerate}
+    \item \textbf{Актуальность}: Задержка не более 100ms
+    \item \textbf{Точность}: Ошибка цены не более 0.01\%
+    \item \textbf{Полнота}: Покрытие всех торговых пар
+    \item \textbf{Надежность}: Uptime не менее 99.9\%
+    \item \textbf{Консистентность}: Синхронизация между источниками
+\end{enumerate}
+
+\newpage
+
+\section{Детальная стратегия арбитража}
+
+\subsection{Принцип работы стратегии}
+
+Арбитражная стратегия основана на выявлении временных расхождений в ценах одного и того же актива на разных торговых площадках. Система автоматически:
+
+\begin{enumerate}
+    \item \textbf{Мониторит цены} на всех подключенных платформах
+    \item \textbf{Вычисляет спред} между ценами
+    \item \textbf{Оценивает прибыльность} с учетом комиссий и газовых сборов
+    \item \textbf{Исполняет сделки} при превышении минимального порога прибыли
+    \item \textbf{Управляет рисками} через stop-loss и position sizing
+\end{enumerate}
+
+\subsection{Типы арбитражных стратегий}
+
+\subsubsection{1. Простой арбитраж (Simple Arbitrage)}
+\begin{itemize}
+    \item \textbf{Принцип}: Покупка на одной бирже, продажа на другой
+    \item \textbf{Пример}: ETH дешевле на Uniswap, дороже на Binance
+    \item \textbf{Действие}: Покупаем ETH на Uniswap, продаем на Binance
+    \item \textbf{Риски}: Низкие, но прибыль ограничена спредом
+\end{itemize}
+
+\subsubsection{2. Треугольный арбитраж (Triangular Arbitrage)}
+\begin{itemize}
+    \item \textbf{Принцип}: Торговля через три актива (A→B→C→A)
+    \item \textbf{Пример}: BTC→ETH→USDT→BTC с прибылью
+    \item \textbf{Действие}: Последовательное исполнение трех сделок
+    \item \textbf{Риски}: Средние, сложность исполнения
+\end{itemize}
+
+\subsubsection{3. Статистический арбитраж (Statistical Arbitrage)}
+\begin{itemize}
+    \item \textbf{Принцип}: Торговля на основе исторических корреляций
+    \item \textbf{Пример}: Коррелированные пары (ETH/BTC, LINK/ETH)
+    \item \textbf{Действие}: Продажа переоцененного, покупка недооцененного
+    \item \textbf{Риски}: Высокие, требует ML моделей
+\end{itemize}
+
+\subsubsection{4. MEV арбитраж (Miner Extractable Value)}
+\begin{itemize}
+    \item \textbf{Принцип}: Извлечение прибыли из порядка транзакций
+    \item \textbf{Пример}: Front-running, sandwich attacks
+    \item \textbf{Действие}: Специальные транзакции с высоким gas price
+    \item \textbf{Риски}: Очень высокие, этические вопросы
+\end{itemize}
+
+\subsection{Инструменты и алгоритмы}
+
+\subsubsection{Алгоритм обнаружения возможностей}
+
+\begin{verbatim}
+Для каждой торговой пары (например, ETH/USDT):
+1. Получить текущие цены со всех платформ
+2. Вычислить спред: (max_price - min_price) / min_price
+3. Если спред > минимальный_порог (например, 0.5%):
+   - Рассчитать прибыль с учетом комиссий
+   - Если прибыль > минимальная_прибыль:
+     - Создать арбитражную возможность
+     - Добавить в очередь исполнения
+\end{verbatim}
+
+\subsubsection{Алгоритм исполнения сделок}
+
+\begin{verbatim}
+Для каждой арбитражной возможности:
+1. Проверить ликвидность на обеих платформах
+2. Рассчитать оптимальный размер позиции
+3. Разместить ордер на покупку (дешевая платформа)
+4. Дождаться исполнения покупки
+5. Разместить ордер на продажу (дорогая платформа)
+6. Дождаться исполнения продажи
+7. Рассчитать фактическую прибыль
+8. Обновить статистику и P&L
+\end{verbatim}
+
+\subsubsection{Алгоритм управления рисками}
+
+\begin{verbatim}
+Для каждой открытой позиции:
+1. Мониторить текущую цену
+2. Если убыток > stop_loss (например, 0.5%):
+   - Закрыть позицию немедленно
+3. Если время в позиции > max_hold_time:
+   - Закрыть позицию по рыночной цене
+4. Если волатильность > max_volatility:
+   - Уменьшить размер позиции
+5. Обновить risk metrics
+\end{verbatim}
+
+\subsection{Параметры стратегии}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Параметр} & \textbf{Значение} & \textbf{Описание} \\
+\hline
+Минимальный спред & 0.3\% & Минимальная разница цен для входа \\
+Минимальная прибыль & 0.1\% & Минимальная прибыль после комиссий \\
+Максимальный размер & 5\% капитала & Максимальный размер одной позиции \\
+Stop-loss & 0.5\% & Максимальный убыток на позицию \\
+Max hold time & 5 минут & Максимальное время в позиции \\
+Max volatility & 5\% & Максимальная волатильность для входа \\
+\hline
+\end{tabular}
+\caption{Ключевые параметры арбитражной стратегии}
+\end{table}
+
+\subsection{Поведение системы в различных рыночных условиях}
+
+\subsubsection{Нормальные рыночные условия}
+\begin{itemize}
+    \item \textbf{Волатильность}: 1-3\% в день
+    \item \textbf{Стратегия}: Стандартный арбитраж
+    \item \textbf{Размер позиций}: 100\% от стандартного
+    \item \textbf{Частота сделок}: 10-50 в день
+\end{itemize}
+
+\subsubsection{Высокая волатильность}
+\begin{itemize}
+    \item \textbf{Волатильность}: 5-15\% в день
+    \item \textbf{Стратегия}: Консервативный арбитраж
+    \item \textbf{Размер позиций}: 50\% от стандартного
+    \item \textbf{Частота сделок}: 20-100 в день
+\end{itemize}
+
+\subsubsection{Низкая ликвидность}
+\begin{itemize}
+    \item \textbf{Ликвидность}: < 50\% от нормальной
+    \item \textbf{Стратегия}: Мелкие позиции, быстрый выход
+    \item \textbf{Размер позиций}: 25\% от стандартного
+    \item \textbf{Частота сделок}: 5-20 в день
+\end{itemize}
+
+\subsubsection{Рыночные кризисы}
+\begin{itemize}
+    \item \textbf{Условия}: Краш рынка, паника
+    \item \textbf{Стратегия}: Только безопасные возможности
+    \item \textbf{Размер позиций}: 10\% от стандартного
+    \item \textbf{Частота сделок}: 1-5 в день
+\end{itemize}
+
+\newpage
+
+\section{Инфраструктурный уровень}
+
+Инфраструктурный уровень обеспечивает надежное подключение к различным биржам и DeFi-протоколам через WebSocket соединения.
+
+\subsection{Диаграмма компонентов инфраструктурного уровня}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.75, transform shape]
+
+% Контейнер инфраструктуры
+\node[container, fill=lightgray, minimum width=18cm, minimum height=12cm] (infra) at (0,0) {};
+\node[above] at (infra.north) {\textbf{Инфраструктурный уровень - Подключения к биржам}};
+
+% Биржи и протоколы
+\node[exchange] (uniswap) at (-6,4) {Uniswap V3\\Ethereum};
+\node[exchange] (sushiswap) at (-3,4) {SushiSwap\\Multi-chain};
+\node[exchange] (pancakeswap) at (0,4) {PancakeSwap\\BSC};
+\node[exchange] (binance) at (3,4) {Binance\\CEX};
+\node[exchange] (coinbase) at (6,4) {Coinbase\\CEX};
+
+% WebSocket соединения
+\node[component, fill=websocketcolor!20] (ws1) at (-6,2) {WebSocket\\Client 1};
+\node[component, fill=websocketcolor!20] (ws2) at (-3,2) {WebSocket\\Client 2};
+\node[component, fill=websocketcolor!20] (ws3) at (0,2) {WebSocket\\Client 3};
+\node[component, fill=websocketcolor!20] (ws4) at (3,2) {WebSocket\\Client 4};
+\node[component, fill=websocketcolor!20] (ws5) at (6,2) {WebSocket\\Client 5};
+
+% Connection Manager
+\node[component, fill=darkblue!20, text width=4cm] (connmgr) at (0,0) {Connection Manager\\Управление соединениями\\Retry Logic};
+
+% Rate Limiting
+\node[component, fill=orange!20, text width=3.5cm] (ratelimit) at (0,-2) {Rate Limiter\\API лимиты\\Throttling};
+
+% Мониторинг соединений
+\node[component, fill=yellow!20, text width=3.5cm] (monitor) at (0,-4) {Connection Monitor\\Health Check\\Alerting};
+
+% Связи
+\draw[arrow] (uniswap) -- (ws1);
+\draw[arrow] (sushiswap) -- (ws2);
+\draw[arrow] (pancakeswap) -- (ws3);
+\draw[arrow] (binance) -- (ws4);
+\draw[arrow] (coinbase) -- (ws5);
+
+\draw[arrow] (ws1) -- (connmgr);
+\draw[arrow] (ws2) -- (connmgr);
+\draw[arrow] (ws3) -- (connmgr);
+\draw[arrow] (ws4) -- (connmgr);
+\draw[arrow] (ws5) -- (connmgr);
+
+\draw[arrow] (connmgr) -- (ratelimit);
+\draw[arrow] (ratelimit) -- (monitor);
+
+% Метки производительности
+\node[text width=2.5cm, align=center, font=\tiny] at (-6,1) {1000 msg/s\\Low Latency};
+\node[text width=2.5cm, align=center, font=\tiny] at (-3,1) {800 msg/s\\Multi-chain};
+\node[text width=2.5cm, align=center, font=\tiny] at (0,1) {600 msg/s\\BSC Network};
+\node[text width=2.5cm, align=center, font=\tiny] at (3,1) {2000 msg/s\\High Volume};
+\node[text width=2.5cm, align=center, font=\tiny] at (6,1) {1500 msg/s\\US Market};
+
+\end{tikzpicture}
+\caption{UML диаграмма компонентов инфраструктурного уровня}
+\end{figure}
+
+\subsection{Узкие места инфраструктурного уровня}
+
+\begin{enumerate}
+    \item \textbf{WebSocket соединения} -- Ограничены количеством одновременных соединений
+    \item \textbf{API лимиты} -- Rate limiting от бирж (100-1200 запросов/мин)
+    \item \textbf{Сетевая задержка} -- Latency между регионами (50-200ms)
+    \item \textbf{Переподключения} -- Время восстановления соединения (1-5 сек)
+\end{enumerate}
+
+\subsection{Оптимизации производительности}
+
+\begin{itemize}
+    \item Connection pooling для WebSocket соединений
+    \item Географическое распределение серверов для минимизации latency
+    \item Предварительная авторизация API ключей
+    \item Автоматическое переподключение с exponential backoff
+\end{itemize}
+
+\newpage
+
+\section{Аналитический уровень}
+
+Аналитический уровень отвечает за обработку рыночных данных, выявление арбитражных возможностей и управление исполнением сделок.
+
+\subsection{Диаграмма компонентов аналитического уровня}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.7, transform shape]
+
+% Контейнер аналитики
+\node[container, fill=lightgray, minimum width=18cm, minimum height=12cm] (analytics) at (0,0) {};
+\node[above] at (analytics.north) {\textbf{Аналитический уровень - Обработка рыночных данных}};
+
+% Источники данных
+\node[component, fill=websocketcolor!20] (datasource) at (0,4.5) {Data Sources\\WebSocket Streams\\Market Data};
+
+% Парсинг данных
+\node[component, fill=blue!20] (parser) at (-5,3) {Data Parser\\JSON/Protobuf\\Normalization};
+\node[component, fill=blue!20] (validator) at (-2.5,3) {Data Validator\\Price Validation\\Outlier Detection};
+\node[component, fill=blue!20] (normalizer) at (0,3) {Data Normalizer\\Format Standardization\\Unit Conversion};
+\node[component, fill=blue!20] (enricher) at (2.5,3) {Data Enricher\\Metadata Addition\\Context Enrichment};
+\node[component, fill=blue!20] (aggregator) at (5,3) {Data Aggregator\\Time-based Aggregation\\Volume Calculation};
+
+% ClickHouse
+\node[database, fill=clickhousecolor!20, text width=3cm] (clickhouse) at (0,1) {ClickHouse\\Time-series DB\\Real-time Analytics};
+
+% Аналитические компоненты
+\node[component, fill=green!20] (arbitrage) at (-4,0) {Arbitrage\\Detector\\Opportunity Scanner};
+\node[component, fill=green!20] (calculator) at (-1.5,0) {Profit\\Calculator\\Fee Analysis};
+\node[component, fill=green!20] (risk) at (1.5,0) {Risk\\Manager\\Position Limits};
+\node[component, fill=green!20] (executor) at (4,0) {Trade\\Executor\\Order Management};
+
+% Redis для кэширования
+\node[database, fill=red!20, text width=2.5cm] (redis) at (0,-1.5) {Redis\\Cache\\Hot Data};
+
+% Мониторинг
+\node[component, fill=yellow!20, text width=3.5cm] (monitor) at (0,-3) {Performance Monitor\\Latency Tracking\\Throughput Metrics};
+
+% Связи
+\draw[arrow] (datasource) -- (parser);
+\draw[arrow] (datasource) -- (validator);
+\draw[arrow] (datasource) -- (normalizer);
+\draw[arrow] (datasource) -- (enricher);
+\draw[arrow] (datasource) -- (aggregator);
+
+\draw[arrow] (parser) -- (clickhouse);
+\draw[arrow] (validator) -- (clickhouse);
+\draw[arrow] (normalizer) -- (clickhouse);
+\draw[arrow] (enricher) -- (clickhouse);
+\draw[arrow] (aggregator) -- (clickhouse);
+
+\draw[arrow] (clickhouse) -- (arbitrage);
+\draw[arrow] (clickhouse) -- (calculator);
+\draw[arrow] (clickhouse) -- (risk);
+\draw[arrow] (clickhouse) -- (executor);
+
+\draw[arrow] (arbitrage) -- (redis);
+\draw[arrow] (calculator) -- (redis);
+\draw[arrow] (risk) -- (redis);
+\draw[arrow] (executor) -- (redis);
+
+\draw[dataflow] (arbitrage) -- (monitor);
+\draw[dataflow] (executor) -- (monitor);
+
+% Метки производительности
+\node[text width=2.5cm, align=center, font=\tiny] at (-4,1.5) {10K events/s\\Real-time};
+\node[text width=2.5cm, align=center, font=\tiny] at (0,1.5) {100K+ TPS\\Sharding};
+\node[text width=2.5cm, align=center, font=\tiny] at (4,1.5) {1000 trades/s\\Low Latency};
+
+\end{tikzpicture}
+\caption{UML диаграмма компонентов аналитического уровня}
+\end{figure}
+
+\subsection{Узкие места аналитического уровня}
+
+\begin{enumerate}
+    \item \textbf{ClickHouse запросы} -- Сложные агрегации могут занимать 100-500ms
+    \item \textbf{Redis память} -- Hot data требует быстрого доступа
+    \item \textbf{Arbitrage detection} -- Сканирование всех пар занимает время
+    \item \textbf{Order execution} -- Задержка исполнения снижает прибыльность
+\end{enumerate}
+
+\subsection{Оптимизации производительности}
+
+\begin{itemize}
+    \item Материализованные представления для частых запросов
+    \item In-memory таблицы в ClickHouse для hot data
+    \item Параллельное сканирование арбитражных возможностей
+    \item Pre-approval транзакций для быстрого исполнения
+\end{itemize}
+
+\newpage
+
+\section{Уровень машинного обучения}
+
+Уровень машинного обучения предоставляет предиктивную аналитику для оптимизации арбитражных стратегий и управления рисками.
+
+\subsection{Диаграмма компонентов уровня машинного обучения}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.7, transform shape]
+
+% Контейнер ML
+\node[container, fill=lightgray, minimum width=18cm, minimum height=12cm] (ml) at (0,0) {};
+\node[above] at (ml.north) {\textbf{Уровень машинного обучения - Предиктивная аналитика}};
+
+% ML API
+\node[component, fill=mlcolor!20, text width=4cm] (mlapi) at (0,4.5) {ML API Service\\Model Serving\\Inference Engine};
+
+% ML компоненты
+\node[component, fill=purple!20] (pricepred) at (-5,3) {Price Prediction\\LSTM/Transformer\\Multi-timeframe};
+\node[component, fill=purple!20] (volatility) at (-2.5,3) {Volatility\\Forecasting\\GARCH Models};
+\node[component, fill=purple!20] (liquidity) at (0,3) {Liquidity\\Prediction\\Depth Analysis};
+\node[component, fill=purple!20] (correlation) at (2.5,3) {Correlation\\Analysis\\Pair Trading};
+\node[component, fill=purple!20] (anomaly) at (5,3) {Anomaly\\Detection\\Market Events};
+
+% Feature Engineering
+\node[component, fill=cyan!20, text width=3.5cm] (feature) at (0,1.5) {Feature Engineering\\Technical Indicators\\Market Microstructure};
+
+% Модели
+\node[component, fill=orange!20] (lstm) at (-4,0) {LSTM\\Price Movement\\Sequence Models};
+\node[component, fill=orange!20] (transformer) at (-1.5,0) {Transformer\\Attention-based\\Multi-asset};
+\node[component, fill=orange!20] (xgboost) at (1.5,0) {XGBoost\\Ensemble\\Risk Scoring};
+\node[component, fill=orange!20] (isolation) at (4,0) {Isolation Forest\\Anomaly\\Outlier Detection};
+
+% Model Storage
+\node[database, fill=green!20, text width=2.5cm] (modelstore) at (0,-1.5) {Model Registry\\Versioning\\A/B Testing};
+
+% Performance Monitor
+\node[component, fill=yellow!20, text width=3.5cm] (perfmon) at (0,-3) {Performance Monitor\\Model Drift\\Accuracy Tracking};
+
+% Связи
+\draw[arrow] (mlapi) -- (pricepred);
+\draw[arrow] (mlapi) -- (volatility);
+\draw[arrow] (mlapi) -- (liquidity);
+\draw[arrow] (mlapi) -- (correlation);
+\draw[arrow] (mlapi) -- (anomaly);
+
+\draw[arrow] (pricepred) -- (feature);
+\draw[arrow] (volatility) -- (feature);
+\draw[arrow] (liquidity) -- (feature);
+\draw[arrow] (correlation) -- (feature);
+\draw[arrow] (anomaly) -- (feature);
+
+\draw[arrow] (feature) -- (lstm);
+\draw[arrow] (feature) -- (transformer);
+\draw[arrow] (feature) -- (xgboost);
+\draw[arrow] (feature) -- (isolation);
+
+\draw[arrow] (lstm) -- (modelstore);
+\draw[arrow] (transformer) -- (modelstore);
+\draw[arrow] (xgboost) -- (modelstore);
+\draw[arrow] (isolation) -- (modelstore);
+
+\draw[dataflow] (modelstore) -- (perfmon);
+
+% Метки производительности
+\node[text width=2.5cm, align=center, font=\tiny] at (-4,1.5) {100 pred/s\\GPU};
+\node[text width=2.5cm, align=center, font=\tiny] at (0,1.5) {Feature Store\\Real-time};
+\node[text width=2.5cm, align=center, font=\tiny] at (4,1.5) {Model Versioning\\A/B Test};
+
+\end{tikzpicture}
+\caption{UML диаграмма компонентов уровня машинного обучения}
+\end{figure}
+
+\subsection{Узкие места уровня машинного обучения}
+
+\begin{enumerate}
+    \item \textbf{Feature computation} -- Вычисление технических индикаторов в реальном времени
+    \item \textbf{Model inference} -- Задержка предсказаний (цель < 50ms)
+    \item \textbf{Model updates} -- Переключение между версиями моделей
+    \item \textbf{GPU memory} -- Ограничения для больших моделей
+\end{enumerate}
+
+\subsection{Оптимизации производительности}
+
+\begin{itemize}
+    \item Предвычисленные features в Redis
+    \item Model quantization для ускорения инференса
+    \item Batch inference для повышения throughput
+    \item Model serving с TensorFlow Serving
+\end{itemize}
+
+\newpage
+
+\section{Функциональная диаграмма арбитражной стратегии}
+
+\subsection{Полный цикл арбитражной торговли}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.6, transform shape]
+
+% Определение стилей
+\tikzset{
+    funcblock/.style={
+        rectangle,
+        rounded corners=5pt,
+        draw=darkblue,
+        fill=white,
+        text width=3cm,
+        minimum height=1.2cm,
+        text centered,
+        font=\small,
+        line width=1pt
+    },
+    datasource/.style={
+        ellipse,
+        draw=darkblue,
+        fill=yellow!20,
+        text width=2.5cm,
+        minimum height=1cm,
+        text centered,
+        font=\small,
+        line width=1pt
+    },
+    decision/.style={
+        diamond,
+        draw=darkblue,
+        fill=orange!20,
+        text width=2.5cm,
+        minimum height=2.5cm,
+        text centered,
+        font=\small,
+        line width=1pt,
+        aspect=1
+    }
+}
+
+% Источники данных
+\node[datasource] (exchanges) at (0,8) {Биржи \&\\DeFi протоколы};
+\node[datasource] (mlmodels) at (4,8) {ML модели\\Предикции};
+
+% Сбор данных
+\node[funcblock, fill=websocketcolor!20] (collect) at (2,6.5) {WebSocket\\Data Collection\\Real-time};
+
+% Обработка данных
+\node[funcblock, fill=blue!20] (process) at (2,5) {Data Processing\\Normalization\\Validation};
+
+% Хранение
+\node[funcblock, fill=clickhousecolor!20] (storage) at (2,3.5) {ClickHouse\\Time-series\\Storage};
+
+% Анализ
+\node[funcblock, fill=green!20] (analysis) at (2,2) {Arbitrage\\Analysis\\Opportunity Detection};
+
+% Принятие решений
+\node[decision] (decision) at (2,0) {Profitable\\Opportunity?};
+
+% Исполнение
+\node[funcblock, fill=arbitragecolor!20] (execution) at (-2,-1.5) {Trade\\Execution\\Order Management};
+
+% Мониторинг
+\node[funcblock, fill=yellow!20] (monitor) at (6,-1.5) {Performance\\Monitoring\\P&L Tracking};
+
+% Результаты
+\node[datasource] (profits) at (-2,-3.5) {Прибыль\\0.1-1\%};
+\node[datasource] (risks) at (2,-3.5) {Риски\\Комиссии, Gas};
+\node[datasource] (reports) at (6,-3.5) {Отчеты\\Аналитика};
+
+% Связи
+\draw[arrow] (exchanges) -- (collect);
+\draw[arrow] (mlmodels) -- (collect);
+\draw[arrow] (collect) -- (process);
+\draw[arrow] (process) -- (storage);
+\draw[arrow] (storage) -- (analysis);
+\draw[arrow] (analysis) -- (decision);
+
+\draw[arrow] (decision) -- node[left] {Да} (execution);
+\draw[arrow] (decision) -- node[right] {Нет} (monitor);
+
+\draw[arrow] (execution) -- (profits);
+\draw[arrow] (execution) -- (risks);
+\draw[arrow] (monitor) -- (reports);
+
+% Обратная связь
+\draw[dataflow, bend right=30] (monitor) to (analysis);
+\draw[dataflow, bend left=30] (profits) to (analysis);
+
+% Метки производительности
+\node[text width=2cm, align=center, font=\tiny] at (0,7.5) {10K+ msg/s\\WebSocket};
+\node[text width=2cm, align=center, font=\tiny] at (0,4.5) {100K+ TPS\\ClickHouse};
+\node[text width=2cm, align=center, font=\tiny] at (0,1.5) {1000+ opp/s\\Scanner};
+\node[text width=2cm, align=center, font=\tiny] at (0,-0.8) {<100ms\\Decision};
+\node[text width=2cm, align=center, font=\tiny] at (-2,-2.5) {<500ms\\Execution};
+
+\end{tikzpicture}
+\caption{Функциональная диаграмма арбитражной торговой стратегии}
+\end{figure}
+
+\subsection{Критические пути и временные ограничения}
+
+\subsubsection{Критический путь 1: Обнаружение возможности}
+\begin{verbatim}
+Market Data → Processing → Analysis → Decision
+Целевая задержка: < 100 миллисекунд
+\end{verbatim}
+
+\textbf{Оптимизации:}
+\begin{itemize}
+    \item In-memory обработка в Redis
+    \item Предвычисленные арбитражные матрицы
+    \item Параллельное сканирование всех пар
+\end{itemize}
+
+\subsubsection{Критический путь 2: Исполнение сделки}
+\begin{verbatim}
+Decision → Order Placement → Confirmation → Settlement
+Целевая задержка: < 500 миллисекунд
+\end{verbatim}
+
+\textbf{Оптимизации:}
+\begin{itemize}
+    \item Pre-approved транзакции
+    \item Gas price optimization
+    \item MEV protection
+\end{itemize}
+
+\subsubsection{Критический путь 3: ML предсказания}
+\begin{verbatim}
+Feature Request → Model Inference → Prediction → Strategy Update
+Целевая задержка: < 50 миллисекунд
+\end{verbatim}
+
+\textbf{Оптимизации:}
+\begin{itemize}
+    \item Model serving с TensorFlow Serving
+    \item Feature caching в Redis
+    \item Batch inference для множественных предсказаний
+\end{itemize}
+
+\newpage
+
+\section{Анализ производительности и рисков}
+
+\subsection{Ключевые метрики производительности}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|X|r|r|r|}
+\hline
+\textbf{Метрика} & \textbf{Текущая} & \textbf{Целевая} & \textbf{Критическая} \\
+\hline
+Обнаружение возможностей & 1000/сек & 5000/сек & 10000/сек \\
+Время принятия решения & 100ms & 50ms & 25ms \\
+Исполнение сделки & 500ms & 200ms & 100ms \\
+ML предсказания & 100/сек & 500/сек & 1000/сек \\
+WebSocket сообщения & 10000/сек & 50000/сек & 100000/сек \\
+ClickHouse запросы & 1000/сек & 5000/сек & 10000/сек \\
+\hline
+\end{tabularx}
+\caption{Метрики производительности арбитражной стратегии}
+\end{table}
+
+\subsection{Анализ рисков}
+
+\begin{enumerate}
+    \item \textbf{Рыночные риски}
+    \begin{itemize}
+        \item Slippage при исполнении больших ордеров
+        \item Изменение цены между обнаружением и исполнением
+        \item Ликвидность на целевых биржах
+    \end{itemize}
+    
+    \item \textbf{Технические риски}
+    \begin{itemize}
+        \item Сбои WebSocket соединений
+        \item Задержки в ClickHouse запросах
+        \item Ошибки ML моделей
+        \item Сетевые задержки
+    \end{itemize}
+    
+    \item \textbf{Операционные риски}
+    \begin{itemize}
+        \item API лимиты бирж
+        \item Изменения в комиссиях
+        \item Регулятивные изменения
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Стратегии управления рисками}
+
+\subsubsection{Риск-менеджмент}
+\begin{itemize}
+    \item Максимальный размер позиции: 1-5\% от капитала
+    \item Stop-loss на уровне 0.5\% убытка
+    \item Диверсификация по активам и биржам
+    \item Мониторинг корреляций между активами
+\end{itemize}
+
+\subsubsection{Технические меры}
+\begin{itemize}
+    \item Redundancy для критических компонентов
+    \item Circuit breakers при аномальной активности
+    \item Real-time мониторинг всех метрик
+    \item Автоматическое отключение при ошибках
+\end{itemize}
+
+\section{Масштабирование и оптимизация}
+
+\subsection{Горизонтальное масштабирование}
+
+\begin{enumerate}
+    \item \textbf{Инфраструктурный уровень}
+    \begin{itemize}
+        \item Множественные WebSocket клиенты для каждой биржи
+        \item Географическое распределение серверов
+        \item Load balancing для API запросов
+    \end{itemize}
+    
+    \item \textbf{Аналитический уровень}
+    \begin{itemize}
+        \item ClickHouse кластер с шардированием
+        \item Параллельная обработка арбитражных возможностей
+        \item Redis cluster для распределенного кэширования
+    \end{itemize}
+    
+    \item \textbf{Уровень машинного обучения}
+    \begin{itemize}
+        \item Model serving replicas
+        \item GPU кластеры для обучения
+        \item Распределенное хранилище features
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Рекомендации по оптимизации}
+
+\subsubsection{Краткосрочные (1-3 месяца)}
+\begin{itemize}
+    \item Оптимизация ClickHouse запросов
+    \item Внедрение Redis для hot data
+    \item Улучшение WebSocket reconnection логики
+    \item Оптимизация gas price стратегий
+\end{itemize}
+
+\subsubsection{Среднесрочные (3-6 месяцев)}
+\begin{itemize}
+    \item Внедрение ClickHouse cluster
+    \item ML модели для предсказания volatility
+    \item Автоматическая оптимизация параметров
+    \item A/B testing различных стратегий
+\end{itemize}
+
+\subsubsection{Долгосрочные (6-12 месяцев)}
+\begin{itemize}
+    \item Multi-region deployment
+    \item AI-driven стратегии
+    \item Интеграция с DeFi протоколами
+    \item Cross-chain арбитраж
+\end{itemize}
+
+\section{Заключение}
+
+Арбитражная торговая стратегия между биржами и DeFi-протоколами представляет собой высокотехнологичную систему, требующую оптимальной производительности на всех уровнях архитектуры.
+
+Ключевые факторы успеха:
+\begin{itemize}
+    \item Минимальная задержка обнаружения возможностей (< 100ms)
+    \item Быстрое исполнение сделок (< 500ms)
+    \item Высокая пропускная способность данных (10K+ msg/s)
+    \item Надежная инфраструктура с redundancy
+    \item Эффективное управление рисками
+\end{itemize}
+
+Система спроектирована для масштабирования и может обрабатывать растущие объемы торговых данных, обеспечивая стабильную доходность в диапазоне 0.1-1\% на сделку при правильном управлении рисками.
+
+\end{document}

@@ -1,0 +1,641 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage[russian]{babel}
+\usepackage{geometry}
+\usepackage{tikz}
+\usepackage{tikz-uml}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{booktabs}
+
+% Настройка геометрии страницы для A4
+\geometry{
+    a4paper,
+    left=20mm,
+    right=20mm,
+    top=25mm,
+    bottom=25mm
+}
+
+% Настройка цветов
+\definecolor{gcpcolor}{RGB}{66, 133, 244}
+\definecolor{hetznercolor}{RGB}{214, 0, 0}
+\definecolor{mlcolor}{RGB}{52, 168, 83}
+\definecolor{darkblue}{RGB}{0, 51, 102}
+\definecolor{lightgray}{RGB}{240, 240, 240}
+\definecolor{orange}{RGB}{255, 140, 0}
+
+% Настройка TikZ
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds, calc, shadows, patterns}
+\tikzset{
+    component/.style={
+        rectangle,
+        rounded corners=5pt,
+        draw=darkblue,
+        fill=lightgray,
+        text width=3.5cm,
+        minimum height=1.2cm,
+        text centered,
+        font=\small,
+        line width=1pt
+    },
+    database/.style={
+        cylinder,
+        draw=darkblue,
+        fill=lightgray,
+        text width=2.5cm,
+        minimum height=1.5cm,
+        text centered,
+        font=\small,
+        line width=1pt,
+        shape border rotate=90,
+        aspect=0.25
+    },
+    service/.style={
+        rectangle,
+        rounded corners=3pt,
+        draw=darkblue,
+        fill=white,
+        text width=2.8cm,
+        minimum height=0.9cm,
+        text centered,
+        font=\footnotesize,
+        line width=0.8pt
+    },
+    arrow/.style={
+        ->,
+        >=Stealth,
+        line width=1.2pt,
+        darkblue
+    },
+    dataflow/.style={
+        ->,
+        >=Stealth,
+        line width=1pt,
+        orange,
+        dashed
+    },
+    container/.style={
+        rectangle,
+        draw=gray,
+        dashed,
+        rounded corners=10pt,
+        inner sep=10pt
+    }
+}
+
+\title{Архитектурная документация платформы DEFIMON\\
+\large DeFi Analytics Platform}
+\author{Система мониторинга и аналитики DeFi протоколов}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Введение}
+
+DEFIMON представляет собой комплексную платформу для мониторинга и аналитики децентрализованных финансовых (DeFi) протоколов. Система построена на основе микросервисной архитектуры и разделена на три основных уровня:
+
+\begin{itemize}
+    \item \textbf{Инфраструктурный уровень} -- обеспечивает взаимодействие с блокчейн-сетями
+    \item \textbf{Аналитический уровень} -- выполняет обработку и анализ данных
+    \item \textbf{Уровень машинного обучения} -- предоставляет предиктивную аналитику и оценку рисков
+\end{itemize}
+
+\subsection{Ключевые характеристики производительности}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|r|l|}
+\hline
+\textbf{Компонент} & \textbf{Производительность} & \textbf{Узкое место} \\
+\hline
+Обработка блоков (Rust) & 1000 блоков/сек & I/O диска \\
+Парсинг событий & 5000 событий/сек & CPU \\
+RPC запросы & 1000 RPC/сек & Сетевая задержка \\
+FastAPI & 5000 запросов/сек & Пул соединений БД \\
+ML инференс & 100 предсказаний/сек & GPU память \\
+Потоковая обработка & 10000 событий/сек & Kafka партиции \\
+\hline
+\end{tabular}
+\caption{Ключевые показатели производительности системы}
+\end{table}
+
+\newpage
+
+\section{Инфраструктурный уровень}
+
+Инфраструктурный уровень развернут на Google Cloud Platform и обеспечивает надежное взаимодействие с различными блокчейн-сетями.
+
+\subsection{Диаграмма компонентов инфраструктурного уровня}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.8, transform shape]
+
+% Контейнер GCP
+\node[container, fill=gcpcolor!10, minimum width=16cm, minimum height=10cm] (gcp) at (0,0) {};
+\node[above] at (gcp.north) {\textbf{Google Cloud Platform}};
+
+% Ethereum ноды
+\node[component, fill=gcpcolor!20] (geth) at (-5,2) {Geth Node\\Ethereum\\Execution Layer};
+\node[component, fill=gcpcolor!20] (lighthouse) at (-1,2) {Lighthouse\\Consensus\\Layer};
+
+% Storage
+\node[database, fill=gcpcolor!30] (storage) at (-3,-1) {Persistent\\Storage\\2TB+ SSD};
+
+% Мониторинг
+\node[component, fill=orange!20] (prometheus) at (2,2) {Prometheus\\Метрики\\Сбор данных};
+\node[component, fill=orange!20] (grafana) at (5.5,2) {Grafana\\Визуализация\\Дашборды};
+
+% Load Balancer
+\node[component, fill=gcpcolor!40] (lb) at (0,-1) {Load Balancer\\Распределение\\нагрузки};
+
+% Kubernetes
+\node[container, draw=darkblue, dashed, minimum width=7cm, minimum height=3cm] (k8s) at (3.5,-1) {};
+\node[above] at (k8s.north) {\small \textbf{GKE Cluster}};
+
+% Сервисы в K8s
+\node[service] (monitor) at (2,-1) {Monitoring\\Service};
+\node[service] (sync) at (5,-1) {Sync\\Monitor};
+
+% JWT Auth
+\node[component, fill=yellow!20] (jwt) at (-3,0.5) {JWT Auth\\Безопасность\\между нодами};
+
+% Связи
+\draw[arrow] (geth) -- (lighthouse);
+\draw[arrow] (geth) -- (storage);
+\draw[arrow] (lighthouse) -- (storage);
+\draw[arrow] (jwt) -- (geth);
+\draw[arrow] (jwt) -- (lighthouse);
+\draw[arrow] (geth) -- (lb);
+\draw[arrow] (lighthouse) -- (lb);
+\draw[arrow] (lb) -- (monitor);
+\draw[arrow] (monitor) -- (prometheus);
+\draw[arrow] (prometheus) -- (grafana);
+\draw[dataflow] (sync) -- (prometheus);
+
+% Внешние подключения
+\node[above=2cm of geth] (eth) {Ethereum Network};
+\draw[arrow, line width=2pt] (eth) -- (geth);
+\draw[arrow, line width=2pt] (eth) -- (lighthouse);
+
+\end{tikzpicture}
+\caption{UML диаграмма компонентов инфраструктурного уровня}
+\end{figure}
+
+\subsection{Узкие места инфраструктурного уровня}
+
+\begin{enumerate}
+    \item \textbf{Синхронизация блокчейна} -- Ограничена скоростью диска (NVMe SSD рекомендуется)
+    \item \textbf{RPC соединения} -- Лимит 1000 запросов/сек на ноду
+    \item \textbf{JWT handshake} -- Добавляет 5-10ms задержки на каждый запрос
+    \item \textbf{Сетевая пропускная способность} -- Минимум 1Gbps для стабильной работы
+\end{enumerate}
+
+\subsection{Оптимизации производительности}
+
+\begin{itemize}
+    \item Использование connection pooling для RPC соединений
+    \item Кэширование JWT токенов на 1 час
+    \item Горизонтальное масштабирование через multiple Geth/Lighthouse пары
+    \item SSD диски с высоким IOPS для блокчейн данных
+\end{itemize}
+
+\newpage
+
+\section{Аналитический уровень}
+
+Аналитический уровень развернут на Hetzner Cloud и отвечает за обработку, хранение и анализ данных блокчейна.
+
+\subsection{Диаграмма компонентов аналитического уровня}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.75, transform shape]
+
+% Контейнер Hetzner
+\node[container, fill=hetznercolor!10, minimum width=17cm, minimum height=11cm] (hetzner) at (0,0) {};
+\node[above] at (hetzner.north) {\textbf{Hetzner Cloud - Analytics Pool}};
+
+% API Gateway
+\node[component, fill=hetznercolor!20, text width=4cm] (kong) at (0,3.5) {Kong API Gateway\\Rate Limiting\\Auth \& Routing};
+
+% Микросервисы
+\node[component, fill=blue!20] (analytics) at (-5,1.5) {Analytics API\\FastAPI\\REST/WebSocket};
+\node[component, fill=blue!20] (ingestion) at (-1.5,1.5) {Data Ingestion\\Web3 APIs\\Event Parsing};
+\node[component, fill=blue!20] (stream) at (2,1.5) {Stream Processing\\Kafka Consumer\\Real-time ETL};
+\node[component, fill=blue!20] (blockchain) at (5.5,1.5) {Blockchain Node\\Rust Service\\Multi-chain};
+
+% Базы данных
+\node[database, fill=green!20] (postgres) at (-5,-1.5) {PostgreSQL\\Метаданные\\Конфигурации};
+\node[database, fill=green!20] (clickhouse) at (-1.5,-1.5) {ClickHouse\\Time-series\\Аналитика};
+\node[database, fill=green!20] (redis) at (2,-1.5) {Redis\\Кэш\\Сессии};
+
+% Message Queue
+\node[component, fill=orange!20] (kafka) at (5.5,-1.5) {Apache Kafka\\Message Queue\\Event Stream};
+
+% Мониторинг внизу
+\node[component, fill=yellow!20, text width=3cm] (prom) at (-2,-3.5) {Prometheus\\Metrics};
+\node[component, fill=yellow!20, text width=3cm] (graf) at (2,-3.5) {Grafana\\Dashboards};
+
+% Связи между компонентами
+\draw[arrow] (kong) -- (analytics);
+\draw[arrow] (kong) -- (ingestion);
+\draw[arrow] (kong) -- (stream);
+\draw[arrow] (kong) -- (blockchain);
+
+\draw[arrow] (analytics) -- (postgres);
+\draw[arrow] (analytics) -- (clickhouse);
+\draw[arrow] (analytics) -- (redis);
+
+\draw[arrow] (ingestion) -- (kafka);
+\draw[arrow] (stream) -- (kafka);
+\draw[arrow] (stream) -- (clickhouse);
+
+\draw[arrow] (blockchain) -- (postgres);
+\draw[arrow] (blockchain) -- (kafka);
+
+\draw[dataflow] (analytics) -- (prom);
+\draw[dataflow] (ingestion) -- (prom);
+\draw[dataflow] (stream) -- (prom);
+\draw[dataflow] (blockchain) -- (prom);
+\draw[arrow] (prom) -- (graf);
+
+% Внешние подключения
+\node[above=1.5cm of kong] (clients) {External Clients};
+\draw[arrow, line width=2pt] (clients) -- (kong);
+
+\node[right=2cm of blockchain] (chains) {Blockchains};
+\draw[arrow, line width=2pt] (chains) -- (blockchain);
+
+\end{tikzpicture}
+\caption{UML диаграмма компонентов аналитического уровня}
+\end{figure}
+
+\subsection{Узкие места аналитического уровня}
+
+\begin{enumerate}
+    \item \textbf{ClickHouse запросы} -- Агрегации на больших данных могут занимать 1-5 сек
+    \item \textbf{Kafka пропускная способность} -- Ограничена количеством партиций
+    \item \textbf{PostgreSQL connection pool} -- Максимум 100 соединений по умолчанию
+    \item \textbf{Redis память} -- Требует мониторинга и eviction политики
+    \item \textbf{API Gateway} -- Rate limiting может создавать искусственные задержки
+\end{enumerate}
+
+\subsection{Оптимизации производительности}
+
+\begin{itemize}
+    \item Материализованные представления в ClickHouse для частых запросов
+    \item Увеличение Kafka партиций для параллельной обработки
+    \item PgBouncer для эффективного управления PostgreSQL соединениями
+    \item Redis cluster mode для горизонтального масштабирования кэша
+    \item Кэширование на уровне Kong для статических данных
+\end{itemize}
+
+\newpage
+
+\section{Уровень машинного обучения}
+
+Уровень машинного обучения предоставляет предиктивную аналитику, оценку рисков и обнаружение аномалий.
+
+\subsection{Диаграмма компонентов уровня машинного обучения}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.75, transform shape]
+
+% Контейнер ML
+\node[container, fill=mlcolor!10, minimum width=17cm, minimum height=11cm] (ml) at (0,0) {};
+\node[above] at (ml.north) {\textbf{Machine Learning Infrastructure (планируется)}};
+
+% ML API
+\node[component, fill=mlcolor!20, text width=4cm] (mlapi) at (0,3.5) {ML API Service\\FastAPI\\Model Serving};
+
+% ML компоненты
+\node[component, fill=purple!20] (training) at (-5.5,1.5) {Training Pipeline\\TensorFlow\\Model Training};
+\node[component, fill=purple!20] (serving) at (-2,1.5) {Model Serving\\TF Serving\\Inference};
+\node[component, fill=purple!20] (feature) at (2,1.5) {Feature Store\\Feature Eng.\\Data Pipeline};
+\node[component, fill=purple!20] (mlflow) at (5.5,1.5) {MLflow\\Experiments\\Model Registry};
+
+% Модели
+\node[component, fill=cyan!20, text width=3.5cm] (price) at (-5.5,-1) {Price Prediction\\LSTM/Transformer\\Multi-timeframe};
+\node[component, fill=cyan!20, text width=3.5cm] (risk) at (-1.5,-1) {Risk Scoring\\Gradient Boost\\Real-time};
+\node[component, fill=cyan!20, text width=3.5cm] (anomaly) at (2.5,-1) {Anomaly Detection\\Isolation Forest\\Multi-dim};
+
+% Storage
+\node[database, fill=green!20] (modelstorage) at (5.5,-1) {Model Storage\\S3/MinIO\\Versioning};
+
+% GPU/CPU ноды
+\node[component, fill=orange!20, text width=3cm] (gpu) at (-3.5,-3.5) {GPU Nodes\\Training\\NVIDIA T4};
+\node[component, fill=orange!20, text width=3cm] (cpu) at (0,-3.5) {CPU Nodes\\Inference\\Autoscaling};
+
+% Monitoring
+\node[component, fill=yellow!20, text width=3cm] (monitor) at (3.5,-3.5) {Monitoring\\Model Drift\\A/B Testing};
+
+% Связи
+\draw[arrow] (mlapi) -- (serving);
+\draw[arrow] (mlapi) -- (feature);
+\draw[arrow] (training) -- (mlflow);
+\draw[arrow] (training) -- (gpu);
+\draw[arrow] (serving) -- (cpu);
+\draw[arrow] (mlflow) -- (modelstorage);
+
+\draw[arrow] (feature) -- (price);
+\draw[arrow] (feature) -- (risk);
+\draw[arrow] (feature) -- (anomaly);
+
+\draw[arrow] (price) -- (serving);
+\draw[arrow] (risk) -- (serving);
+\draw[arrow] (anomaly) -- (serving);
+
+\draw[dataflow] (serving) -- (monitor);
+\draw[dataflow] (mlflow) -- (monitor);
+
+% Внешние подключения
+\node[above=1.5cm of mlapi] (mlclients) {ML API Clients};
+\draw[arrow, line width=2pt] (mlclients) -- (mlapi);
+
+\node[left=1.5cm of training] (data) {Training Data};
+\draw[arrow, line width=2pt] (data) -- (training);
+
+\end{tikzpicture}
+\caption{UML диаграмма компонентов уровня машинного обучения}
+\end{figure}
+
+\subsection{Узкие места уровня машинного обучения}
+
+\begin{enumerate}
+    \item \textbf{GPU память} -- Ограничивает размер batch при обучении
+    \item \textbf{Model loading} -- Холодный старт может занимать 10-30 сек
+    \item \textbf{Feature computation} -- Вычисление признаков в реальном времени
+    \item \textbf{Inference latency} -- Целевая задержка < 100ms для real-time
+    \item \textbf{Model versioning} -- Переключение между версиями моделей
+\end{enumerate}
+
+\subsection{Оптимизации производительности}
+
+\begin{itemize}
+    \item Model quantization для уменьшения размера и ускорения инференса
+    \item Предварительная загрузка моделей в память (warm start)
+    \item Batch inference для повышения пропускной способности
+    \item Feature caching для часто используемых признаков
+    \item A/B testing framework для безопасного обновления моделей
+\end{itemize}
+
+\newpage
+
+\section{Функциональная диаграмма системы}
+
+\subsection{Общий поток данных в системе}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.65, transform shape]
+
+% Определение стилей для функциональных блоков
+\tikzset{
+    funcblock/.style={
+        rectangle,
+        rounded corners=5pt,
+        draw=darkblue,
+        fill=white,
+        text width=3.2cm,
+        minimum height=1.5cm,
+        text centered,
+        font=\small,
+        line width=1pt
+    },
+    datasource/.style={
+        ellipse,
+        draw=darkblue,
+        fill=yellow!20,
+        text width=2.8cm,
+        minimum height=1.2cm,
+        text centered,
+        font=\small,
+        line width=1pt
+    },
+    decision/.style={
+        diamond,
+        draw=darkblue,
+        fill=orange!20,
+        text width=2.5cm,
+        minimum height=2.5cm,
+        text centered,
+        font=\small,
+        line width=1pt,
+        aspect=1
+    }
+}
+
+% Источники данных
+\node[datasource] (blockchain) at (0,8) {Blockchain\\Networks};
+\node[datasource] (external) at (4,8) {External\\APIs};
+
+% Сбор данных
+\node[funcblock, fill=gcpcolor!20] (collect) at (2,6) {Data Collection\\Web3 RPC\\Event Logs};
+
+% Валидация
+\node[decision] (validate) at (2,4) {Data\\Validation};
+
+% Обработка
+\node[funcblock, fill=hetznercolor!20] (parse) at (-2,2) {Event Parsing\\ABI Decode\\Normalization};
+\node[funcblock, fill=hetznercolor!20] (stream) at (2,2) {Stream\\Processing\\Aggregation};
+\node[funcblock, fill=hetznercolor!20] (enrich) at (6,2) {Data\\Enrichment\\Metadata};
+
+% Хранение
+\node[funcblock, fill=green!20] (store) at (2,0) {Data Storage\\PostgreSQL\\ClickHouse};
+
+% Аналитика
+\node[funcblock, fill=blue!20] (analytics) at (-3,-2) {Analytics\\Processing\\Metrics Calc};
+
+% ML
+\node[funcblock, fill=mlcolor!20] (mlproc) at (2,-2) {ML Pipeline\\Feature Eng.\\Predictions};
+
+% API
+\node[funcblock, fill=orange!20] (api) at (7,-2) {API Layer\\REST/WS\\GraphQL};
+
+% Результаты
+\node[datasource] (dashboard) at (-3,-4.5) {Dashboards\\Grafana};
+\node[datasource] (alerts) at (2,-4.5) {Alerts\\Notifications};
+\node[datasource] (clients) at (7,-4.5) {Client\\Applications};
+
+% Связи с метками
+\draw[arrow] (blockchain) -- (collect) node[midway,left] {\tiny RPC};
+\draw[arrow] (external) -- (collect) node[midway,right] {\tiny REST};
+\draw[arrow] (collect) -- (validate);
+
+\draw[arrow] (validate) -- node[left] {\tiny Valid} (parse);
+\draw[arrow] (validate) -- node[right] {\tiny Stream} (stream);
+\draw[arrow] (validate) -- node[above right] {\tiny Enrich} (enrich);
+
+\draw[arrow] (parse) -- (store);
+\draw[arrow] (stream) -- (store);
+\draw[arrow] (enrich) -- (store);
+
+\draw[arrow] (store) -- (analytics);
+\draw[arrow] (store) -- (mlproc);
+\draw[arrow] (store) -- (api);
+
+\draw[arrow] (analytics) -- (dashboard);
+\draw[arrow] (mlproc) -- (alerts);
+\draw[arrow] (api) -- (clients);
+
+% Обратная связь
+\draw[dataflow, bend right=30] (alerts) to (collect);
+\draw[dataflow, bend left=30] (dashboard) to (analytics);
+
+% Метки производительности
+\node[text width=2cm, align=center, font=\tiny] at (-5,6) {1000 blocks/s\\5000 events/s};
+\node[text width=2cm, align=center, font=\tiny] at (9,2) {10K events/s\\Kafka};
+\node[text width=2cm, align=center, font=\tiny] at (2,-0.8) {100K+ TPS\\Sharding};
+\node[text width=2cm, align=center, font=\tiny] at (2,-3) {100 pred/s\\GPU};
+
+\end{tikzpicture}
+\caption{Функциональная диаграмма потока данных в системе DEFIMON}
+\end{figure}
+
+\subsection{Критические пути и оптимизации}
+
+\subsubsection{Критический путь 1: Real-time данные}
+\begin{verbatim}
+Blockchain Event → RPC Call → Validation → Stream Processing → API → Client
+Целевая задержка: < 1 секунда
+\end{verbatim}
+
+\textbf{Оптимизации:}
+\begin{itemize}
+    \item WebSocket подписки вместо polling
+    \item In-memory обработка в Kafka Streams
+    \item Прямая запись в Redis для hot data
+\end{itemize}
+
+\subsubsection{Критический путь 2: Аналитические запросы}
+\begin{verbatim}
+API Request → Query Builder → ClickHouse → Aggregation → Response
+Целевая задержка: < 3 секунды
+\end{verbatim}
+
+\textbf{Оптимизации:}
+\begin{itemize}
+    \item Материализованные представления для топ запросов
+    \item Query результаты кэшируются в Redis на 1 минуту
+    \item Партиционирование по времени в ClickHouse
+\end{itemize}
+
+\subsubsection{Критический путь 3: ML предсказания}
+\begin{verbatim}
+Feature Request → Feature Store → Model Inference → Post-processing → Response
+Целевая задержка: < 100ms
+\end{verbatim}
+
+\textbf{Оптимизации:}
+\begin{itemize}
+    \item Предвычисленные features в Redis
+    \item Model serving с TensorFlow Serving
+    \item Batch inference для повышения throughput
+\end{itemize}
+
+\newpage
+
+\section{Анализ производительности и масштабируемости}
+
+\subsection{Текущие показатели производительности}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{|X|r|r|r|}
+\hline
+\textbf{Метрика} & \textbf{Текущее} & \textbf{Целевое} & \textbf{Максимум} \\
+\hline
+Блоков в секунду & 1,000 & 2,000 & 5,000 \\
+Событий в секунду & 5,000 & 10,000 & 25,000 \\
+API запросов в секунду & 5,000 & 10,000 & 50,000 \\
+Задержка API (p99) & 100ms & 50ms & - \\
+ML инференс в секунду & 100 & 500 & 1,000 \\
+Объем хранилища & 2TB & 10TB & 50TB \\
+Активных пользователей & 1,000 & 10,000 & 100,000 \\
+\hline
+\end{tabularx}
+\caption{Показатели производительности системы}
+\end{table}
+
+\subsection{Стратегии горизонтального масштабирования}
+
+\begin{enumerate}
+    \item \textbf{Инфраструктурный уровень}
+    \begin{itemize}
+        \item Множественные пары Geth/Lighthouse за load balancer
+        \item Географическое распределение нод
+        \item Read replicas для RPC запросов
+    \end{itemize}
+    
+    \item \textbf{Аналитический уровень}
+    \begin{itemize}
+        \item Kubernetes HPA для автомасштабирования подов
+        \item ClickHouse sharding для распределения данных
+        \item Kafka партиционирование для параллельной обработки
+    \end{itemize}
+    
+    \item \textbf{Уровень машинного обучения}
+    \begin{itemize}
+        \item GPU кластеры для параллельного обучения
+        \item Model serving replicas с load balancing
+        \item Распределенное хранилище features
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Рекомендации по оптимизации}
+
+\subsubsection{Краткосрочные (1-3 месяца)}
+\begin{itemize}
+    \item Внедрение Redis Cluster для распределенного кэширования
+    \item Оптимизация SQL запросов и добавление индексов
+    \item Настройка connection pooling для всех БД
+    \item Включение HTTP/2 и gRPC где возможно
+\end{itemize}
+
+\subsubsection{Среднесрочные (3-6 месяцев)}
+\begin{itemize}
+    \item Миграция на ClickHouse Cloud для автомасштабирования
+    \item Внедрение service mesh (Istio) для оптимизации сетевого взаимодействия
+    \item Переход на event-driven архитектуру с Apache Pulsar
+    \item Внедрение edge caching через CDN
+\end{itemize}
+
+\subsubsection{Долгосрочные (6-12 месяцев)}
+\begin{itemize}
+    \item Multi-region deployment для глобальной доступности
+    \item Переход на serverless для непостоянных нагрузок
+    \item Внедрение blockchain-specific оптимизаций (custom indexing)
+    \item ML модели на edge для сверхнизкой задержки
+\end{itemize}
+
+\section{Заключение}
+
+Архитектура платформы DEFIMON спроектирована с учетом требований высокой производительности, масштабируемости и надежности. Трехуровневая структура обеспечивает четкое разделение ответственности и позволяет независимо масштабировать каждый компонент системы.
+
+Ключевые архитектурные решения:
+\begin{itemize}
+    \item Использование Rust для критичных по производительности компонентов
+    \item Разделение на специализированные пулы инфраструктуры
+    \item Применение event-driven подхода для real-time обработки
+    \item Комбинация различных типов БД для оптимального хранения данных
+    \item Горизонтальное масштабирование на всех уровнях
+\end{itemize}
+
+Система готова к обработке растущих объемов данных DeFi экосистемы и предоставляет надежную основу для дальнейшего развития функциональности.
+
+\end{document}

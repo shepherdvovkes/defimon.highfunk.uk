@@ -1,0 +1,625 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{geometry}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\geometry{
+    a4paper,
+    left=2cm,
+    right=2cm,
+    top=2cm,
+    bottom=2cm
+}
+
+% TikZ стили для UML диаграмм
+\tikzset{
+    component/.style={
+        rectangle,
+        draw=black,
+        thick,
+        minimum width=2.5cm,
+        minimum height=1.2cm,
+        text width=2.3cm,
+        align=center,
+        fill=blue!10,
+        rounded corners=3pt
+    },
+    service/.style={
+        rectangle,
+        draw=black,
+        thick,
+        minimum width=2.5cm,
+        minimum height=1.2cm,
+        text width=2.3cm,
+        align=center,
+        fill=green!10,
+        rounded corners=3pt
+    },
+    database/.style={
+        cylinder,
+        draw=black,
+        thick,
+        minimum width=2cm,
+        minimum height=1.5cm,
+        shape border rotate=90,
+        fill=yellow!10
+    },
+    ml/.style={
+        rectangle,
+        draw=black,
+        thick,
+        minimum width=2.5cm,
+        minimum height=1.2cm,
+        text width=2.3cm,
+        align=center,
+        fill=red!10,
+        rounded corners=3pt
+    },
+    arrow/.style={
+        ->,
+        thick,
+        >=stealth
+    },
+    flow/.style={
+        rectangle,
+        draw=black,
+        thick,
+        minimum width=2cm,
+        minimum height=0.8cm,
+        text width=1.8cm,
+        align=center,
+        fill=orange!10,
+        rounded corners=3pt
+    }
+}
+
+\title{Скалпинг на волатильности - Архитектурная документация}
+\author{DEFIMON Platform}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Введение}
+
+\subsection{Описание стратегии}
+Скалпинг на волатильности - это высокочастотная торговая стратегия, которая использует машинное обучение для выявления аномальных движений рынка (flash crashes, внезапные всплески волатильности) и входа в краткосрочные позиции.
+
+\subsection{Ключевые характеристики}
+\begin{itemize}
+    \item \textbf{Временной горизонт}: Секунды - минуты
+    \item \textbf{Потенциал доходности}: 5-20\% в день на волатильных рынках
+    \textbf{Риски}: Высокие комиссии, быстрые развороты тренда
+    \item \textbf{Требования к инфраструктуре}: Сверхнизкая латентность, высокая пропускная способность
+\end{itemize}
+
+\section{Анализ необходимых данных}
+
+\subsection{Рыночные данные}
+\begin{itemize}
+    \item \textbf{Ценовые данные}: Тики, свечи (1s, 5s, 1m), OHLCV
+    \item \textbf{Объемы}: Реальные объемы торгов, агрегированные по временным интервалам
+    \item \textbf{Order Book}: Глубина рынка, спреды bid-ask, размеры ордеров
+    \item \textbf{Волатильность}: Историческая и имплицитная волатильность
+\end{itemize}
+
+\subsection{Технические индикаторы}
+\begin{itemize}
+    \item \textbf{Волатильность}: ATR, Bollinger Bands, Historical Volatility
+    \item \textbf{Моментум}: RSI, MACD, Stochastic Oscillator
+    \item \textbf{Объем}: Volume Profile, OBV, VWAP
+    \item \textbf{Тренд}: Moving Averages, ADX, Parabolic SAR
+\end{itemize}
+
+\subsection{Макроэкономические данные}
+\begin{itemize}
+    \item \textbf{Новости}: Экономические календари, FOMC решения
+    \item \textbf{Корреляции}: Взаимосвязи между активами, секторами
+    \item \textbf{Ликвидность}: Показатели рыночной ликвидности
+\end{itemize}
+
+\subsection{Источники данных}
+\begin{itemize}
+    \item \textbf{WebSocket}: Real-time потоки от бирж (Binance, Coinbase, Kraken)
+    \item \textbf{REST API}: Исторические данные, метаданные
+    \item \textbf{Новостные API}: Bloomberg, Reuters, Twitter
+    \item \textbf{Индексы}: VIX, страхование от волатильности
+\end{itemize}
+
+\subsection{Требования к качеству данных}
+\begin{itemize}
+    \item \textbf{Латентность}: < 1ms для критических данных
+    \item \textbf{Точность}: 99.99\% корректности
+    \item \textbf{Полнота}: 100\% покрытие торговых сессий
+    \item \textbf{Надежность}: 99.9\% uptime
+    \item \textbf{Консистентность}: Синхронизация временных меток
+\end{itemize}
+
+\section{Детальная стратегия скалпинга на волатильности}
+
+\subsection{Принцип работы стратегии}
+\begin{enumerate}
+    \item \textbf{Мониторинг}: Постоянное отслеживание рыночных данных в реальном времени
+    \item \textbf{Анализ}: ML-модель выявляет аномалии и паттерны волатильности
+    \item \textbf{Сигнал}: Генерация торговых сигналов при обнаружении возможностей
+    \item \textbf{Исполнение}: Быстрое открытие позиций через API бирж
+    \item \textbf{Управление рисками}: Автоматическое закрытие позиций по стоп-лоссам
+\end{enumerate}
+
+\subsection{Типы скалпинга на волатильности}
+\begin{itemize}
+    \item \textbf{Flash Crash Scalping}: Вход при резких падениях с быстрым отскоком
+    \item \textbf{Volatility Breakout}: Торговля на прорывах уровней волатильности
+    \item \textbf{Mean Reversion}: Использование возврата к среднему значению
+    \item \textbf{News-Based}: Реакция на внезапные новости и события
+\end{itemize}
+
+\subsection{Алгоритмы и логика}
+\begin{lstlisting}[language=Python, basicstyle=\small]
+# Псевдокод для выявления аномалий волатильности
+def detect_volatility_anomaly(price_data, volume_data):
+    # 1. Расчет текущей волатильности
+    current_vol = calculate_rolling_volatility(price_data, window=20)
+    
+    # 2. ML-модель Isolation Forest
+    anomaly_score = isolation_forest.predict(current_vol)
+    
+    # 3. Проверка объема
+    volume_spike = detect_volume_spike(volume_data)
+    
+    # 4. Анализ order book
+    order_book_imbalance = analyze_order_book()
+    
+    # 5. Генерация сигнала
+    if anomaly_score > threshold and volume_spike and order_book_imbalance:
+        return generate_trade_signal()
+    
+    return None
+
+# Псевдокод для исполнения сделок
+def execute_scalping_trade(signal):
+    # 1. Расчет размера позиции
+    position_size = calculate_position_size(signal.strength)
+    
+    # 2. Проверка ликвидности
+    if not check_liquidity(position_size):
+        return False
+    
+    # 3. Размещение ордера
+    order = place_market_order(signal.side, position_size)
+    
+    # 4. Установка стоп-лосса
+    set_stop_loss(order, signal.stop_loss)
+    
+    # 5. Мониторинг позиции
+    monitor_position(order)
+\end{lstlisting}
+
+\subsection{Параметры стратегии}
+\begin{itemize}
+    \item \textbf{Минимальная волатильность}: 2-5\% для входа в позицию
+    \item \textbf{Максимальный размер позиции}: 1-5\% от капитала
+    \textbf{Стоп-лосс}: 0.5-2\% от цены входа
+    \item \textbf{Тейк-профит}: 1-3\% от цены входа
+    \item \textbf{Максимальное время удержания}: 5-30 минут
+    \item \textbf{Максимальная просадка}: 10-15\% от капитала
+\end{itemize}
+
+\subsection{Поведение системы в разных условиях}
+
+\subsubsection{Нормальные рыночные условия}
+\begin{itemize}
+    \item \textbf{Волатильность}: 10-25\% годовых
+    \item \textbf{Частота сигналов}: 5-15 в день
+    \item \textbf{Успешность}: 60-70\%
+    \item \textbf{Средняя прибыль}: 0.5-1.5\% на сделку
+\end{itemize}
+
+\subsubsection{Высокая волатильность}
+\begin{itemize}
+    \item \textbf{Волатильность}: 25-50\% годовых
+    \item \textbf{Частота сигналов}: 20-40 в день
+    \item \textbf{Успешность}: 50-60\%
+    \item \textbf{Средняя прибыль}: 1-3\% на сделку
+    \textbf{Риски}: Увеличенные просадки, ложные сигналы
+\end{itemize}
+
+\subsubsection{Низкая волатильность}
+\begin{itemize}
+    \item \textbf{Волатильность}: 5-15\% годовых
+    \item \textbf{Частота сигналов}: 1-3 в день
+    \item \textbf{Успешность}: 70-80\%
+    \item \textbf{Средняя прибыль}: 0.3-0.8\% на сделку
+    \textbf{Риски}: Низкая доходность, высокие комиссии
+\end{itemize}
+
+\subsubsection{Кризисные условия}
+\begin{itemize}
+    \item \textbf{Волатильность}: 50-100\%+ годовых
+    \item \textbf{Частота сигналов}: 50-100+ в день
+    \item \textbf{Успешность}: 30-50\%
+    \item \textbf{Средняя прибыль}: 2-5\% на сделку
+    \textbf{Риски}: Экстремальные просадки, быстрые развороты
+\end{itemize}
+
+\section{Инфраструктурный уровень}
+
+\subsection{UML диаграмма компонентов}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.8, transform shape]
+    % Инфраструктурные компоненты
+    \node[component] (ws) at (0,0) {WebSocket\\Gateway};
+    \node[component] (api) at (3,0) {REST API\\Gateway};
+    \node[component] (load) at (6,0) {Load\\Balancer};
+    
+    % Сервисы обработки
+    \node[service] (stream) at (0,-2) {Stream\\Processor};
+    \node[service] (cache) at (3,-2) {Redis\\Cache};
+    \node[service] (queue) at (6,-2) {Message\\Queue};
+    
+    % Базы данных
+    \node[database] (clickhouse) at (0,-4) {ClickHouse\\(Time Series)};
+    \node[database] (postgres) at (3,-4) {PostgreSQL\\(Metadata)};
+    \node[database] (redis) at (6,-4) {Redis\\(Hot Data)};
+    
+    % Соединения
+    \draw[arrow] (ws) -- (stream);
+    \draw[arrow] (api) -- (stream);
+    \draw[arrow] (load) -- (stream);
+    \draw[arrow] (stream) -- (cache);
+    \draw[arrow] (stream) -- (queue);
+    \draw[arrow] (stream) -- (clickhouse);
+    \draw[arrow] (cache) -- (redis);
+    \draw[arrow] (queue) -- (postgres);
+    
+    % Подписи
+    \node[above] at (0,0.8) {\small \textbf{Data Ingestion}};
+    \node[above] at (3,0.8) {\small \textbf{Processing}};
+    \node[above] at (6,0.8) {\small \textbf{Storage}};
+\end{tikzpicture}
+\end{center}
+
+\subsection{Ключевые компоненты}
+
+\subsubsection{WebSocket Gateway}
+\begin{itemize}
+    \item \textbf{Назначение}: Прием real-time данных от бирж
+    \item \textbf{Технологии}: FastAPI WebSocket, asyncio
+    \item \textbf{Производительность}: 100,000+ сообщений/сек
+    \item \textbf{Масштабирование}: Горизонтальное через Kubernetes
+\end{itemize}
+
+\subsubsection{Stream Processor}
+\begin{itemize}
+    \item \textbf{Назначение}: Обработка потоковых данных
+    \item \textbf{Технологии}: Apache Kafka, Apache Flink
+    \item \textbf{Производительность}: < 1ms latency
+    \item \textbf{Масштабирование}: Автоматическое по нагрузке
+\end{itemize}
+
+\subsubsection{ClickHouse}
+\begin{itemize}
+    \item \textbf{Назначение}: Хранение временных рядов
+    \item \textbf{Оптимизация}: Columnar storage, compression
+    \item \textbf{Производительность}: 1M+ запросов/сек
+    \item \textbf{Масштабирование}: Sharding, replication
+\end{itemize}
+
+\section{Аналитический уровень}
+
+\subsection{UML диаграмма компонентов}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.8, transform shape]
+    % Аналитические компоненты
+    \node[service] (calc) at (0,0) {Volatility\\Calculator};
+    \node[service] (indicator) at (3,0) {Technical\\Indicators};
+    \node[service] (correlation) at (6,0) {Correlation\\Analyzer};
+    
+    % Обработка данных
+    \node[service] (aggregator) at (0,-2) {Data\\Aggregator};
+    \node[service] (normalizer) at (3,-2) {Data\\Normalizer};
+    \node[service] (validator) at (6,-2) {Data\\Validator};
+    
+    % Аналитические сервисы
+    \node[service] (pattern) at (0,-4) {Pattern\\Recognition};
+    \node[service] (risk) at (3,-4) {Risk\\Manager};
+    \node[service] (backtest) at (6,-4) {Backtesting\\Engine};
+    
+    % Соединения
+    \draw[arrow] (calc) -- (aggregator);
+    \draw[arrow] (indicator) -- (normalizer);
+    \draw[arrow] (correlation) -- (validator);
+    \draw[arrow] (aggregator) -- (pattern);
+    \draw[arrow] (normalizer) -- (risk);
+    \draw[arrow] (validator) -- (backtest);
+    
+    % Подписи
+    \node[above] at (0,0.8) {\small \textbf{Calculation}};
+    \node[above] at (3,0.8) {\small \textbf{Processing}};
+    \node[above] at (6,0.8) {\small \textbf{Analysis}};
+\end{tikzpicture}
+\end{center}
+
+\subsection{Ключевые компоненты}
+
+\subsubsection{Volatility Calculator}
+\begin{itemize}
+    \item \textbf{Методы}: Historical, Implied, Realized volatility
+    \item \textbf{Временные окна}: 1m, 5m, 15m, 1h, 1d
+    \item \textbf{Производительность}: < 100ms расчет
+    \item \textbf{Оптимизация}: Vectorized operations, caching
+\end{itemize}
+
+\subsubsection{Technical Indicators}
+\begin{itemize}
+    \item \textbf{Волатильность}: ATR, Bollinger Bands, Keltner Channels
+    \item \textbf{Моментум}: RSI, MACD, Stochastic, Williams \%R
+    \item \textbf{Объем}: VWAP, Volume Profile, Money Flow Index
+    \item \textbf{Производительность}: Batch processing, parallel execution
+\end{itemize}
+
+\subsubsection{Risk Manager}
+\begin{itemize}
+    \item \textbf{Позиционный риск}: VaR, Expected Shortfall
+    \item \textbf{Рыночный риск}: Stress testing, scenario analysis
+    \item \textbf{Операционный риск}: Circuit breakers, limits
+    \item \textbf{Производительность}: Real-time monitoring, alerts
+\end{itemize}
+
+\section{Уровень машинного обучения}
+
+\subsection{UML диаграмма компонентов}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.8, transform shape]
+    % ML компоненты
+    \node[ml] (anomaly) at (0,0) {Anomaly\\Detection};
+    \node[ml] (prediction) at (3,0) {Price\\Prediction};
+    \node[ml] (classification) at (6,0) {Signal\\Classification};
+    
+    % Модели
+    \node[ml] (isolation) at (0,-2) {Isolation\\Forest};
+    \node[ml] (lstm) at (3,-2) {LSTM\\Network};
+    \node[ml] (ensemble) at (6,-2) {Ensemble\\Models};
+    
+    % Обучение и валидация
+    \node[ml] (training) at (0,-4) {Model\\Training};
+    \node[ml] (validation) at (3,-4) {Cross\\Validation};
+    \node[ml] (monitoring) at (6,-4) {Model\\Monitoring};
+    
+    % Соединения
+    \draw[arrow] (anomaly) -- (isolation);
+    \draw[arrow] (prediction) -- (lstm);
+    \draw[arrow] (classification) -- (ensemble);
+    \draw[arrow] (isolation) -- (training);
+    \draw[arrow] (lstm) -- (validation);
+    \draw[arrow] (ensemble) -- (monitoring);
+    
+    % Подписи
+    \node[above] at (0,0.8) {\small \textbf{Detection}};
+    \node[above] at (3,0.8) {\small \textbf{Prediction}};
+    \node[above] at (6,0.8) {\small \textbf{Classification}};
+\end{tikzpicture}
+\end{center}
+
+\subsection{Ключевые компоненты}
+
+\subsubsection{Anomaly Detection}
+\begin{itemize}
+    \item \textbf{Алгоритмы}: Isolation Forest, One-Class SVM, Autoencoder
+    \item \textbf{Признаки}: Price changes, volume spikes, order book imbalance
+    \item \textbf{Производительность}: < 10ms inference
+    \item \textbf{Точность}: 95\%+ precision, 90\%+ recall
+\end{itemize}
+
+\subsubsection{Price Prediction}
+\begin{itemize}
+    \item \textbf{Модели}: LSTM, GRU, Transformer
+    \textbf{Временные горизонты}: 1s, 5s, 15s, 1m
+    \item \textbf{Признаки}: Technical indicators, market microstructure
+    \item \textbf{Производительность}: < 50ms inference
+\end{itemize}
+
+\subsubsection{Signal Classification}
+\begin{itemize}
+    \item \textbf{Классы}: Strong Buy, Buy, Hold, Sell, Strong Sell
+    \item \textbf{Модели}: Random Forest, XGBoost, Neural Networks
+    \item \textbf{Признаки}: ML predictions, technical indicators
+    \item \textbf{Производительность}: < 20ms inference
+\end{itemize}
+
+\section{Функциональная диаграмма}
+
+\subsection{Схема работы стратегии}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.7, transform shape]
+    % Основные блоки
+    \node[flow] (start) at (0,0) {Start\\Monitoring};
+    \node[flow] (data) at (3,0) {Data\\Collection};
+    \node[flow] (analysis) at (6,0) {ML\\Analysis};
+    
+    % Обработка
+    \node[flow] (signal) at (0,-2) {Signal\\Generation};
+    \node[flow] (validation) at (3,-2) {Risk\\Validation};
+    \node[flow] (execution) at (6,-2) {Trade\\Execution};
+    
+    % Управление
+    \node[flow] (monitor) at (0,-4) {Position\\Monitoring};
+    \node[flow] (close) at (3,-4) {Position\\Closing};
+    \node[flow] (update) at (6,-4) {Model\\Update};
+    
+    % Соединения
+    \draw[arrow] (start) -- (data);
+    \draw[arrow] (data) -- (analysis);
+    \draw[arrow] (analysis) -- (signal);
+    \draw[arrow] (signal) -- (validation);
+    \draw[arrow] (validation) -- (execution);
+    \draw[arrow] (execution) -- (monitor);
+    \draw[arrow] (monitor) -- (close);
+    \draw[arrow] (close) -- (update);
+    \draw[arrow] (update) -- (start);
+    
+    % Подписи циклов
+    \node[right] at (7,0) {\small \textbf{Detection Cycle}};
+    \node[right] at (7,-2) {\small \textbf{Execution Cycle}};
+    \node[right] at (7,-4) {\small \textbf{Learning Cycle}};
+\end{tikzpicture}
+\end{center}
+
+\subsection{Описание циклов}
+
+\subsubsection{Detection Cycle (1-5ms)}
+\begin{enumerate}
+    \item \textbf{Start Monitoring}: Инициализация мониторинга
+    \item \textbf{Data Collection}: Сбор рыночных данных
+    \item \textbf{ML Analysis}: Анализ через ML-модели
+\end{enumerate}
+
+\subsubsection{Execution Cycle (5-50ms)}
+\begin{enumerate}
+    \item \textbf{Signal Generation}: Генерация торговых сигналов
+    \textbf{Risk Validation}: Проверка рисков
+    \item \textbf{Trade Execution}: Исполнение сделок
+\end{enumerate}
+
+\subsubsection{Learning Cycle (1-5min)}
+\begin{enumerate}
+    \item \textbf{Position Monitoring}: Мониторинг открытых позиций
+    \item \textbf{Position Closing}: Закрытие позиций
+    \textbf{Model Update}: Обновление ML-моделей
+\end{enumerate}
+
+\section{Анализ узких мест и производительности}
+
+\subsection{Критические узкие места}
+
+\subsubsection{Латентность данных}
+\begin{itemize}
+    \item \textbf{WebSocket}: < 1ms от биржи до системы
+    \item \textbf{Обработка}: < 5ms для критических операций
+    \item \textbf{Исполнение}: < 10ms от сигнала до ордера
+    \item \textbf{Общая задержка}: < 20ms end-to-end
+\end{itemize}
+
+\subsubsection{Пропускная способность}
+\begin{itemize}
+    \item \textbf{Входящие данные}: 1M+ сообщений/сек
+    \item \textbf{Обработка}: 100K+ событий/сек
+    \item \textbf{Хранение}: 10GB+ данных/день
+    \item \textbf{Вывод}: 10K+ ордеров/сек
+\end{itemize}
+
+\subsubsection{Масштабируемость}
+\begin{itemize}
+    \item \textbf{Горизонтальное}: Kubernetes auto-scaling
+    \item \textbf{Вертикальное}: Оптимизация ресурсов
+    \item \textbf{Географическое}: Multi-region deployment
+    \item \textbf{Временное}: Load balancing по времени
+\end{itemize}
+
+\subsection{Оптимизации производительности}
+
+\subsubsection{Инфраструктурные}
+\begin{itemize}
+    \item \textbf{Сеть}: Low-latency connections, colocation
+    \item \textbf{Вычисления}: GPU acceleration, vectorization
+    \item \textbf{Память}: In-memory processing, caching
+    \item \textbf{Хранение}: SSD arrays, compression
+\end{itemize}
+
+\subsubsection{Алгоритмические}
+\begin{itemize}
+    \item \textbf{ML}: Batch inference, model quantization
+    \item \textbf{Обработка}: Stream processing, parallel execution
+    \item \textbf{База данных}: Query optimization, indexing
+    \item \textbf{Кэширование}: Multi-level cache hierarchy
+\end{itemize}
+
+\subsubsection{Архитектурные}
+\begin{itemize}
+    \item \textbf{Микросервисы}: Event-driven architecture
+    \item \textbf{Асинхронность}: Non-blocking I/O, async/await
+    \item \textbf{Очереди}: Message queuing, backpressure handling
+    \item \textbf{Мониторинг}: Real-time metrics, alerting
+\end{itemize}
+
+\section{Масштабирование и развертывание}
+
+\subsection{Архитектура развертывания}
+
+\subsubsection{Kubernetes Cluster}
+\begin{itemize}
+    \item \textbf{Master nodes}: 3+ для высокой доступности
+    \item \textbf{Worker nodes}: Auto-scaling 10-100+
+    \item \textbf{Load balancing}: Ingress controllers, service mesh
+    \item \textbf{Monitoring}: Prometheus, Grafana, Jaeger
+\end{itemize}
+
+\subsubsection{Multi-Region Deployment}
+\begin{itemize}
+    \item \textbf{Primary}: Основной регион (ближайший к биржам)
+    \item \textbf{Secondary}: Резервный регион для DR
+    \item \textbf{Global}: CDN для статических ресурсов
+    \item \textbf{Sync}: Real-time синхронизация данных
+\end{itemize}
+
+\subsection{Мониторинг и алертинг}
+
+\subsubsection{Метрики производительности}
+\begin{itemize}
+    \item \textbf{Латентность}: P50, P95, P99 percentiles
+    \item \textbf{Пропускная способность}: TPS, QPS, throughput
+    \item \textbf{Ресурсы}: CPU, Memory, Network, Disk I/O
+    \item \textbf{Бизнес}: P&L, win rate, Sharpe ratio
+\end{itemize}
+
+\subsubsection{Система алертов}
+\begin{itemize}
+    \item \textbf{Критические}: Latency > 20ms, errors > 1\%
+    \textbf{Предупреждения}: Latency > 10ms, errors > 0.1\%
+    \item \textbf{Информационные}: Performance degradation, capacity alerts
+    \item \textbf{Автоматизация}: Auto-scaling, circuit breakers
+\end{itemize}
+
+\section{Заключение}
+
+\subsection{Ключевые выводы}
+\begin{enumerate}
+    \item \textbf{Производительность}: Критически важна для скалпинга
+    \item \textbf{ML-модели}: Isolation Forest эффективен для аномалий
+    \item \textbf{Инфраструктура}: Требует специализированных решений
+    \item \textbf{Риск-менеджмент}: Автоматизация обязательна
+\end{enumerate}
+
+\subsection{Рекомендации по внедрению}
+\begin{enumerate}
+    \item \textbf{Поэтапное развертывание}: Начните с одного актива
+    \item \textbf{Тестирование}: Backtesting + paper trading
+    \item \textbf{Мониторинг}: Real-time dashboards + alerts
+    \item \textbf{Оптимизация}: Continuous performance tuning
+\end{enumerate}
+
+\subsection{Будущие улучшения}
+\begin{enumerate}
+    \item \textbf{AI/ML}: Более сложные модели, reinforcement learning
+    \item \textbf{Инфраструктура}: Edge computing, quantum computing
+    \textbf{Данные}: Alternative data sources, sentiment analysis
+    \item \textbf{Риски}: Advanced risk models, stress testing
+\end{enumerate}
+
+\end{document}
