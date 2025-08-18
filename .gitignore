@@ -34,6 +34,32 @@ Cargo.lock
 *.dll
 *.exe
 
+# Ethereum blockchain data
+**/geth-data/
+**/lighthouse-data/
+**/beacon/
+**/chaindata/
+**/blobpool/
+**/nodes/
+**/ancient/
+**/triedb/
+**/*.bag
+**/*.ldb
+**/*.sst
+**/*.cdat
+**/*.cidx
+**/*.rdat
+**/*.ridx
+**/*.meta
+**/jwtsecret
+**/jwtsecret.raw
+**/jwtsecret.hex
+**/nodekey
+**/transactions.rlp
+**/enr.dat
+**/key
+**/metadata
+
 # Environment variables
 .env
 .env.local
