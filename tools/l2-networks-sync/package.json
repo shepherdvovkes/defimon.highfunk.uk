@@ -1,28 +1,45 @@
 {
-  "name": "l2-networks-sync",
+  "name": "defimon-l2-networks-sync",
   "version": "1.0.0",
-  "description": "Tool for synchronizing Ethereum L2 networks from geth and lighthouse nodes",
-  "main": "index.js",
+  "description": "L2 Networks Synchronization Tool for Defimon - Syncs L2 networks via Beacon Chain API",
+  "main": "sync-l2-networks.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "sync": "node index.js sync",
-    "list": "node index.js list",
-    "search": "node index.js search",
-    "test": "node test.js"
+    "start": "node sync-l2-networks.js",
+    "sync": "node sync-l2-networks.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node --watch sync-l2-networks.js",
+    "validate": "RUN_VALIDATION=true node sync-l2-networks.js"
   },
-  "keywords": ["ethereum", "l2", "networks", "sync", "geth", "lighthouse"],
+  "keywords": [
+    "ethereum",
+    "l2",
+    "rollups",
+    "beacon-chain",
+    "defimon",
+    "blockchain",
+    "networks",
+    "synchronization"
+  ],
   "author": "Defimon Team",
   "license": "MIT",
   "dependencies": {
-    "pg": "^8.11.3",
-    "dotenv": "^16.3.1",
-    "commander": "^11.1.0",
-    "chalk": "^5.3.0",
-    "ora": "^7.0.1",
-    "axios": "^1.6.0"
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
-  }
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/defimon/defimon.highfunk.uk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/defimon/defimon.highfunk.uk/issues"
+  },
+  "homepage": "https://github.com/defimon/defimon.highfunk.uk#readme"
 }

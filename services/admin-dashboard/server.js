@@ -16,6 +16,9 @@ const io = socketIo(server, {
   }
 });
 
+// Import routes
+const l2NetworksRouter = require('./routes/l2-networks');
+
 // Middleware
 app.use(helmet());
 app.use(compression());
@@ -89,6 +92,8 @@ async function checkAllServices() {
 }
 
 // API Routes
+app.use('/api/l2-networks', l2NetworksRouter);
+
 app.get('/api/health', async (req, res) => {
   try {
     const healthData = await checkAllServices();

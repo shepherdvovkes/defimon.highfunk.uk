@@ -1,0 +1,31 @@
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeAddress
+metadata:
+  name: defimon-frontend-ip
+  namespace: defimon
+spec:
+  location: ${GOOGLE_CLOUD_REGION}
+---
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeAddress
+metadata:
+  name: defimon-admin-ip
+  namespace: defimon
+spec:
+  location: ${GOOGLE_CLOUD_REGION}
+---
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeAddress
+metadata:
+  name: defimon-api-ip
+  namespace: defimon
+spec:
+  location: ${GOOGLE_CLOUD_REGION}
+---
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeAddress
+metadata:
+  name: defimon-ai-ip
+  namespace: defimon
+spec:
+  location: ${GOOGLE_CLOUD_REGION}

@@ -1,0 +1,10 @@
+<LifecycleConfiguration>
+  <Rule>
+    <Action>
+      <Delete/>
+    </Action>
+    <Condition>
+      <Age>365</Age>
+    </Condition>
+  </Rule>
+</LifecycleConfiguration>

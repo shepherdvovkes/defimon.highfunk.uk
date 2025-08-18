@@ -21,6 +21,19 @@ wheels/
 .installed.cfg
 *.egg
 
+# Rust build artifacts
+target/
+**/target/
+Cargo.lock
+*.rlib
+*.rmeta
+*.d
+*.o
+*.dylib
+*.so
+*.dll
+*.exe
+
 # Environment variables
 .env
 .env.local

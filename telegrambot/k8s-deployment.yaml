@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telegram-bot
+  labels:
+    app: telegram-bot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telegram-bot
+  template:
+    metadata:
+      labels:
+        app: telegram-bot
+    spec:
+      containers:
+      - name: telegram-bot
+        image: gcr.io/defimon-ethereum-node/telegram-bot:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: TELEGRAM_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: telegram-bot-secrets
+              key: telegram-bot-token
+        - name: GOOGLE_CLOUD_PROJECT_ID
+          value: "defimon-ethereum-node"
+        - name: ALLOWED_TELEGRAM_USERS
+          value: ""
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: telegram-bot-service
+  labels:
+    app: telegram-bot
+spec:
+  selector:
+    app: telegram-bot
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: telegram-bot-secrets
+type: Opaque
+data:
+  telegram-bot-token: ODI3ODgyNzE0NDpBQUd6NGF0LTV4dmxoc2Z4RllPRGIyWG0tTFRFOEc2d1RGMCA=  # Base64 encoded token

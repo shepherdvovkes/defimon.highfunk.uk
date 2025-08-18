@@ -98,11 +98,27 @@ export default function Home() {
               <h1 className="text-3xl font-bold text-gray-900">DeFi Analytics</h1>
               <p className="text-gray-600">Real-time DeFi protocol monitoring and analytics</p>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500">Last updated</p>
-              <p className="text-sm font-medium text-gray-900">
-                {marketOverview?.timestamp ? new Date(marketOverview.timestamp).toLocaleString() : 'N/A'}
-              </p>
+            <div className="flex items-center space-x-6">
+              <nav className="flex space-x-4">
+                <a
+                  href="/"
+                  className="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Dashboard
+                </a>
+                <a
+                  href="/tools"
+                  className="text-gray-500 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Tools
+                </a>
+              </nav>
+              <div className="text-right">
+                <p className="text-sm text-gray-500">Last updated</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {marketOverview?.timestamp ? new Date(marketOverview.timestamp).toLocaleString() : 'N/A'}
+                </p>
+              </div>
             </div>
           </div>
         </div>

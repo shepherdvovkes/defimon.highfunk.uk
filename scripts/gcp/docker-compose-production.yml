@@ -1,0 +1,160 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./logs:/var/log/nginx
+    depends_on:
+      - geth
+      - lighthouse
+      - grafana
+    networks:
+      - defimon-network
+
+  geth:
+    image: ethereum/client-go:latest
+    container_name: geth
+    restart: unless-stopped
+    expose:
+      - "8545"
+      - "8546"
+      - "8551"
+      - "30303"
+    volumes:
+      - /mnt/gcs-ethereum:/root/.ethereum
+      - /opt/defimon/geth-jwtsecret:/root/.ethereum/jwtsecret
+    command: >
+      --datadir /root/.ethereum
+      --http
+      --http.addr 0.0.0.0
+      --http.port 8545
+      --http.corsdomain "*"
+      --http.vhosts "*"
+      --ws
+      --ws.addr 0.0.0.0
+      --ws.port 8546
+      --ws.origins "*"
+      --authrpc.addr 0.0.0.0
+      --authrpc.port 8551
+      --authrpc.vhosts "*"
+      --authrpc.jwtsecret /root/.ethereum/jwtsecret
+      --syncmode snap
+      --cache 2048
+      --maxpeers 50
+      --metrics
+      --metrics.addr 0.0.0.0
+      --metrics.port 6060
+      --pprof
+      --pprof.addr 0.0.0.0
+      --pprof.port 6061
+      --verbosity 3
+    environment:
+      - TZ=UTC
+    networks:
+      - defimon-network
+
+  lighthouse:
+    image: sigp/lighthouse:latest
+    container_name: lighthouse
+    restart: unless-stopped
+    expose:
+      - "5052"
+      - "9000"
+    volumes:
+      - /mnt/gcs-lighthouse:/root/.lighthouse
+      - /opt/defimon/geth-jwtsecret:/root/.lighthouse/jwtsecret
+    command: >
+      lighthouse beacon_node
+      --datadir /root/.lighthouse
+      --network mainnet
+      --http
+      --http-address 0.0.0.0
+      --http-port 5052
+      --execution-jwt /root/.lighthouse/jwtsecret
+      --execution-endpoint http://geth:8551
+      --checkpoint-sync-url https://sync-mainnet.beaconcha.in
+      --metrics
+      --validator-monitor-auto
+      --target-peers 50
+      --max-skip-slots 5
+    environment:
+      - TZ=UTC
+    depends_on:
+      - geth
+    networks:
+      - defimon-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    expose:
+      - "9090"
+    volumes:
+      - /opt/defimon/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    environment:
+      - TZ=UTC
+    networks:
+      - defimon-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+      GF_SERVER_ROOT_URL: https://defimon.highfunk.uk
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      TZ: UTC
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - /opt/defimon/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - /opt/defimon/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+    networks:
+      - defimon-network
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    expose:
+      - "9100"
+    command:
+      - '--path.rootfs=/host'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /:/host:ro,rslave
+    environment:
+      - TZ=UTC
+    networks:
+      - defimon-network
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  defimon-network:
+    driver: bridge

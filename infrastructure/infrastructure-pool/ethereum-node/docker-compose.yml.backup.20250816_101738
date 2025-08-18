@@ -1,0 +1,74 @@
+
+
+services:
+  geth:
+    image: ethereum/client-go:latest
+    container_name: ethereum-geth
+    restart: unless-stopped
+    ports:
+      - "8545:8545"
+      - "8546:8546"
+      - "30303:30303"
+      - "30303:30303/udp"
+    volumes:
+      - ./geth-data:/root/.ethereum
+      - ./jwtsecret.raw:/root/.ethereum/jwtsecret:ro
+      - ./.env:/root/.env
+    command: >
+      --datadir /root/.ethereum
+      --http
+      --http.addr 0.0.0.0
+      --http.port 8545
+      --http.corsdomain "*"
+      --http.api eth,net,web3,debug,txpool,personal
+      --ws
+      --ws.addr 0.0.0.0
+      --ws.port 8546
+      --ws.api eth,net,web3,debug,txpool,personal
+      --authrpc.addr 0.0.0.0
+      --authrpc.port 8551
+      --authrpc.jwtsecret /root/.ethereum/jwtsecret
+      --syncmode snap
+      --cache 4096
+      --maxpeers 50
+      --metrics
+      --metrics.addr 0.0.0.0
+      --metrics.port 6060
+      --pprof
+      --pprof.addr 0.0.0.0
+      --pprof.port 6061
+    networks:
+      - ethereum-network
+
+  lighthouse:
+    image: sigp/lighthouse:latest
+    container_name: ethereum-lighthouse
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9000:9000/udp"
+      - "5052:5052"
+    volumes:
+      - ./lighthouse-data:/root/.lighthouse
+      - ./jwtsecret.hex:/root/.lighthouse/jwtsecret:ro
+      - ./.env:/root/.env
+    command: >
+      lighthouse beacon_node
+      --network mainnet
+      --datadir /root/.lighthouse
+      --execution-jwt /root/.lighthouse/jwtsecret
+      --execution-endpoint http://geth:8551
+      --http
+      --http-address 0.0.0.0
+      --http-port 5052
+      --checkpoint-sync-url https://sync-mainnet.beaconcha.in
+      --metrics
+      --validator-monitor-auto
+    depends_on:
+      - geth
+    networks:
+      - ethereum-network
+
+networks:
+  ethereum-network:
+    driver: bridge

@@ -1,0 +1,31 @@
+[Unit]
+Description=L2 Networks Synchronization Tool
+After=docker.service
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory={{TOOL_DIR}}
+ExecStart=/usr/bin/docker-compose -f {{TOOL_DIR}}/docker-compose.yml up -d
+ExecStop=/usr/bin/docker-compose -f {{TOOL_DIR}}/docker-compose.yml down
+ExecReload=/usr/bin/docker-compose -f {{TOOL_DIR}}/docker-compose.yml restart
+TimeoutStartSec=300
+TimeoutStopSec=60
+Restart=on-failure
+RestartSec=10
+
+# Environment variables
+Environment=NODE_ENV=production
+Environment=LOG_LEVEL=info
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths={{TOOL_DIR}} /var/log/l2-sync
+
+[Install]
+WantedBy=multi-user.target

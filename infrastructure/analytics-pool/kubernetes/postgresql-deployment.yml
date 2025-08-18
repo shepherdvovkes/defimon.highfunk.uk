@@ -1,0 +1,140 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgresql
+  namespace: analytics
+  labels:
+    app: postgresql
+    pool: analytics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresql
+  template:
+    metadata:
+      labels:
+        app: postgresql
+        pool: analytics
+    spec:
+      containers:
+      - name: postgresql
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "defi_analytics"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgresql-secrets
+              key: username
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgresql-secrets
+              key: password
+        - name: POSTGRES_INITDB_ARGS
+          value: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+        volumeMounts:
+        - name: postgresql-data
+          mountPath: /var/lib/postgresql/data
+        - name: postgresql-init
+          mountPath: /docker-entrypoint-initdb.d
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "1000m"
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - postgres
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - postgres
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: postgresql-data
+        persistentVolumeClaim:
+          claimName: postgresql-pvc
+      - name: postgresql-init
+        configMap:
+          name: postgresql-init
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-service
+  namespace: analytics
+spec:
+  selector:
+    app: postgresql
+  ports:
+  - protocol: TCP
+    port: 5432
+    targetPort: 5432
+  type: ClusterIP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgresql-pvc
+  namespace: analytics
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: hcloud-volumes
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgresql-init
+  namespace: analytics
+data:
+  init.sql: |
+    -- Initialize database schema
+    CREATE DATABASE IF NOT EXISTS defi_analytics;
+    \c defi_analytics;
+    
+    -- Create extensions
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+    
+    -- Create tables (basic structure)
+    CREATE TABLE IF NOT EXISTS protocols (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        chain VARCHAR(100) NOT NULL,
+        address VARCHAR(42),
+        tvl DECIMAL(20,2),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    
+    CREATE TABLE IF NOT EXISTS protocol_metrics (
+        id SERIAL PRIMARY KEY,
+        protocol_id INTEGER REFERENCES protocols(id),
+        metric_name VARCHAR(100) NOT NULL,
+        metric_value DECIMAL(20,2),
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    
+    -- Create indexes
+    CREATE INDEX IF NOT EXISTS idx_protocols_chain ON protocols(chain);
+    CREATE INDEX IF NOT EXISTS idx_protocol_metrics_timestamp ON protocol_metrics(timestamp);
+    CREATE INDEX IF NOT EXISTS idx_protocol_metrics_protocol ON protocol_metrics(protocol_id);
