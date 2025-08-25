@@ -44,7 +44,7 @@ import {
 } from 'lucide-react'
 
 // Import chart components
-import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart as RechartsPieChart, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import DataExportPanel from '../components/DataExportPanel'
 import AIQuestionInterface from '../components/AIQuestionInterface'
 

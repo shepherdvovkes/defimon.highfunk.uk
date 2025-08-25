@@ -7,7 +7,7 @@ import {
   FileText,
   FileSpreadsheet,
   FileJson,
-  FilePdf,
+  FileText as FilePdf,
   Calendar,
   Filter,
   Settings,
