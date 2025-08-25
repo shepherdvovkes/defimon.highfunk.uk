@@ -1,0 +1,530 @@
+= DEFIMON Project Documentation =
+
+== Project Overview ==
+
+'''DEFIMON''' (DeFi Analytics Platform) is a comprehensive platform for analytics and monitoring of DeFi protocols with AI/ML integration for predictions and risk assessment. The platform supports monitoring of over 50 L2 networks, Cosmos ecosystem, Polkadot parachains, and other blockchains.
+
+=== Key Features ===
+* '''Multi-blockchain support''': Ethereum, Cosmos, Polkadot, Bitcoin, Solana, StarkNet
+* '''L2 Networks''': Optimism, Arbitrum, Base, zkSync, Polygon zkEVM, Linea, Scroll and others
+* '''AI/ML Analytics''': Price prediction, risk assessment, anomaly detection
+* '''Real-time monitoring''': WebSocket updates, streaming data processing
+* '''Monitoring''': Prometheus, Grafana, administrative dashboard
+* '''Scalability''': Kubernetes, Google Cloud, microservice architecture
+
+== Main Architectural Documents ==
+
+=== Primary Architecture Documentation ===
+The main architectural documents for the DEFIMON project are stored in the `/pdfs` folder:
+
+* [[Media:defimon_architecture_overleaf.pdf|DEFIMON Architecture Overview (Primary)]]
+* [[Media:defimon_architecture_overleaf-2.pdf|DEFIMON Architecture Overview (Extended)]]
+
+These PDF documents contain the complete architectural specifications, system design, and technical implementation details for the entire platform.
+
+== System Architecture ==
+
+=== Architecture Overview ===
+The DEFIMON platform follows a layered microservice architecture with three main infrastructure pools:
+
+==== 1. Infrastructure Pool (Google Cloud Platform) ====
+* '''Purpose''': Ethereum nodes (Geth + Lighthouse), blockchain infrastructure
+* '''Provider''': Google Cloud Platform (GKE + VM instances)
+* '''Resources''': High-performance servers for blockchain synchronization
+* '''Storage''': 2TB+ for blockchain data
+
+==== 2. Analytics Pool (Hetzner Cloud) ====
+* '''Purpose''': Analytical APIs, data processing, databases
+* '''Provider''': Hetzner Cloud (Kubernetes)
+* '''Resources''': Optimized for analytics and data storage
+* '''Storage''': PostgreSQL + ClickHouse + Redis
+
+==== 3. ML Pool (TBD) ====
+* '''Purpose''': Machine learning, predictions, ML models
+* '''Provider''': To be determined
+* '''Resources''': GPU for training, CPU for inference
+* '''Storage''': Models, experiments, feature store
+
+=== Architecture Layers ===
+
+==== Presentation Layer ====
+* Web Dashboard (Next.js)
+* Mobile App (React Native)
+* API Documentation (Swagger)
+* Admin Dashboard (Node.js)
+
+==== API Gateway Layer ====
+* API Gateway (Kong/AWS API Gateway)
+* Authentication & Authorization
+* Rate Limiting
+* Request Routing
+* API Key Management
+* Caching
+* Monitoring
+
+==== Microservices Layer ====
+* Analytics API (Python/FastAPI)
+* AI/ML Service (Python)
+* Blockchain Node (Rust)
+* Data Ingestion (Python)
+
+==== Data Processing Layer ====
+* Stream Processing (Python)
+* Batch Processing (Apache Airflow)
+* ML Pipeline (MLflow)
+* Event Indexer (Rust)
+
+==== Data Layer ====
+* PostgreSQL (User data, metadata, configurations)
+* ClickHouse (Time series, analytics, logs)
+* Redis (Cache, sessions, rate limits)
+* S3/MinIO (Model storage, raw data, backups)
+
+== Technology Stack ==
+
+=== Frontend ===
+* '''Next.js 14''' - React framework with App Router
+* '''TypeScript''' - Typed JavaScript
+* '''Tailwind CSS''' - Utility-first CSS framework
+* '''Recharts''' - React charting library
+* '''Axios''' - HTTP client
+* '''Headless UI''' - Accessible UI components
+* '''Heroicons''' - SVG icons
+
+=== Backend Services ===
+* '''FastAPI''' - Modern Python web framework
+* '''Uvicorn''' - ASGI server
+* '''Pydantic''' - Data validation
+* '''SQLAlchemy''' - ORM for PostgreSQL
+* '''ClickHouse Connect''' - ClickHouse client
+* '''Redis''' - Caching and sessions
+* '''Prometheus Client''' - Metrics
+
+=== AI/ML ===
+* '''TensorFlow 2.13''' - Deep learning
+* '''Scikit-learn 1.3''' - Machine learning
+* '''NumPy 1.24''' - Numerical computing
+* '''Pandas 2.0''' - Data analysis
+* '''Matplotlib & Seaborn''' - Visualization
+* '''Joblib''' - Parallel processing
+
+=== Blockchain Node (Rust) ===
+* '''Web3''' - Ethereum client
+* '''Ethers''' - Ethereum library
+* '''Subxt''' - Substrate client
+* '''Tokio''' - Async runtime
+* '''SQLx''' - Async ORM
+* '''Redis''' - Caching
+* '''RDKafka''' - Kafka client
+* '''Tracing''' - Logging
+
+=== Infrastructure ===
+* '''Docker & Docker Compose''' - Containerization
+* '''Kubernetes''' - Container orchestration
+* '''Kong''' - API Gateway
+* '''PostgreSQL 15''' - Primary database
+* '''ClickHouse''' - Analytical database
+* '''Redis 7''' - Cache and queues
+* '''Apache Kafka''' - Stream processing
+* '''Prometheus''' - Monitoring
+* '''Grafana''' - Metrics visualization
+
+=== DevOps & Deployment ===
+* '''Google Cloud Platform''' - Cloud infrastructure
+* '''Linux Mint''' - Operating system
+* '''Nginx''' - Web server and load balancer
+* '''SSL/TLS''' - Encryption
+* '''Git''' - Version control system
+
+== Project Structure ==
+
+=== Directory Organization ===
+```
+defimon.highfunk.uk/
+├── frontend/                 # Next.js web application
+│   ├── app/                 # App Router (Next.js 14)
+│   ├── package.json         # Dependencies
+│   └── Dockerfile           # Containerization
+├── services/
+│   ├── analytics-api/       # FastAPI analytical service
+│   ├── ai-ml-service/       # Python AI/ML service
+│   ├── blockchain-node/     # Rust service for blockchain operations
+│   ├── data-ingestion/      # Data collection service
+│   ├── stream-processing/    # Stream data processing
+│   └── admin-dashboard/     # Node.js administrative dashboard
+├── infrastructure/           # Docker and configurations
+│   ├── docker-compose.yml   # Main compose file
+│   ├── kubernetes/          # K8s manifests
+│   ├── monitoring/          # Prometheus, Grafana
+│   ├── *.sql               # Database schemas
+│   └── kong.yml            # API Gateway configuration
+├── scripts/                 # Deployment scripts
+├── docs/                    # Documentation
+├── tools/                   # Utility tools
+├── mobile-app-flutter/      # Flutter mobile applications
+├── terraform/               # Infrastructure as Code
+├── telegrambot/             # Telegram bot service
+└── pdfs/                    # Main architectural documents
+```
+
+== Supported Blockchains ==
+
+=== Ethereum & L2 Networks ===
+* '''Ethereum Mainnet''' - Primary network
+* '''Optimism''' (Priority 10) - $850M TVL
+* '''Arbitrum One''' (Priority 10) - $2.1B TVL
+* '''Base''' (Priority 9) - $750M TVL
+* '''zkSync Era''' (Priority 9) - $650M TVL
+* '''Polygon zkEVM''' (Priority 9) - $45M TVL
+* '''StarkNet''' (Priority 8) - $180M TVL
+* '''Linea''' (Priority 8) - $120M TVL
+* '''Scroll''' (Priority 8) - $85M TVL
+* '''Mantle''' (Priority 7) - $45M TVL
+* And 40+ more L2 networks...
+
+=== Cosmos Ecosystem ===
+* '''Cosmos Hub''' - Primary network
+* '''Osmosis''' - DEX protocol
+* '''Injective''' - Financial applications
+* '''Celestia''' - Modular blockchain network
+* '''Sei''' - Trading network
+* '''Neutron''' - Smart contract platform
+* '''Stride''' - Liquid staking
+* '''Quicksilver''' - Interchain DeFi
+* '''Persistence''' - Enterprise DeFi
+* '''Agoric''' - JavaScript smart contracts
+* '''Evmos''' - EVM compatibility
+* '''Kava''' - DeFi platform
+
+=== Polkadot Ecosystem ===
+* '''Polkadot''' - Relay Chain
+* '''Kusama''' - Canary network
+* '''Westend''' - Testnet
+* '''Rococo''' - Parachain testnet
+* '''Moonbeam''' - EVM compatibility
+* '''Astar''' - Multi-VM platform
+
+=== Other Blockchains ===
+* '''Bitcoin''' - Primary network and Lightning Network
+* '''Solana''' - High-performance network
+* '''StarkNet''' - ZK-rollup
+
+== API Documentation ==
+
+=== Main Endpoints ===
+
+==== Analytics API (Port 8002) ====
+* `GET /api/protocols` - Protocol list
+* `GET /api/analytics/overview` - Market overview
+* `GET /api/protocols/{protocol}/metrics` - Protocol metrics
+* `GET /api/protocols/{protocol}/risk` - Risk assessment
+* `GET /api/networks/{network}/status` - Network status
+
+==== AI/ML Service (Port 8001) ====
+* `POST /api/predict/price` - Price prediction
+* `POST /api/analyze/risk` - Risk analysis
+* `GET /api/models/status` - ML model status
+* `POST /api/train/model` - Model training
+
+==== Blockchain Node (Port 8545) ====
+* `POST /` - Ethereum RPC
+* `GET /health` - Health check
+* `GET /metrics` - Node metrics
+
+=== Swagger UI ===
+* '''Analytics API''': http://localhost:8002/docs
+* '''AI/ML Service''': http://localhost:8001/docs
+
+== Monitoring & Observability ==
+
+=== Administrative Dashboard ===
+* '''URL''': http://localhost:8080
+* '''Features''': 
+  * Real-time monitoring of all services
+  * Log and metrics viewing
+  * Deployment management
+  * WebSocket updates every 10 seconds
+  * Data export
+
+=== Monitoring Tools ===
+* '''Grafana''': http://localhost:3001 (admin/admin)
+* '''Prometheus''': http://localhost:9090
+* '''Kong Admin''': http://localhost:8001
+
+=== Monitored Services ===
+* '''API Gateway''' (Kong) - Port 8001
+* '''Analytics API''' - Port 8002
+* '''AI/ML Service''' - Port 8001
+* '''Blockchain Node''' - Port 8545
+* '''PostgreSQL''' - Port 5432
+* '''ClickHouse''' - Port 8123
+* '''Redis''' - Port 6379
+* '''Kafka''' - Port 9092
+
+== Performance Characteristics ==
+
+=== Rust Components (blockchain-node) ===
+* '''Block processing''': ~1000 blocks/sec
+* '''Event parsing''': ~5000 events/sec
+* '''Node requests''': ~1000 RPC/sec
+* '''Memory''': ~500MB for blockchain-node
+* '''CPU''': 2-4 cores for full synchronization
+
+=== Python Services ===
+* '''FastAPI''': ~5000 requests/sec
+* '''ML inference''': ~100 predictions/sec
+* '''Stream processing''': ~10000 events/sec
+
+=== System Requirements ===
+* '''CPU''': 4+ cores (8+ for production)
+* '''RAM''': 8GB+ (16GB+ for production)
+* '''Disk''': 100GB+ SSD (500GB+ for node)
+* '''Network''': 100Mbps+ stable connection
+
+== Security ==
+
+=== Security Measures ===
+* '''Environment variables''' - All API keys and secrets
+* '''JWT tokens''' - User authentication
+* '''Rate limiting''' - Request limiting at API Gateway level
+* '''HTTPS''' - Encryption for all external connections
+* '''Docker isolation''' - Container isolation
+* '''Kubernetes RBAC''' - Role-based access in production
+
+== Deployment ==
+
+=== Local Development ===
+```bash
+# Start only basic services
+docker-compose -f infrastructure/docker-compose.yml up -d postgres redis kafka
+
+# Start frontend in development mode
+cd frontend && npm run dev
+
+# Start API services
+cd services/analytics-api && python -m uvicorn main:app --reload
+cd services/ai-ml-service && python -m uvicorn main:app --reload
+
+# Start Rust blockchain-node
+cd services/blockchain-node && cargo run
+```
+
+=== Production Deployment ===
+
+==== Linux Mint (Recommended) ====
+```bash
+./scripts/deploy-linux-mint.sh
+```
+
+==== Google Cloud Platform ====
+```bash
+./scripts/deploy-google-cloud.sh
+```
+
+==== Kubernetes ====
+```bash
+kubectl apply -f infrastructure/kubernetes/
+```
+
+=== Node Management ===
+```bash
+# Deploy node on separate server
+sudo ./scripts/deploy-node.sh
+
+# L2 network management
+./scripts/setup_l2.sh status    # Check status
+./scripts/setup_l2.sh logs      # View logs
+./scripts/setup_l2.sh restart   # Restart
+./scripts/setup_l2.sh clean     # Clean
+
+# System monitoring
+./scripts/system-monitor.sh
+```
+
+== Quick Start Guides ==
+
+=== Prerequisites ===
+* '''Docker & Docker Compose''' (version 2.0+)
+* '''Node.js 18+''' (for development)
+* '''Python 3.9+''' (for development)
+* '''Rust 1.70+''' (for blockchain-node)
+* '''Git'''
+* '''Minimum 8GB RAM''' (16GB recommended)
+* '''Minimum 50GB free space'''
+
+=== Installation & Setup ===
+
+==== 1. Repository Cloning ====
+```bash
+git clone <repository-url>
+cd defimon.highfunk.uk
+```
+
+==== 2. Environment Variables Setup ====
+```bash
+cp env.example .env
+# Edit .env file with your API keys
+```
+
+==== 3. System Launch ====
+
+'''Full deployment on Linux Mint (recommended):'''
+```bash
+chmod +x scripts/deploy-linux-mint.sh
+./scripts/deploy-linux-mint.sh
+```
+
+'''Quick start with L2 support:'''
+```bash
+chmod +x scripts/setup_l2.sh
+./scripts/setup_l2.sh
+```
+
+'''Standard launch:'''
+```bash
+chmod +x scripts/deploy.sh
+./scripts/deploy.sh
+```
+
+'''Admin dashboard only:'''
+```bash
+chmod +x scripts/start-admin-dashboard.sh
+./scripts/start-admin-dashboard.sh
+```
+
+==== 4. Health Check ====
+* '''Frontend''': http://localhost:3000
+* '''API Gateway''': http://localhost:8000
+* '''Analytics API''': http://localhost:8002/docs
+* '''AI/ML Service''': http://localhost:8001/docs
+* '''Admin Dashboard''': http://localhost:8080
+* '''Grafana''': http://localhost:3001 (admin/admin)
+* '''Prometheus''': http://localhost:9090
+
+== Infrastructure Pools ==
+
+=== Infrastructure Pool (Google Cloud Platform) ===
+* '''Purpose''': Ethereum nodes (Geth + Lighthouse), blockchain infrastructure
+* '''Provider''': Google Cloud Platform (GKE + VM instances)
+* '''Resources''': High-performance servers for blockchain synchronization
+* '''Storage''': 2TB+ for blockchain data
+
+==== Deployment ====
+```bash
+# GKE deployment
+cd infrastructure/infrastructure-pool/gke
+./scripts/GKE/deploy-gke-ethereum.sh
+
+# VM deployment
+cd infrastructure/infrastructure-pool/vm-instances
+./scripts/deploy-ethereum-gcp-production.sh
+```
+
+=== Analytics Pool (Hetzner Cloud) ===
+* '''Purpose''': Analytical APIs, data processing, databases
+* '''Provider''': Hetzner Cloud (Kubernetes)
+* '''Resources''': Optimized for analytics and data storage
+* '''Storage''': PostgreSQL + ClickHouse + Redis
+
+==== Deployment ====
+```bash
+# Connect to Hetzner server
+ssh vovkes@kraken.highfunk.uk
+
+# Create cluster
+cd infrastructure/analytics-pool/deployment
+./create-analytics-cluster.sh
+
+# Deploy services
+kubectl apply -f ../kubernetes/
+```
+
+=== ML Pool (TBD) ===
+* '''Purpose''': Machine learning, predictions, ML models
+* '''Provider''': To be determined
+* '''Resources''': GPU for training, CPU for inference
+* '''Storage''': Models, experiments, feature store
+
+== Database Schemas ==
+
+=== Core Schemas ===
+* [[Media:init.sql|Main Database Schema]]
+* [[Media:l2_schema.sql|L2 Networks Schema]]
+* [[Media:clickhouse_schema.sql|ClickHouse Analytics Schema]]
+* [[Media:cosmos_schema.sql|Cosmos Ecosystem Schema]]
+* [[Media:polkadot_schema.sql|Polkadot Ecosystem Schema]]
+
+== Mobile Applications ==
+
+=== Flutter Applications ===
+* '''Admin Monitor App''' - Administrative monitoring application
+* '''Admin Monitor App New''' - Enhanced administrative monitoring
+* '''DeFi Analytics App''' - Main DeFi analytics mobile application
+
+== Tools & Utilities ==
+
+=== L2 Networks Synchronization ===
+* '''Purpose''': Synchronization and monitoring of L2 networks
+* '''Features''': Network status monitoring, synchronization progress tracking
+
+=== System Scripts ===
+* '''Network optimization scripts''' - System network performance optimization
+* '''Monitor control scripts''' - Enhanced monitoring system management
+* '''Deployment scripts''' - Automated deployment and setup
+
+== Contributing ==
+
+=== Contribution Guidelines ===
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+== License ==
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+== Support ==
+
+* '''Issues''': Create an Issue for bugs or feature requests
+* '''Documentation''': `/docs` - Detailed documentation
+* '''Email''': support@defimon.com
+
+== Roadmap ==
+
+See [ROADMAP_NETWORK_EXPANSION.md](docs/ROADMAP_NETWORK_EXPANSION.md) for platform development plans.
+
+== Additional Resources ==
+
+=== Documentation Files ===
+* [[DEPLOYMENT_GUIDE.md|Deployment Guide]]
+* [[ENHANCED_MONITOR_README.md|Enhanced Monitor README]]
+* [[ENHANCED_MONITOR_FEATURES.md|Enhanced Monitor Features]]
+* [[INTEGRATION_GUIDE.md|Integration Guide]]
+* [[L2_SETUP.md|L2 Setup Guide]]
+* [[TOOLS_MANAGEMENT_README.md|Tools Management README]]
+* [[ADMIN_DASHBOARD_V2_UPGRADE_REPORT.md|Admin Dashboard V2 Upgrade Report]]
+
+=== Configuration Files ===
+* [[Media:docker-compose.yml|Docker Compose Configuration]]
+* [[Media:kong.yml|Kong API Gateway Configuration]]
+* [[Media:gcp.env|Google Cloud Platform Environment Variables]]
+
+---
+
+'''DeFi Analytics Platform''' - A powerful platform for analytics and monitoring of DeFi ecosystems with multi-blockchain architecture support and AI/ML capabilities.
+
+== References ==
+
+* [https://github.com/your-username/defimon.highfunk.uk|Project Repository]
+* [https://defimon.com|Official Website]
+* [https://docs.defimon.com|API Documentation]
+* [https://status.defimon.com|System Status]
+
+[[Category:DeFi]]
+[[Category:Blockchain]]
+[[Category:Analytics]]
+[[Category:Machine Learning]]
+[[Category:Infrastructure]]
+[[Category:Documentation]]

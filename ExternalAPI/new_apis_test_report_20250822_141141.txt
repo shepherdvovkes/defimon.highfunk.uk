@@ -1,0 +1,48 @@
+================================================================================
+NEW APIs TEST REPORT
+================================================================================
+Timestamp: 2025-08-22T14:11:36.844841
+
+Service: QUICKNODE
+----------------------------------------
+✗ Connectivity: FAILED - Unknown error
+✓ Get latest block number: SUCCESS (0.032s)
+✓ Get latest block info: SUCCESS (0.034s)
+✓ Get chain ID: SUCCESS (0.27s)
+✓ Get current gas price: SUCCESS (0.037s)
+✓ Get account balance: SUCCESS (0.033s)
+✓ Get network version: SUCCESS (0.034s)
+✓ Get client version: SUCCESS (0.032s)
+
+Service: BLAST
+----------------------------------------
+✗ Connectivity: FAILED - HTTPSConnectionPool(host='azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io', port=443): Max retries exceeded with url: /ping (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x103988050>: Failed to resolve 'azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ Get latest block number: FAILED - HTTPSConnectionPool(host='azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x103988190>: Failed to resolve 'azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ Get latest block info: FAILED - HTTPSConnectionPool(host='azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x103988a50>: Failed to resolve 'azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ Get chain ID: FAILED - HTTPSConnectionPool(host='azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x103988e10>: Failed to resolve 'azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ Get current gas price: FAILED - HTTPSConnectionPool(host='azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x1039891d0>: Failed to resolve 'azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ Get network version: FAILED - HTTPSConnectionPool(host='azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x103989590>: Failed to resolve 'azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io' ([Errno 8] nodename nor servname provided, or not known)"))
+
+Service: COINGECKO
+----------------------------------------
+✓ Connectivity: SUCCESS (0.31s)
+✓ Test API connectivity: SUCCESS (0.181s)
+✓ Get simple price data: SUCCESS (0.197s)
+✓ Get market data: SUCCESS (0.212s)
+✓ Get Bitcoin detailed data: SUCCESS (0.045s)
+
+Service: GITHUB
+----------------------------------------
+✗ Connectivity: FAILED - Unknown error
+✓ Get authenticated user information: SUCCESS (1.283s)
+✓ Get user repositories: SUCCESS (0.327s)
+✓ Check API rate limits: SUCCESS (0.184s)
+✓ Search repositories: SUCCESS (1.031s)
+
+================================================================================
+SUMMARY
+================================================================================
+Total Tests: 24
+Passed: 16
+Failed: 8
+Success Rate: 66.7%

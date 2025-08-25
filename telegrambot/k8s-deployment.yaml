@@ -1,0 +1,325 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: telegram-bot
+  labels:
+    name: telegram-bot
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: telegram-bot-sa
+  namespace: telegram-bot
+  annotations:
+    iam.gke.io/gcp-service-account: telegram-bot@defimon-ethereum-node.iam.gserviceaccount.com
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telegram-bot-config
+  namespace: telegram-bot
+data:
+  GOOGLE_CLOUD_PROJECT_ID: "defimon-ethereum-node"
+  ENABLE_CLUSTER_MONITORING: "true"
+  ENABLE_NODE_MONITORING: "true"
+  ENABLE_RESOURCE_MONITORING: "true"
+  ENABLE_ALERTING: "true"
+  CLUSTER_CHECK_INTERVAL: "300"
+  NODE_CHECK_INTERVAL: "300"
+  RESOURCE_CHECK_INTERVAL: "300"
+  CPU_USAGE_THRESHOLD: "80"
+  MEMORY_USAGE_THRESHOLD: "80"
+  DISK_USAGE_THRESHOLD: "85"
+  NODE_ERROR_THRESHOLD: "1"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: telegram-bot-secrets
+  namespace: telegram-bot
+type: Opaque
+data:
+  TELEGRAM_BOT_TOKEN: "ODI3ODgyNzE0NDpBQUd6NGF0LTV4dmxoc2Z4RllPRGIyWG0tTFRFOEc2d1RGMCA="  # Base64 encoded
+  TELEGRAM_CHAT_ID: "ODAzMzU2MzE0NQ=="  # Base64 encoded
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telegram-bot
+  namespace: telegram-bot
+  labels:
+    app: telegram-bot
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telegram-bot
+  template:
+    metadata:
+      labels:
+        app: telegram-bot
+        version: v1
+    spec:
+      serviceAccountName: telegram-bot-sa
+      containers:
+      - name: telegram-bot
+        image: gcr.io/defimon-ethereum-node/telegram-bot:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: GOOGLE_CLOUD_PROJECT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: GOOGLE_CLOUD_PROJECT_ID
+        - name: TELEGRAM_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: telegram-bot-secrets
+              key: TELEGRAM_BOT_TOKEN
+        - name: TELEGRAM_CHAT_ID
+          valueFrom:
+            secretKeyRef:
+              name: telegram-bot-secrets
+              key: TELEGRAM_CHAT_ID
+        - name: ENABLE_CLUSTER_MONITORING
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: ENABLE_CLUSTER_MONITORING
+        - name: ENABLE_NODE_MONITORING
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: ENABLE_NODE_MONITORING
+        - name: ENABLE_RESOURCE_MONITORING
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: ENABLE_RESOURCE_MONITORING
+        - name: ENABLE_ALERTING
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: ENABLE_ALERTING
+        - name: CLUSTER_CHECK_INTERVAL
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: CLUSTER_CHECK_INTERVAL
+        - name: NODE_CHECK_INTERVAL
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: NODE_CHECK_INTERVAL
+        - name: RESOURCE_CHECK_INTERVAL
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: RESOURCE_CHECK_INTERVAL
+        - name: CPU_USAGE_THRESHOLD
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: CPU_USAGE_THRESHOLD
+        - name: MEMORY_USAGE_THRESHOLD
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: MEMORY_USAGE_THRESHOLD
+        - name: DISK_USAGE_THRESHOLD
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: DISK_USAGE_THRESHOLD
+        - name: NODE_ERROR_THRESHOLD
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: NODE_ERROR_THRESHOLD
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        # Health checks temporarily disabled for initial deployment
+        # livenessProbe:
+        #   httpGet:
+        #     path: /health
+        #     port: 8080
+        #   initialDelaySeconds: 30
+        #   periodSeconds: 10
+        # readinessProbe:
+        #   httpGet:
+        #     path: /ready
+        #     port: 8080
+        #   initialDelaySeconds: 5
+        #   periodSeconds: 5
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+      volumes:
+      - name: data-volume
+        emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infrastructure-monitor
+  namespace: telegram-bot
+  labels:
+    app: infrastructure-monitor
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infrastructure-monitor
+  template:
+    metadata:
+      labels:
+        app: infrastructure-monitor
+        version: v1
+    spec:
+      serviceAccountName: telegram-bot-sa
+      containers:
+      - name: infrastructure-monitor
+        image: gcr.io/defimon-ethereum-node/infrastructure-monitor:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: GOOGLE_CLOUD_PROJECT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: GOOGLE_CLOUD_PROJECT_ID
+        - name: TELEGRAM_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: telegram-bot-secrets
+              key: TELEGRAM_BOT_TOKEN
+        - name: TELEGRAM_CHAT_ID
+          valueFrom:
+            secretKeyRef:
+              name: telegram-bot-secrets
+              key: TELEGRAM_CHAT_ID
+        - name: ENABLE_CLUSTER_MONITORING
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: ENABLE_CLUSTER_MONITORING
+        - name: ENABLE_NODE_MONITORING
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: ENABLE_NODE_MONITORING
+        - name: ENABLE_RESOURCE_MONITORING
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: ENABLE_RESOURCE_MONITORING
+        - name: ENABLE_ALERTING
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: ENABLE_ALERTING
+        - name: CLUSTER_CHECK_INTERVAL
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: CLUSTER_CHECK_INTERVAL
+        - name: NODE_CHECK_INTERVAL
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: NODE_CHECK_INTERVAL
+        - name: RESOURCE_CHECK_INTERVAL
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: RESOURCE_CHECK_INTERVAL
+        - name: CPU_USAGE_THRESHOLD
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: CPU_USAGE_THRESHOLD
+        - name: MEMORY_USAGE_THRESHOLD
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: MEMORY_USAGE_THRESHOLD
+        - name: DISK_USAGE_THRESHOLD
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: DISK_USAGE_THRESHOLD
+        - name: NODE_ERROR_THRESHOLD
+          valueFrom:
+            configMapKeyRef:
+              name: telegram-bot-config
+              key: NODE_ERROR_THRESHOLD
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        # Health checks temporarily disabled for initial deployment
+        # livenessProbe:
+        #   httpGet:
+        #     path: /health
+        #     port: 8080
+        #   initialDelaySeconds: 30
+        #   periodSeconds: 10
+        # readinessProbe:
+        #   httpGet:
+        #     path: /ready
+        #     port: 8080
+        #   initialDelaySeconds: 5
+        #   periodSeconds: 5
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+      volumes:
+      - name: data-volume
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: telegram-bot-service
+  namespace: telegram-bot
+  labels:
+    app: telegram-bot
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: telegram-bot
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infrastructure-monitor-service
+  namespace: telegram-bot
+  labels:
+    app: infrastructure-monitor
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: infrastructure-monitor

@@ -1,0 +1,56 @@
+================================================================================
+NEW APIs TEST REPORT
+================================================================================
+Timestamp: 2025-08-22T12:33:30.870785
+
+Service: QUICKNODE
+----------------------------------------
+✗ Connectivity: FAILED - Unknown error
+✓ Get latest block number: SUCCESS (0.03s)
+✓ Get latest block info: SUCCESS (0.034s)
+✓ Get chain ID: SUCCESS (0.03s)
+✓ Get current gas price: SUCCESS (0.031s)
+✓ Get account balance: SUCCESS (0.03s)
+✓ Get network version: SUCCESS (0.029s)
+✓ Get client version: SUCCESS (0.03s)
+
+Service: BLAST
+----------------------------------------
+✗ Connectivity: FAILED - HTTPSConnectionPool(host='azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io', port=443): Max retries exceeded with url: /ping (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x102214910>: Failed to resolve 'azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ Get latest block number: FAILED - HTTPSConnectionPool(host='azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x102214190>: Failed to resolve 'azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ Get latest block info: FAILED - HTTPSConnectionPool(host='azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x102214cd0>: Failed to resolve 'azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ Get chain ID: FAILED - HTTPSConnectionPool(host='azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x102215090>: Failed to resolve 'azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ Get current gas price: FAILED - HTTPSConnectionPool(host='azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x102215450>: Failed to resolve 'azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ Get network version: FAILED - HTTPSConnectionPool(host='azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x102215810>: Failed to resolve 'azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io' ([Errno 8] nodename nor servname provided, or not known)"))
+
+Service: COINGECKO
+----------------------------------------
+✓ Connectivity: SUCCESS (0.365s)
+✓ Test API connectivity: SUCCESS (0.191s)
+✓ Get simple price data: SUCCESS (0.182s)
+✓ Get market data: SUCCESS (0.169s)
+✓ Get Bitcoin detailed data: SUCCESS (0.07s)
+
+Service: COINCAP
+----------------------------------------
+✓ Connectivity: SUCCESS (0.337s)
+✗ Get all assets: FAILED - Expecting value: line 1 column 1 (char 0)
+✗ Get Bitcoin asset data: FAILED - Expecting value: line 1 column 1 (char 0)
+✗ Get exchange rates: FAILED - Expecting value: line 1 column 1 (char 0)
+✗ Get exchange data: FAILED - Expecting value: line 1 column 1 (char 0)
+
+Service: GITHUB
+----------------------------------------
+✗ Connectivity: FAILED - Unknown error
+✓ Get authenticated user information: SUCCESS (0.271s)
+✓ Get user repositories: SUCCESS (0.369s)
+✓ Check API rate limits: SUCCESS (0.196s)
+✓ Search repositories: SUCCESS (0.996s)
+
+================================================================================
+SUMMARY
+================================================================================
+Total Tests: 29
+Passed: 17
+Failed: 12
+Success Rate: 58.6%

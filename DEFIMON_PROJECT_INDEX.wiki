@@ -1,0 +1,170 @@
+= DEFIMON Project Documentation Index =
+
+== Quick Navigation ==
+
+=== [[DEFIMON_PROJECT_DOCUMENTATION|📚 Complete Project Documentation]] ===
+* [[DEFIMON_PROJECT_DOCUMENTATION#Project Overview|Project Overview]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#System Architecture|System Architecture]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Technology Stack|Technology Stack]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Quick Start Guides|Quick Start Guides]]
+
+=== [[DEFIMON_PROJECT_DOCUMENTATION#Main Architectural Documents|🏗️ Main Architectural Documents]] ===
+* [[Media:defimon_architecture_overleaf.pdf|Primary Architecture Overview]]
+* [[Media:defimon_architecture_overleaf-2.pdf|Extended Architecture Overview]]
+
+== Documentation Categories ==
+
+=== 🚀 Getting Started ===
+* [[DEFIMON_PROJECT_DOCUMENTATION#Prerequisites|Prerequisites]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Installation & Setup|Installation & Setup]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Quick Start Guides|Quick Start Guides]]
+* [[QUICKSTART.md|Quick Start Guide]]
+* [[QUICKSTART_LINUX_MINT.md|Linux Mint Quick Start]]
+
+=== 🏗️ Architecture & Design ===
+* [[DEFIMON_PROJECT_DOCUMENTATION#System Architecture|System Architecture Overview]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Architecture Layers|Architecture Layers]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Infrastructure Pools|Infrastructure Pools]]
+* [[infrastructure/README.md|Infrastructure Architecture]]
+* [[DEPLOYMENT_GUIDE.md|Deployment Guide]]
+
+=== 🔧 Technology Stack ===
+* [[DEFIMON_PROJECT_DOCUMENTATION#Technology Stack|Complete Technology Stack]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Frontend|Frontend Technologies]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Backend Services|Backend Services]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#AI/ML|AI/ML Technologies]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Blockchain Node|Blockchain Node (Rust)]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Infrastructure|Infrastructure Technologies]]
+
+=== 📊 APIs & Services ===
+* [[DEFIMON_PROJECT_DOCUMENTATION#API Documentation|API Documentation]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Main Endpoints|Main API Endpoints]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Swagger UI|Swagger UI Access]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Monitored Services|Monitored Services]]
+
+=== 🌐 Supported Blockchains ===
+* [[DEFIMON_PROJECT_DOCUMENTATION#Ethereum & L2 Networks|Ethereum & L2 Networks]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Cosmos Ecosystem|Cosmos Ecosystem]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Polkadot Ecosystem|Polkadot Ecosystem]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Other Blockchains|Other Blockchains]]
+* [[L2_SETUP.md|L2 Setup Guide]]
+
+=== 📱 Applications ===
+* [[DEFIMON_PROJECT_DOCUMENTATION#Mobile Applications|Mobile Applications]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Flutter Applications|Flutter Applications]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Web Dashboard|Web Dashboard]]
+
+=== 🗄️ Data & Storage ===
+* [[DEFIMON_PROJECT_DOCUMENTATION#Database Schemas|Database Schemas]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Core Schemas|Core Database Schemas]]
+* [[infrastructure/init.sql|Main Database Schema]]
+* [[infrastructure/l2_schema.sql|L2 Networks Schema]]
+* [[infrastructure/clickhouse_schema.sql|ClickHouse Analytics Schema]]
+* [[infrastructure/cosmos_schema.sql|Cosmos Ecosystem Schema]]
+* [[infrastructure/polkadot_schema.sql|Polkadot Ecosystem Schema]]
+
+=== 🚀 Deployment & Operations ===
+* [[DEFIMON_PROJECT_DOCUMENTATION#Deployment|Deployment Guide]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Local Development|Local Development]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Production Deployment|Production Deployment]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Node Management|Node Management]]
+* [[DEPLOYMENT_GUIDE.md|Complete Deployment Guide]]
+* [[INTEGRATION_GUIDE.md|Integration Guide]]
+
+=== 📈 Monitoring & Observability ===
+* [[DEFIMON_PROJECT_DOCUMENTATION#Monitoring & Observability|Monitoring Overview]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Administrative Dashboard|Administrative Dashboard]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Monitoring Tools|Monitoring Tools]]
+* [[ENHANCED_MONITOR_README.md|Enhanced Monitor README]]
+* [[ENHANCED_MONITOR_FEATURES.md|Enhanced Monitor Features]]
+
+=== 🛠️ Tools & Utilities ===
+* [[DEFIMON_PROJECT_DOCUMENTATION#Tools & Utilities|Tools Overview]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#L2 Networks Synchronization|L2 Networks Synchronization]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#System Scripts|System Scripts]]
+* [[tools/README.md|Tools Management]]
+* [[TOOLS_MANAGEMENT_README.md|Tools Management README]]
+
+=== 🔐 Security & Configuration ===
+* [[DEFIMON_PROJECT_DOCUMENTATION#Security|Security Measures]]
+* [[DEFIMON_PROJECT_DOCUMENTATION#Security Measures|Security Overview]]
+* [[env.example|Environment Variables Example]]
+* [[infrastructure/kong.yml|Kong API Gateway Configuration]]
+* [[gcp.env|Google Cloud Platform Environment]]
+
+=== 📚 Additional Documentation ===
+* [[README.md|Main Project README]]
+* [[ADMIN_DASHBOARD_V2_UPGRADE_REPORT.md|Admin Dashboard V2 Upgrade Report]]
+* [[MIGRATION_REPORT.md|Migration Report]]
+* [[SDA1_DATA_MIGRATION_REPORT.md|SDA1 Data Migration Report]]
+
+== Project Structure Overview ==
+
+=== Core Components ===
+* **Frontend**: Next.js 14 web application
+* **Mobile Apps**: Flutter applications for monitoring and analytics
+* **Backend Services**: Python FastAPI services, Rust blockchain node
+* **Infrastructure**: Docker, Kubernetes, cloud providers
+* **Databases**: PostgreSQL, ClickHouse, Redis
+* **Monitoring**: Prometheus, Grafana, custom dashboards
+
+=== Infrastructure Pools ===
+* **Infrastructure Pool**: Google Cloud Platform (Ethereum nodes)
+* **Analytics Pool**: Hetzner Cloud (APIs, databases)
+* **ML Pool**: TBD (Machine learning infrastructure)
+
+=== Key Services ===
+* **Analytics API**: FastAPI service for data queries and aggregations
+* **AI/ML Service**: Python service for predictions and risk assessment
+* **Blockchain Node**: Rust service for blockchain operations
+* **Data Ingestion**: Python service for data collection
+* **Stream Processing**: Real-time data processing
+* **Admin Dashboard**: Node.js administrative interface
+
+== Quick Reference ==
+
+=== Ports & URLs ===
+* **Frontend**: http://localhost:3000
+* **API Gateway**: http://localhost:8000
+* **Analytics API**: http://localhost:8002/docs
+* **AI/ML Service**: http://localhost:8001/docs
+* **Admin Dashboard**: http://localhost:8080
+* **Grafana**: http://localhost:3001 (admin/admin)
+* **Prometheus**: http://localhost:9090
+
+=== System Requirements ===
+* **CPU**: 4+ cores (8+ for production)
+* **RAM**: 8GB+ (16GB+ for production)
+* **Disk**: 100GB+ SSD (500GB+ for node)
+* **Network**: 100Mbps+ stable connection
+
+=== Performance Benchmarks ===
+* **Rust blockchain-node**: ~1000 blocks/sec, ~5000 events/sec
+* **FastAPI services**: ~5000 requests/sec
+* **ML inference**: ~100 predictions/sec
+* **Stream processing**: ~10000 events/sec
+
+== External Resources ==
+
+=== Official Links ===
+* [https://github.com/your-username/defimon.highfunk.uk|GitHub Repository]
+* [https://defimon.com|Official Website]
+* [https://docs.defimon.com|API Documentation]
+* [https://status.defimon.com|System Status]
+
+=== Documentation Sources ===
+* [[Media:defimon_architecture_overleaf.pdf|Primary Architecture PDF]]
+* [[Media:defimon_architecture_overleaf-2.pdf|Extended Architecture PDF]]
+* [[infrastructure/docker-compose.yml|Docker Compose Configuration]]
+* [[infrastructure/kong.yml|Kong Configuration]]
+
+== Categories ==
+
+[[Category:DeFi]]
+[[Category:Blockchain]]
+[[Category:Analytics]]
+[[Category:Machine Learning]]
+[[Category:Infrastructure]]
+[[Category:Documentation]]
+[[Category:Index]]
+[[Category:Navigation]]

@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ethereum-hot-data
+  namespace: defimon
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: hot-storage-ssd
+  resources:
+    requests:
+      storage: 100Gi  # Fast SSD for recent 200k blocks
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ethereum-cold-data
+  namespace: defimon
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: cold-storage-hdd
+  resources:
+    requests:
+      storage: 2Ti  # Large HDD for archive data
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ethereum-storage-config
+  namespace: defimon
+data:
+  hot-storage-path: "/var/lib/ethereum/hot"
+  cold-storage-path: "/var/lib/ethereum/cold"
+  archive-blocks-threshold: "200000"

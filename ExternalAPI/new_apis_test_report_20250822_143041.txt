@@ -1,0 +1,48 @@
+================================================================================
+NEW APIs TEST REPORT
+================================================================================
+Timestamp: 2025-08-22T14:30:37.878124
+
+Service: QUICKNODE
+----------------------------------------
+✗ Connectivity: FAILED - Unknown error
+✓ Get latest block number: SUCCESS (0.029s)
+✓ Get latest block info: SUCCESS (0.033s)
+✓ Get chain ID: SUCCESS (0.029s)
+✓ Get current gas price: SUCCESS (0.029s)
+✓ Get account balance: SUCCESS (0.033s)
+✓ Get network version: SUCCESS (0.029s)
+✓ Get client version: SUCCESS (0.029s)
+
+Service: BLAST
+----------------------------------------
+✗ Connectivity: FAILED - Unknown error
+✓ Get latest block number: SUCCESS (0.187s)
+✓ Get latest block info: SUCCESS (0.13s)
+✓ Get chain ID: SUCCESS (0.129s)
+✓ Get current gas price: SUCCESS (0.128s)
+✓ Get network version: SUCCESS (0.127s)
+
+Service: COINGECKO
+----------------------------------------
+✗ Connectivity: FAILED - Unknown error
+✗ Test API connectivity: FAILED - {"status":{"error_code":429,"error_message":"You've exceeded the Rate Limit. Please visit https://www.coingecko.com/en/api/pricing to subscribe to our API plans for higher rate limits."}}
+✗ Get simple price data: FAILED - {"status":{"error_code":429,"error_message":"You've exceeded the Rate Limit. Please visit https://www.coingecko.com/en/api/pricing to subscribe to our API plans for higher rate limits."}}
+✗ Get market data: FAILED - {"status":{"error_code":429,"error_message":"You've exceeded the Rate Limit. Please visit https://www.coingecko.com/en/api/pricing to subscribe to our API plans for higher rate limits."}}
+✗ Get Bitcoin detailed data: FAILED - {"status":{"error_code":429,"error_message":"You've exceeded the Rate Limit. Please visit https://www.coingecko.com/en/api/pricing to subscribe to our API plans for higher rate limits."}}
+
+Service: GITHUB
+----------------------------------------
+✗ Connectivity: FAILED - Unknown error
+✓ Get authenticated user information: SUCCESS (0.289s)
+✓ Get user repositories: SUCCESS (0.58s)
+✓ Check API rate limits: SUCCESS (0.195s)
+✓ Search repositories: SUCCESS (0.908s)
+
+================================================================================
+SUMMARY
+================================================================================
+Total Tests: 24
+Passed: 16
+Failed: 8
+Success Rate: 66.7%

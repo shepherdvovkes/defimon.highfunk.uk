@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L2 Analytics - Investor Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .metric-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .metric-change {
+            font-size: 0.9rem;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .positive {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .negative {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .controls h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        select, button {
+            padding: 10px 15px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select:focus, button:focus {
+            outline: none;
+            border-color: #764ba2;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .protocol-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .protocol-btn {
+            padding: 8px 16px;
+            border: 2px solid #667eea;
+            border-radius: 20px;
+            background: white;
+            color: #667eea;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .protocol-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .protocol-btn:hover {
+            background: #764ba2;
+            border-color: #764ba2;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .control-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>L2 Analytics Dashboard</h1>
+            <p>Comprehensive metrics for Layer 2 protocol investment analysis</p>
+        </div>
+
+        <div class="controls">
+            <h3>Dashboard Controls</h3>
+            <div class="control-group">
+                <select id="timeRange">
+                    <option value="7">Last 7 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                    <option value="365">Last year</option>
+                </select>
+                <button onclick="refreshData()">Refresh Data</button>
+                <button onclick="collectNewData()">Collect New Data</button>
+            </div>
+            
+            <div class="protocol-selector">
+                <div class="protocol-btn active" onclick="selectProtocol('all')">All Protocols</div>
+                <div class="protocol-btn" onclick="selectProtocol('arbitrum')">Arbitrum</div>
+                <div class="protocol-btn" onclick="selectProtocol('optimism')">Optimism</div>
+                <div class="protocol-btn" onclick="selectProtocol('polygon')">Polygon</div>
+                <div class="protocol-btn" onclick="selectProtocol('base')">Base</div>
+                <div class="protocol-btn" onclick="selectProtocol('zksync')">zkSync</div>
+            </div>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-title">Total TVL</div>
+                    <div class="metric-value" id="totalTvl">$0</div>
+                </div>
+                <div class="metric-change positive" id="tvlChange">+0.00%</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-title">Daily Active Users</div>
+                    <div class="metric-value" id="totalDau">0</div>
+                </div>
+                <div class="metric-change positive" id="dauChange">+0.00%</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-title">Avg Gas Savings</div>
+                    <div class="metric-value" id="avgGasSavings">0%</div>
+                </div>
+                <div class="metric-change positive" id="gasSavingsChange">+0.00%</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-title">Protocol Count</div>
+                    <div class="metric-value" id="protocolCount">0</div>
+                </div>
+                <div class="metric-change positive" id="protocolChange">+0</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-title">TVL Growth by Protocol</div>
+                <canvas id="tvlChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-title">Daily Active Users</div>
+                <canvas id="dauChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-title">Gas Savings Comparison</div>
+                <canvas id="gasSavingsChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-title">User Retention Rates</div>
+                <canvas id="retentionChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE_URL = 'http://localhost:8000/api/l2-analytics';
+        let selectedProtocol = 'all';
+        let charts = {};
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            loadDashboardData();
+        });
+
+        function initializeCharts() {
+            // TVL Chart
+            const tvlCtx = document.getElementById('tvlChart').getContext('2d');
+            charts.tvl = new Chart(tvlCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + (value / 1e9).toFixed(1) + 'B';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // DAU Chart
+            const dauCtx = document.getElementById('dauChart').getContext('2d');
+            charts.dau = new Chart(dauCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Gas Savings Chart
+            const gasCtx = document.getElementById('gasSavingsChart').getContext('2d');
+            charts.gasSavings = new Chart(gasCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#4BC0C0',
+                            '#9966FF'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        }
+                    }
+                }
+            });
+
+            // Retention Chart
+            const retentionCtx = document.getElementById('retentionChart').getContext('2d');
+            charts.retention = new Chart(retentionCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['1 Day', '7 Days', '30 Days'],
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        async function loadDashboardData() {
+            try {
+                showLoading();
+                
+                // Load TVL data
+                const tvlData = await fetchData('/tvl-growth');
+                updateTvlMetrics(tvlData);
+                updateTvlChart(tvlData);
+
+                // Load user activity data
+                const dauData = await fetchData('/daily-active-users');
+                updateDauMetrics(dauData);
+                updateDauChart(dauData);
+
+                // Load gas savings data
+                const gasData = await fetchData('/gas-savings');
+                updateGasSavingsMetrics(gasData);
+                updateGasSavingsChart(gasData);
+
+                // Load retention data
+                const retentionData = await fetchData('/user-retention');
+                updateRetentionChart(retentionData);
+
+                hideLoading();
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                showError('Failed to load dashboard data');
+                hideLoading();
+            }
+        }
+
+        async function fetchData(endpoint) {
+            const url = `${API_BASE_URL}${endpoint}`;
+            const response = await axios.get(url);
+            return response.data;
+        }
+
+        function updateTvlMetrics(data) {
+            if (!data || data.length === 0) return;
+
+            const totalTvl = data.reduce((sum, item) => sum + item.tvl, 0);
+            const avgGrowth = data.reduce((sum, item) => sum + (item.growth_rate || 0), 0) / data.length;
+
+            document.getElementById('totalTvl').textContent = formatCurrency(totalTvl);
+            document.getElementById('tvlChange').textContent = `${avgGrowth > 0 ? '+' : ''}${avgGrowth.toFixed(2)}%`;
+            document.getElementById('tvlChange').className = `metric-change ${avgGrowth >= 0 ? 'positive' : 'negative'}`;
+        }
+
+        function updateDauMetrics(data) {
+            if (!data || data.length === 0) return;
+
+            const totalDau = data.reduce((sum, item) => sum + item.dau, 0);
+            const avgGrowth = data.reduce((sum, item) => sum + (item.user_growth_rate || 0), 0) / data.length;
+
+            document.getElementById('totalDau').textContent = formatNumber(totalDau);
+            document.getElementById('dauChange').textContent = `${avgGrowth > 0 ? '+' : ''}${avgGrowth.toFixed(2)}%`;
+            document.getElementById('dauChange').className = `metric-change ${avgGrowth >= 0 ? 'positive' : 'negative'}`;
+        }
+
+        function updateGasSavingsMetrics(data) {
+            if (!data || data.length === 0) return;
+
+            const avgSavings = data.reduce((sum, item) => sum + item.savings_percentage, 0) / data.length;
+            const avgChange = data.reduce((sum, item) => sum + (item.savings_percentage || 0), 0) / data.length;
+
+            document.getElementById('avgGasSavings').textContent = `${avgSavings.toFixed(1)}%`;
+            document.getElementById('gasSavingsChange').textContent = `${avgChange > 0 ? '+' : ''}${avgChange.toFixed(2)}%`;
+            document.getElementById('gasSavingsChange').className = `metric-change ${avgChange >= 0 ? 'positive' : 'negative'}`;
+        }
+
+        function updateTvlChart(data) {
+            if (!data || data.length === 0) return;
+
+            const labels = data.map(item => item.chain);
+            const values = data.map(item => item.tvl);
+
+            charts.tvl.data.labels = labels;
+            charts.tvl.data.datasets = [{
+                label: 'TVL (USD)',
+                data: values,
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                tension: 0.4
+            }];
+            charts.tvl.update();
+        }
+
+        function updateDauChart(data) {
+            if (!data || data.length === 0) return;
+
+            const labels = data.map(item => item.chain);
+            const values = data.map(item => item.dau);
+
+            charts.dau.data.labels = labels;
+            charts.dau.data.datasets = [{
+                label: 'Daily Active Users',
+                data: values,
+                backgroundColor: '#36A2EB'
+            }];
+            charts.dau.update();
+        }
+
+        function updateGasSavingsChart(data) {
+            if (!data || data.length === 0) return;
+
+            const labels = data.map(item => item.l2_protocol);
+            const values = data.map(item => item.savings_percentage);
+
+            charts.gasSavings.data.labels = labels;
+            charts.gasSavings.data.datasets[0].data = values;
+            charts.gasSavings.update();
+        }
+
+        function updateRetentionChart(data) {
+            if (!data || data.length === 0) return;
+
+            const datasets = data.map((item, index) => ({
+                label: item.protocol,
+                data: [item.retention_1d, item.retention_7d, item.retention_30d],
+                borderColor: getColor(index),
+                backgroundColor: getColor(index, 0.2)
+            }));
+
+            charts.retention.data.datasets = datasets;
+            charts.retention.update();
+        }
+
+        function getColor(index, alpha = 1) {
+            const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
+            const color = colors[index % colors.length];
+            return alpha < 1 ? color.replace(')', `, ${alpha})`).replace('rgb', 'rgba') : color;
+        }
+
+        function formatCurrency(value) {
+            if (value >= 1e9) {
+                return '$' + (value / 1e9).toFixed(1) + 'B';
+            } else if (value >= 1e6) {
+                return '$' + (value / 1e6).toFixed(1) + 'M';
+            } else if (value >= 1e3) {
+                return '$' + (value / 1e3).toFixed(1) + 'K';
+            }
+            return '$' + value.toFixed(0);
+        }
+
+        function formatNumber(value) {
+            if (value >= 1e6) {
+                return (value / 1e6).toFixed(1) + 'M';
+            } else if (value >= 1e3) {
+                return (value / 1e3).toFixed(1) + 'K';
+            }
+            return value.toLocaleString();
+        }
+
+        function selectProtocol(protocol) {
+            selectedProtocol = protocol;
+            
+            // Update button states
+            document.querySelectorAll('.protocol-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Reload data with filter
+            loadDashboardData();
+        }
+
+        function refreshData() {
+            loadDashboardData();
+        }
+
+        async function collectNewData() {
+            try {
+                showLoading();
+                await axios.post(`${API_BASE_URL}/collect`);
+                setTimeout(() => {
+                    loadDashboardData();
+                }, 5000); // Wait for collection to complete
+            } catch (error) {
+                console.error('Error collecting new data:', error);
+                showError('Failed to collect new data');
+                hideLoading();
+            }
+        }
+
+        function showLoading() {
+            const loading = document.createElement('div');
+            loading.className = 'loading';
+            loading.textContent = 'Loading data...';
+            document.querySelector('.container').appendChild(loading);
+        }
+
+        function hideLoading() {
+            const loading = document.querySelector('.loading');
+            if (loading) {
+                loading.remove();
+            }
+        }
+
+        function showError(message) {
+            const error = document.createElement('div');
+            error.className = 'error';
+            error.textContent = message;
+            document.querySelector('.container').insertBefore(error, document.querySelector('.metrics-grid'));
+            
+            setTimeout(() => {
+                error.remove();
+            }, 5000);
+        }
+
+        // Auto-refresh every 5 minutes
+        setInterval(loadDashboardData, 5 * 60 * 1000);
+    </script>
+</body>
+</html>

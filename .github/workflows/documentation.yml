@@ -1,0 +1,106 @@
+name: Documentation Management
+
+on:
+  push:
+    paths:
+      - '*.wiki'
+      - 'MEDIAWIKI_DOCUMENTATION_README.md'
+      - 'pdfs/**'
+      - 'README.md'
+  pull_request:
+    paths:
+      - '*.wiki'
+      - 'MEDIAWIKI_DOCUMENTATION_README.md'
+      - 'pdfs/**'
+      - 'README.md'
+
+jobs:
+  validate-wiki:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate MediaWiki syntax
+        run: |
+          echo "Checking MediaWiki files..."
+          for file in *.wiki; do
+            if [ -f "$file" ]; then
+              echo "Validating $file..."
+              # Basic MediaWiki syntax validation
+              if grep -q "\[\[.*\]\]" "$file"; then
+                echo "✓ $file contains valid MediaWiki links"
+              else
+                echo "⚠ $file may be missing MediaWiki links"
+              fi
+            fi
+          done
+
+      - name: Check PDF files
+        run: |
+          echo "Checking PDF documentation..."
+          if [ -d "pdfs" ]; then
+            echo "PDF directory found with $(ls pdfs/*.pdf 2>/dev/null | wc -l) PDF files"
+            ls -la pdfs/*.pdf 2>/dev/null || echo "No PDF files found"
+          else
+            echo "⚠ PDF directory not found"
+          fi
+
+  update-documentation-index:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Update documentation timestamp
+        run: |
+          echo "Updating documentation timestamp..."
+          date > docs/last_updated.txt
+          echo "Last updated: $(date)" >> docs/last_updated.txt
+
+      - name: Commit documentation updates
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add docs/last_updated.txt
+          git commit -m "Update documentation timestamp" || echo "No changes to commit"
+          git push || echo "No changes to push"
+
+  create-release-notes:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate documentation summary
+        run: |
+          echo "Generating documentation summary..."
+          echo "# DEFIMON Documentation Summary" > docs/summary.md
+          echo "" >> docs/summary.md
+          echo "Generated on: $(date)" >> docs/summary.md
+          echo "" >> docs/summary.md
+          echo "## MediaWiki Files" >> docs/summary.md
+          for file in *.wiki; do
+            if [ -f "$file" ]; then
+              echo "- $file" >> docs/summary.md
+            fi
+          done
+          echo "" >> docs/summary.md
+          echo "## PDF Documents" >> docs/summary.md
+          if [ -d "pdfs" ]; then
+            for file in pdfs/*.pdf; do
+              if [ -f "$file" ]; then
+                echo "- $(basename "$file")" >> docs/summary.md
+              fi
+            done
+          fi
+
+      - name: Commit summary
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add docs/summary.md
+          git commit -m "Update documentation summary" || echo "No changes to commit"
+          git push || echo "No changes to push"

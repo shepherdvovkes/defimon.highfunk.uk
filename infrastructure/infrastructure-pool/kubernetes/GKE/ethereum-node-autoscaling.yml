@@ -1,0 +1,167 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ethereum-geth-hpa
+  namespace: defimon
+  labels:
+    app: ethereum-geth
+    component: execution-client
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ethereum-geth
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  - type: Object
+    object:
+      metric:
+        name: requests-per-second
+      describedObject:
+        apiVersion: v1
+        kind: Service
+        name: ethereum-geth-service
+      target:
+        type: AverageValue
+        averageValue: 100
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+      - type: Pods
+        value: 1
+        periodSeconds: 15
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+      - type: Pods
+        value: 1
+        periodSeconds: 60
+      selectPolicy: Min
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ethereum-lighthouse-hpa
+  namespace: defimon
+  labels:
+    app: ethereum-lighthouse
+    component: consensus-client
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ethereum-lighthouse
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  - type: Object
+    object:
+      metric:
+        name: requests-per-second
+      describedObject:
+        apiVersion: v1
+        kind: Service
+        name: ethereum-lighthouse-service
+      target:
+        type: AverageValue
+        averageValue: 50
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+      - type: Pods
+        value: 1
+        periodSeconds: 15
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+      - type: Pods
+        value: 1
+        periodSeconds: 60
+      selectPolicy: Min
+---
+apiVersion: autoscaling/v2
+kind: VerticalPodAutoscaler
+metadata:
+  name: ethereum-geth-vpa
+  namespace: defimon
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ethereum-geth
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: '*'
+      minAllowed:
+        cpu: 100m
+        memory: 50Mi
+      maxAllowed:
+        cpu: 8
+        memory: 16Gi
+      controlledValues: RequestsAndLimits
+---
+apiVersion: autoscaling/v2
+kind: VerticalPodAutoscaler
+metadata:
+  name: ethereum-lighthouse-vpa
+  namespace: defimon
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ethereum-lighthouse
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: '*'
+      minAllowed:
+        cpu: 100m
+        memory: 50Mi
+      maxAllowed:
+        cpu: 4
+        memory: 8Gi
+      controlledValues: RequestsAndLimits

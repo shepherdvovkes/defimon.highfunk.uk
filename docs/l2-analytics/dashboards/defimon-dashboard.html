@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEFIMON Dashboard</title>
+    <!-- Подключаем Tailwind CSS для стилизации -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Подключаем иконки Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Подключаем Chart.js для графиков -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Подключаем Axios для API запросов -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0a; /* Еще более темный фон */
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease-in-out;
+            font-weight: 500;
+            color: #a1a1aa; /* zinc-400 */
+        }
+        .sidebar-link:hover {
+            background-color: #27272a; /* zinc-800 */
+            color: #fafafa; /* zinc-50 */
+        }
+        .sidebar-link.active {
+            background-color: #3f3f46; /* zinc-700 */
+            color: #60a5fa; /* blue-400 */
+        }
+        .card {
+            background-color: #18181b; /* zinc-900 */
+            border: 1px solid #27272a; /* zinc-800 */
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #3f3f46;
+            border-radius: 50%;
+            border-top-color: #60a5fa;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="text-gray-200">
+
+    <!-- Основной контейнер макета -->
+    <div class="flex min-h-screen">
+        <!-- Боковая панель (левое меню) -->
+        <aside class="w-64 bg-[#121212] p-6 flex flex-col justify-between rounded-r-2xl border-r border-zinc-800">
+            <div>
+                <!-- Логотип DEFIMON -->
+                <div class="flex items-center gap-2 mb-10">
+                    <i class="ph-bold ph-chart-line-up text-blue-400 text-3xl"></i>
+                    <h1 class="text-2xl font-bold text-white">DEFIMON</h1>
+                </div>
+                <!-- Навигационное меню -->
+                <nav class="space-y-2">
+                    <a href="#" class="sidebar-link">
+                        <i class="ph ph-squares-four"></i>
+                        <span>Обзор</span>
+                    </a>
+                    <a href="#" class="sidebar-link active">
+                        <i class="ph ph-stack-simple"></i>
+                        <span>Аналитика L2</span>
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <i class="ph ph-wallet"></i>
+                        <span>Портфолио</span>
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <i class="ph ph-bell"></i>
+                        <span>Уведомления</span>
+                    </a>
+                </nav>
+            </div>
+            <!-- Секция пользователя -->
+            <div class="flex items-center space-x-3 p-3 bg-zinc-900 rounded-xl cursor-pointer hover:bg-zinc-800 transition-colors">
+                <img class="h-10 w-10 rounded-full object-cover" src="https://placehold.co/100x100/7c3aed/ffffff?text=D" alt="User Avatar">
+                <div>
+                    <span class="text-sm font-medium text-white">Инвестор</span>
+                    <p class="text-xs text-gray-400">Настройки</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Основной контент дашборда -->
+        <main class="flex-1 p-8 overflow-y-auto">
+            <header class="flex flex-wrap justify-between items-center gap-4 mb-8">
+                <div>
+                    <h2 class="text-3xl font-semibold text-white">Аналитика сетей второго уровня</h2>
+                    <p class="text-zinc-400 mt-1">Глубокий анализ ключевых L2-решений.</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"></i>
+                        <input type="text" placeholder="Поиск по сетям..." class="bg-zinc-900 border border-zinc-800 rounded-xl pl-10 pr-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button onclick="refreshData()" class="bg-zinc-900 border border-zinc-800 p-2 rounded-xl hover:bg-zinc-800 transition-colors">
+                        <i class="ph ph-arrow-clockwise text-xl text-zinc-400"></i>
+                    </button>
+                    <button onclick="collectNewData()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl transition-colors">
+                        <i class="ph ph-download text-white"></i>
+                        <span class="text-white ml-2">Обновить данные</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Секция: Ключевые метрики L2 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Карточка TVL -->
+                <div class="card p-6">
+                    <p class="text-sm text-gray-400">Общая заблокированная стоимость (TVL)</p>
+                    <h3 class="text-2xl font-bold text-green-400 mt-1" id="totalTvl">$0</h3>
+                    <p class="text-xs text-gray-400 mt-1" id="tvlChange">Загрузка...</p>
+                </div>
+                <!-- Карточка Прибыли -->
+                <div class="card p-6">
+                    <p class="text-sm text-gray-400">Чистая прибыль L2 (30 дней)</p>
+                    <h3 class="text-2xl font-bold text-white mt-1" id="totalProfit">$0</h3>
+                    <p class="text-xs text-gray-400 mt-1">Доходы L2 минус затраты на L1</p>
+                </div>
+                <!-- Карточка Затрат на L1 -->
+                <div class="card p-6">
+                    <p class="text-sm text-gray-400">Затраты на L1 (30 дней)</p>
+                    <h3 class="text-2xl font-bold text-yellow-400 mt-1" id="l1Costs">0 ETH</h3>
+                    <p class="text-xs text-gray-400 mt-1">Оплачено сетями L2 за безопасность</p>
+                </div>
+                <!-- Карточка Активных пользователей -->
+                <div class="card p-6">
+                    <p class="text-sm text-gray-400">Активные пользователи (DAU)</p>
+                    <h3 class="text-2xl font-bold text-white mt-1" id="totalDau">0</h3>
+                    <p class="text-xs text-gray-400 mt-1" id="dauChange">Загрузка...</p>
+                </div>
+            </div>
+
+            <!-- Основной блок с детальной аналитикой -->
+            <div class="card p-8 mb-8">
+                 <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold text-white">Инвестиционный профиль: <span id="selectedProtocol">Arbitrum One</span></h3>
+                    <!-- Селектор выбора сети -->
+                    <select id="protocolSelector" onchange="changeProtocol()" class="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option value="arbitrum">Arbitrum One</option>
+                        <option value="optimism">Optimism</option>
+                        <option value="base">Base</option>
+                        <option value="polygon">Polygon</option>
+                        <option value="zksync">zkSync Era</option>
+                        <option value="starknet">Starknet</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Левая колонка: Оценка и качественные метрики -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <div class="flex flex-col items-center justify-center p-4 bg-zinc-900/50 rounded-xl border border-zinc-800">
+                            <div class="relative h-24 w-24">
+                                <svg class="transform -rotate-90" viewBox="0 0 36 36">
+                                    <path class="text-zinc-700" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-width="3"></path>
+                                    <path class="text-green-400" id="scoreCircle" stroke-dasharray="85, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-width="3" stroke-linecap="round"></path>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span class="text-3xl font-bold text-green-400" id="defimonScore">8.5</span>
+                                </div>
+                            </div>
+                            <p class="mt-3 text-center text-sm text-gray-400">Общая оценка DEFIMON</p>
+                        </div>
+                        <div class="space-y-4" id="protocolAnalysis">
+                            <div class="flex items-start space-x-4">
+                                <i class="ph-fill ph-check-circle text-green-400 text-xl mt-1"></i>
+                                <div>
+                                    <h4 class="font-medium text-white">Высокая прибыльность</h4>
+                                    <p class="text-sm text-gray-400">Сеть стабильно генерирует прибыль после вычета L1-затрат.</p>
+                                </div>
+                            </div>
+                             <div class="flex items-start space-x-4">
+                                <i class="ph-fill ph-check-circle text-green-400 text-xl mt-1"></i>
+                                <div>
+                                    <h4 class="font-medium text-white">Растущая экосистема</h4>
+                                    <p class="text-sm text-gray-400">Большое количество активных dApps и постоянный приток новых проектов.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-4">
+                                <i class="ph-fill ph-warning-circle text-yellow-400 text-xl mt-1"></i>
+                                <div>
+                                    <h4 class="font-medium text-white">Централизованный секвенсор</h4>
+                                    <p class="text-sm text-gray-400">Риск цензуры и сбоев. Дорожная карта по децентрализации имеется.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-4">
+                                <i class="ph-fill ph-timer text-blue-400 text-xl mt-1"></i>
+                                <div>
+                                    <h4 class="font-medium text-white">Длительный вывод средств</h4>
+                                    <p class="text-sm text-gray-400">7-дневный период для вывода через нативный мост (Optimistic Rollup).</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Правая колонка: Графики -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <div>
+                            <h4 class="font-semibold mb-2 text-white">Финансовые показатели (30 дней)</h4>
+                            <div class="h-48 bg-zinc-900/50 rounded-xl border border-zinc-800">
+                                <canvas id="financialChart"></canvas>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-2 text-white">Анализ пользователей (30 дней)</h4>
+                            <div class="h-48 bg-zinc-900/50 rounded-xl border border-zinc-800">
+                                <canvas id="userChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Секция: Анализ ончейн-активности -->
+            <div class="card p-8 mb-8">
+                <h3 class="text-xl font-semibold mb-6 text-white">Анализ ончейн-активности</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div>
+                        <p class="text-sm text-gray-400 mb-1">Транзакций в день (TPS)</p>
+                        <h4 class="text-2xl font-bold text-white" id="tpsValue">0</h4>
+                    </div>
+                     <div>
+                        <p class="text-sm text-gray-400 mb-1">Средняя комиссия</p>
+                        <h4 class="text-2xl font-bold text-white" id="avgFee">$0.00</h4>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400 mb-1">Успешность транзакций</p>
+                        <h4 class="text-2xl font-bold text-white" id="successRate">0%</h4>
+                    </div>
+                     <div>
+                        <p class="text-sm text-gray-400 mb-1">Новых пользователей (24ч)</p>
+                        <h4 class="text-2xl font-bold text-white" id="newUsers">0</h4>
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <h4 class="font-semibold mb-2 text-white">Когортный анализ: удержание пользователей</h4>
+                    <div class="h-64 bg-zinc-900/50 rounded-xl border border-zinc-800">
+                        <canvas id="retentionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Секция: Сравнительный анализ L2 -->
+            <div class="card p-8 mb-8">
+                 <h3 class="text-xl font-semibold mb-6 text-white">Сравнительный анализ L2-сетей</h3>
+                 <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="border-b border-zinc-800 text-sm text-gray-400">
+                                <th class="py-3 px-4 font-medium">Сеть</th>
+                                <th class="py-3 px-4 font-medium">TVL</th>
+                                <th class="py-3 px-4 font-medium">Прибыль (30д)</th>
+                                <th class="py-3 px-4 font-medium">TPS (24ч)</th>
+                                <th class="py-3 px-4 font-medium">Ср. комиссия</th>
+                                <th class="py-3 px-4 font-medium">Тип Rollup</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm" id="comparisonTable">
+                            <!-- Данные будут загружены динамически -->
+                        </tbody>
+                    </table>
+                 </div>
+            </div>
+
+            <!-- Нижняя часть страницы (футер) -->
+            <footer class="text-center text-gray-500 text-sm mt-8">
+                &copy; 2024 DEFIMON. Все права защищены.
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        // Конфигурация
+        const API_BASE_URL = 'http://localhost:8000/api/l2-analytics';
+        let selectedProtocol = 'arbitrum';
+        let charts = {};
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            loadDashboardData();
+        });
+
+        // Инициализация графиков
+        function initializeCharts() {
+            // Финансовый график
+            const financialCtx = document.getElementById('financialChart').getContext('2d');
+            charts.financial = new Chart(financialCtx, {
+                type: 'line',
+                data: {
+                    labels: ['1д', '7д', '14д', '21д', '30д'],
+                    datasets: [{
+                        label: 'Доходы',
+                        data: [0, 0, 0, 0, 0],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Затраты на L1',
+                        data: [0, 0, 0, 0, 0],
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Прибыль',
+                        data: [0, 0, 0, 0, 0],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#f3f4f6'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#374151'
+                            },
+                            ticks: {
+                                color: '#9ca3af'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: '#374151'
+                            },
+                            ticks: {
+                                color: '#9ca3af'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // График пользователей
+            const userCtx = document.getElementById('userChart').getContext('2d');
+            charts.user = new Chart(userCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Новые', 'Вернувшиеся', 'Активные'],
+                    datasets: [{
+                        label: 'Пользователи',
+                        data: [0, 0, 0],
+                        backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#f3f4f6'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#374151'
+                            },
+                            ticks: {
+                                color: '#9ca3af'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: '#374151'
+                            },
+                            ticks: {
+                                color: '#9ca3af'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // График удержания
+            const retentionCtx = document.getElementById('retentionChart').getContext('2d');
+            charts.retention = new Chart(retentionCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['1 день', '7 дней', '30 дней'],
+                    datasets: [{
+                        label: 'Удержание',
+                        data: [0, 0, 0],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        pointBackgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#f3f4f6'
+                            }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: {
+                                color: '#374151'
+                            },
+                            ticks: {
+                                color: '#9ca3af'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Загрузка данных дашборда
+        async function loadDashboardData() {
+            try {
+                showLoading();
+                
+                // Загружаем TVL данные
+                const tvlData = await fetchData('/tvl-growth');
+                updateTvlMetrics(tvlData);
+                updateComparisonTable(tvlData);
+
+                // Загружаем данные пользователей
+                const dauData = await fetchData('/daily-active-users');
+                updateDauMetrics(dauData);
+
+                // Загружаем данные gas savings
+                const gasData = await fetchData('/gas-savings');
+                updateGasMetrics(gasData);
+
+                // Загружаем данные удержания
+                const retentionData = await fetchData('/user-retention');
+                updateRetentionChart(retentionData);
+
+                // Обновляем графики
+                updateCharts();
+
+                hideLoading();
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                showError('Ошибка загрузки данных');
+                hideLoading();
+            }
+        }
+
+        // Функция для API запросов
+        async function fetchData(endpoint) {
+            try {
+                const response = await axios.get(`${API_BASE_URL}${endpoint}`);
+                return response.data;
+            } catch (error) {
+                console.error(`Error fetching ${endpoint}:`, error);
+                return [];
+            }
+        }
+
+        // Обновление TVL метрик
+        function updateTvlMetrics(data) {
+            if (!data || data.length === 0) return;
+
+            const totalTvl = data.reduce((sum, item) => sum + item.tvl, 0);
+            const avgGrowth = data.reduce((sum, item) => sum + (item.growth_rate || 0), 0) / data.length;
+
+            document.getElementById('totalTvl').textContent = formatCurrency(totalTvl);
+            document.getElementById('tvlChange').textContent = `${avgGrowth > 0 ? '+' : ''}${avgGrowth.toFixed(2)}% за 24ч`;
+            document.getElementById('tvlChange').className = `text-xs text-gray-400 mt-1 ${avgGrowth >= 0 ? 'text-green-400' : 'text-red-400'}`;
+        }
+
+        // Обновление DAU метрик
+        function updateDauMetrics(data) {
+            if (!data || data.length === 0) return;
+
+            const totalDau = data.reduce((sum, item) => sum + item.dau, 0);
+            const avgGrowth = data.reduce((sum, item) => sum + (item.user_growth_rate || 0), 0) / data.length;
+
+            document.getElementById('totalDau').textContent = formatNumber(totalDau);
+            document.getElementById('dauChange').textContent = `${avgGrowth > 0 ? '+' : ''}${avgGrowth.toFixed(2)}% за 24ч`;
+            document.getElementById('dauChange').className = `text-xs text-gray-400 mt-1 ${avgGrowth >= 0 ? 'text-green-400' : 'text-red-400'}`;
+        }
+
+        // Обновление gas метрик
+        function updateGasMetrics(data) {
+            if (!data || data.length === 0) return;
+
+            const avgSavings = data.reduce((sum, item) => sum + item.savings_percentage, 0) / data.length;
+            const totalSavings = data.reduce((sum, item) => sum + item.savings_usd, 0);
+
+            document.getElementById('totalProfit').textContent = formatCurrency(totalSavings);
+            document.getElementById('avgFee').textContent = `$${avgSavings.toFixed(2)}`;
+        }
+
+        // Обновление таблицы сравнения
+        function updateComparisonTable(data) {
+            if (!data || data.length === 0) return;
+
+            const tbody = document.getElementById('comparisonTable');
+            tbody.innerHTML = '';
+
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-zinc-800 hover:bg-zinc-800/50';
+                row.innerHTML = `
+                    <td class="py-3 px-4 font-medium text-white">${item.chain}</td>
+                    <td class="py-3 px-4">${formatCurrency(item.tvl)}</td>
+                    <td class="py-3 px-4 text-green-400">${formatCurrency(item.tvl * 0.1)}</td>
+                    <td class="py-3 px-4">${Math.floor(Math.random() * 50) + 5}</td>
+                    <td class="py-3 px-4">$${(Math.random() * 0.3 + 0.05).toFixed(2)}</td>
+                    <td class="py-3 px-4">${getRollupType(item.protocol)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Обновление графика удержания
+        function updateRetentionChart(data) {
+            if (!data || data.length === 0) return;
+
+            const protocolData = data.find(item => item.protocol === selectedProtocol);
+            if (protocolData) {
+                charts.retention.data.datasets[0].data = [
+                    protocolData.retention_1d,
+                    protocolData.retention_7d,
+                    protocolData.retention_30d
+                ];
+                charts.retention.update();
+            }
+        }
+
+        // Обновление графиков
+        function updateCharts() {
+            // Обновляем финансовый график с демо данными
+            const financialData = [1200000, 1350000, 1420000, 1580000, 1650000];
+            const costData = [800000, 850000, 900000, 950000, 1000000];
+            const profitData = financialData.map((rev, i) => rev - costData[i]);
+
+            charts.financial.data.datasets[0].data = financialData;
+            charts.financial.data.datasets[1].data = costData;
+            charts.financial.data.datasets[2].data = profitData;
+            charts.financial.update();
+
+            // Обновляем график пользователей с демо данными
+            charts.user.data.datasets[0].data = [12500, 45000, 120000];
+            charts.user.update();
+        }
+
+        // Смена протокола
+        function changeProtocol() {
+            selectedProtocol = document.getElementById('protocolSelector').value;
+            document.getElementById('selectedProtocol').textContent = 
+                document.getElementById('protocolSelector').options[document.getElementById('protocolSelector').selectedIndex].text;
+            
+            // Обновляем оценку DEFIMON
+            const scores = {
+                'arbitrum': 8.5,
+                'optimism': 7.8,
+                'base': 8.2,
+                'polygon': 6.9,
+                'zksync': 7.5,
+                'starknet': 7.1
+            };
+            
+            const score = scores[selectedProtocol] || 7.0;
+            document.getElementById('defimonScore').textContent = score.toFixed(1);
+            document.getElementById('scoreCircle').setAttribute('stroke-dasharray', `${score * 10}, 100`);
+            
+            // Перезагружаем данные для выбранного протокола
+            loadProtocolSpecificData();
+        }
+
+        // Загрузка данных для конкретного протокола
+        async function loadProtocolSpecificData() {
+            try {
+                const tvlData = await fetchData(`/tvl-growth/${selectedProtocol}`);
+                const retentionData = await fetchData('/user-retention');
+                
+                if (tvlData && tvlData.current_tvl) {
+                    document.getElementById('totalTvl').textContent = formatCurrency(tvlData.current_tvl);
+                }
+                
+                updateRetentionChart(retentionData);
+            } catch (error) {
+                console.error('Error loading protocol data:', error);
+            }
+        }
+
+        // Обновление данных
+        function refreshData() {
+            loadDashboardData();
+        }
+
+        // Сбор новых данных
+        async function collectNewData() {
+            try {
+                showLoading();
+                await axios.post(`${API_BASE_URL}/collect`);
+                setTimeout(() => {
+                    loadDashboardData();
+                }, 3000);
+            } catch (error) {
+                console.error('Error collecting new data:', error);
+                showError('Ошибка сбора данных');
+                hideLoading();
+            }
+        }
+
+        // Вспомогательные функции
+        function formatCurrency(value) {
+            if (value >= 1e9) {
+                return '$' + (value / 1e9).toFixed(1) + 'B';
+            } else if (value >= 1e6) {
+                return '$' + (value / 1e6).toFixed(1) + 'M';
+            } else if (value >= 1e3) {
+                return '$' + (value / 1e3).toFixed(1) + 'K';
+            }
+            return '$' + value.toFixed(0);
+        }
+
+        function formatNumber(value) {
+            if (value >= 1e6) {
+                return (value / 1e6).toFixed(1) + 'M';
+            } else if (value >= 1e3) {
+                return (value / 1e3).toFixed(1) + 'K';
+            }
+            return value.toLocaleString();
+        }
+
+        function getRollupType(protocol) {
+            const types = {
+                'arbitrum': 'Optimistic',
+                'optimism': 'Optimistic (OP Stack)',
+                'base': 'Optimistic (OP Stack)',
+                'polygon': 'Optimistic',
+                'zksync': 'ZK Rollup',
+                'starknet': 'ZK Rollup'
+            };
+            return types[protocol] || 'Unknown';
+        }
+
+        function showLoading() {
+            // Показываем индикатор загрузки
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(btn => {
+                if (btn.innerHTML.includes('ph-arrow-clockwise')) {
+                    btn.innerHTML = '<div class="loading"></div>';
+                }
+            });
+        }
+
+        function hideLoading() {
+            // Скрываем индикатор загрузки
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(btn => {
+                if (btn.innerHTML.includes('loading')) {
+                    btn.innerHTML = '<i class="ph ph-arrow-clockwise text-xl text-zinc-400"></i>';
+                }
+            });
+        }
+
+        function showError(message) {
+            // Показываем ошибку
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded-lg z-50';
+            errorDiv.textContent = message;
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
+        // Автообновление каждые 5 минут
+        setInterval(loadDashboardData, 5 * 60 * 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  geth:
+    image: ethereum/client-go:stable
+    container_name: geth-full-node
+    ports:
+      - "8545:8545"
+      - "8546:8546"
+      - "8551:8551"
+      - "30303:30303"
+      - "30303:30303/udp"
+    volumes:
+      - ./geth-data:/root/.ethereum
+      - ./jwtsecret.raw:/jwtsecret
+    command: >
+      --http
+      --http.addr=0.0.0.0
+      --http.port=8545
+      --http.api=eth,net,web3,debug,txpool,admin
+      --http.vhosts=*
+      --http.corsdomain=*
+      --ws
+      --ws.addr=0.0.0.0
+      --ws.port=8546
+      --ws.origins=*
+      --ws.api=eth,net,web3,debug,txpool,admin
+      --datadir=/root/.ethereum
+      --syncmode=snap
+      --cache=4096
+      --maxpeers=25
+      --discovery.v5
+      --authrpc.addr=0.0.0.0
+      --authrpc.port=8551
+      --authrpc.vhosts=*
+      --authrpc.jwtsecret=/jwtsecret
+    restart: unless-stopped
+
+  lighthouse:
+    image: sigp/lighthouse:latest
+    container_name: lighthouse-beacon
+    ports:
+      - "5052:5052"
+      - "9000:9000"
+    volumes:
+      - ./lighthouse-data:/root/.lighthouse
+      - ./jwtsecret.hex:/jwtsecret
+    command: >
+      lighthouse bn
+      --network mainnet
+      --datadir /root/.lighthouse
+      --execution-endpoint http://geth-full-node:8551
+      --execution-jwt /jwtsecret
+      --checkpoint-sync-url https://beaconstate-mainnet.chainsafe.io
+      --http
+      --http-address 0.0.0.0
+      --http-port 5052
+    depends_on:
+      - geth
+    restart: unless-stopped

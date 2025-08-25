@@ -1,0 +1,285 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ethereum-geth
+  namespace: defimon
+  labels:
+    app: ethereum-geth
+    component: execution-client
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: ethereum-geth
+  template:
+    metadata:
+      labels:
+        app: ethereum-geth
+        component: execution-client
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "6060"
+    spec:
+      nodeSelector:
+        cloud.google.com/gke-nodepool: ethereum-pool
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - ethereum-geth
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: geth
+        image: ethereum/client-go:latest
+        ports:
+        - containerPort: 8545
+          name: http
+        - containerPort: 8546
+          name: websocket
+        - containerPort: 8551
+          name: authrpc
+        - containerPort: 30303
+          name: p2p
+        - containerPort: 6060
+          name: metrics
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: GETH_DATADIR
+          value: "/root/.ethereum"
+        - name: GETH_SYNC_MODE
+          value: "snap"
+        - name: GETH_CACHE_SIZE
+          value: "4096"
+        - name: GETH_MAX_PEERS
+          value: "50"
+        command:
+        - geth
+        - --datadir
+        - /root/.ethereum
+        - --http
+        - --http.addr
+        - 0.0.0.0
+        - --http.port
+        - "8545"
+        - --http.corsdomain
+        - "*"
+        - --http.api
+        - "eth,net,web3,debug,txpool,personal"
+        - --ws
+        - --ws.addr
+        - 0.0.0.0
+        - --ws.port
+        - "8546"
+        - --ws.api
+        - "eth,net,web3,debug,txpool,personal"
+        - --authrpc.addr
+        - 0.0.0.0
+        - --authrpc.port
+        - "8551"
+        - --authrpc.jwtsecret
+        - /root/.ethereum/jwtsecret
+        - --syncmode
+        - snap
+        - --cache
+        - "4096"
+        - --maxpeers
+        - "50"
+        - --metrics
+        - --metrics.addr
+        - 0.0.0.0
+        - --metrics.port
+        - "6060"
+        - --pprof
+        - --pprof.addr
+        - 0.0.0.0
+        - --pprof.port
+        - "6061"
+        - --verbosity
+        - "3"
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2"
+            ephemeral-storage: "100Gi"
+          limits:
+            memory: "8Gi"
+            cpu: "4"
+            ephemeral-storage: "200Gi"
+        volumeMounts:
+        - name: ethereum-data
+          mountPath: /root/.ethereum
+        - name: jwt-secret
+          mountPath: /root/.ethereum/jwtsecret
+          subPath: jwtsecret.raw
+          readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8545
+          initialDelaySeconds: 300
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8545
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8545
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
+      volumes:
+      - name: ethereum-data
+        persistentVolumeClaim:
+          claimName: ethereum-data-pvc
+      - name: jwt-secret
+        secret:
+          secretName: ethereum-jwt-secret
+          defaultMode: 0400
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ethereum-lighthouse
+  namespace: defimon
+  labels:
+    app: ethereum-lighthouse
+    component: consensus-client
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: ethereum-lighthouse
+  template:
+    metadata:
+      labels:
+        app: ethereum-lighthouse
+        component: consensus-client
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5052"
+    spec:
+      nodeSelector:
+        cloud.google.com/gke-nodepool: ethereum-pool
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - ethereum-lighthouse
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: lighthouse
+        image: sigp/lighthouse:latest
+        ports:
+        - containerPort: 5052
+          name: http
+        - containerPort: 9000
+          name: p2p
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: LIGHTHOUSE_DATADIR
+          value: "/root/.lighthouse"
+        command:
+        - lighthouse
+        - beacon_node
+        - --network
+        - mainnet
+        - --datadir
+        - /root/.lighthouse
+        - --execution-jwt
+        - /root/.lighthouse/jwtsecret
+        - --execution-endpoint
+        - http://ethereum-geth-service:8551
+        - --http
+        - --http-address
+        - 0.0.0.0
+        - --http-port
+        - "5052"
+        - --checkpoint-sync-url
+        - https://sync-mainnet.beaconcha.in
+        - --metrics
+        - --validator-monitor-auto
+        - --target-peers
+        - "50"
+        - --max-skip-slots
+        - "5"
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+            ephemeral-storage: "50Gi"
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+            ephemeral-storage: "100Gi"
+        volumeMounts:
+        - name: lighthouse-data
+          mountPath: /root/.lighthouse
+        - name: jwt-secret
+          mountPath: /root/.lighthouse/jwtsecret
+          subPath: jwtsecret.hex
+          readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /eth/v1/node/health
+            port: 5052
+          initialDelaySeconds: 300
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /eth/v1/node/health
+            port: 5052
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /eth/v1/node/health
+            port: 5052
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
+      volumes:
+      - name: lighthouse-data
+        persistentVolumeClaim:
+          claimName: lighthouse-data-pvc
+      - name: jwt-secret
+        secret:
+          secretName: ethereum-jwt-secret
+          defaultMode: 0400

@@ -1,0 +1,23 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: hot-storage-ssd
+provisioner: pd.csi.storage.gke.io
+parameters:
+  type: pd-ssd
+  csi.storage.k8s.io/fs-type: ext4
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: cold-storage-hdd
+provisioner: pd.csi.storage.gke.io
+parameters:
+  type: pd-standard
+  csi.storage.k8s.io/fs-type: ext4
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+reclaimPolicy: Retain

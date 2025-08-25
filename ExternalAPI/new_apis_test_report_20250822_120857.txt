@@ -1,0 +1,94 @@
+================================================================================
+NEW APIs TEST REPORT
+================================================================================
+Timestamp: 2025-08-22T12:08:52.131696
+
+Service: QUICKNODE
+----------------------------------------
+✗ Connectivity: FAILED - Unknown error
+✓ Get latest block number: SUCCESS (0.029s)
+✓ Get latest block info: SUCCESS (0.033s)
+✓ Get chain ID: SUCCESS (0.029s)
+✓ Get current gas price: SUCCESS (0.029s)
+✓ Get account balance: SUCCESS (0.029s)
+✓ Get network version: SUCCESS (0.029s)
+✓ Get client version: SUCCESS (0.029s)
+
+Service: BLAST
+----------------------------------------
+✗ Connectivity: FAILED - HTTPSConnectionPool(host='api.blast.io', port=443): Max retries exceeded with url: /ping (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x104a44910>: Failed to resolve 'api.blast.io' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ Get latest block information: FAILED - HTTPSConnectionPool(host='api.blast.io', port=443): Max retries exceeded with url: /v1/block/latest (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x104a44690>: Failed to resolve 'api.blast.io' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ Get block by number: FAILED - HTTPSConnectionPool(host='api.blast.io', port=443): Max retries exceeded with url: /v1/block/latest (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x104a44e10>: Failed to resolve 'api.blast.io' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ Get transaction details: FAILED - HTTPSConnectionPool(host='api.blast.io', port=443): Max retries exceeded with url: /v1/transaction/0x88df016429689c079f3b2f6ad39fa052532c56795b733da78a91ebe6a713944b (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x104a451d0>: Failed to resolve 'api.blast.io' ([Errno 8] nodename nor servname provided, or not known)"))
+
+Service: COINGECKO
+----------------------------------------
+✓ Connectivity: SUCCESS (0.386s)
+✓ Test API connectivity: SUCCESS (0.199s)
+✓ Get simple price data: SUCCESS (0.214s)
+✓ Get market data: SUCCESS (0.197s)
+✓ Get Bitcoin detailed data: SUCCESS (0.058s)
+
+Service: COINCAP
+----------------------------------------
+✗ Connectivity: FAILED - Unknown error
+✗ Get all assets: FAILED - <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot GET /v2/assets</pre>
+</body>
+</html>
+
+✗ Get Bitcoin asset data: FAILED - <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot GET /v2/assets/bitcoin</pre>
+</body>
+</html>
+
+✗ Get exchange rates: FAILED - <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot GET /v2/rates</pre>
+</body>
+</html>
+
+✗ Get exchange data: FAILED - <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot GET /v2/exchanges</pre>
+</body>
+</html>
+
+
+Service: GITHUB
+----------------------------------------
+✗ Connectivity: FAILED - Unknown error
+✓ Get authenticated user information: SUCCESS (0.343s)
+✓ Get user repositories: SUCCESS (0.762s)
+✓ Check API rate limits: SUCCESS (0.191s)
+✓ Search repositories: SUCCESS (1.166s)
+
+================================================================================
+SUMMARY
+================================================================================
+Total Tests: 27
+Passed: 16
+Failed: 11
+Success Rate: 59.3%

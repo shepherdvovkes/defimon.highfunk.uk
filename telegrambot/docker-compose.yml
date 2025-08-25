@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  telegram-bot:
+    build: .
+    container_name: gcloud-telegram-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=UTC
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json
+    volumes:
+      # Mount Google Cloud credentials
+      - ~/.config/gcloud/application_default_credentials.json:/app/gcp-credentials.json:ro
+    networks:
+      - bot-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    command: ["python", "bot.py"]
+
+  infrastructure-monitor:
+    build: .
+    container_name: gcloud-infrastructure-monitor
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=UTC
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json
+    volumes:
+      # Mount Google Cloud credentials
+      - ~/.config/gcloud/application_default_credentials.json:/app/gcp-credentials.json:ro
+    networks:
+      - bot-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 60s
+    command: ["python", "infrastructure_monitor.py"]
+    depends_on:
+      - telegram-bot
+
+networks:
+  bot-network:
+    driver: bridge
+
+volumes:
+  # Add any persistent volumes if needed
+  bot-logs:
+    driver: local

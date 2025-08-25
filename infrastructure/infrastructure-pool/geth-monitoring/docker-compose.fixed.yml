@@ -1,0 +1,79 @@
+services:
+  geth:
+    image: ethereum/client-go:stable
+    container_name: geth-full-node
+    ports:
+      - "8545:8545"
+      - "8546:8546"
+      - "8551:8551"
+      - "30303:30303"
+      - "30303:30303/udp"
+    volumes:
+      - ./geth-data:/root/.ethereum
+    environment:
+      - JWT_SECRET=ccbc7632b83510c1e1422be9e8ac9f33b4c3d335aca247862678bc2341d64fc0
+    command: >
+      --http
+      --http.addr=0.0.0.0
+      --http.port=8545
+      --http.api=eth,net,web3,debug,txpool,admin
+      --http.vhosts=*
+      --http.corsdomain=*
+      --ws
+      --ws.addr=0.0.0.0
+      --ws.port=8546
+      --ws.origins=*
+      --ws.api=eth,net,web3,debug,txpool,admin
+      --datadir=/root/.ethereum
+      --syncmode=snap
+      --cache=4096
+      --maxpeers=25
+      --discovery.v5
+      --authrpc.addr=0.0.0.0
+      --authrpc.port=8551
+      --authrpc.vhosts=*
+      --authrpc.jwtsecret=/tmp/jwtsecret
+    restart: unless-stopped
+    entrypoint: >
+      /bin/sh -c '
+        echo "$${JWT_SECRET}" > /tmp/jwtsecret &&
+        exec geth --authrpc.jwtsecret=/tmp/jwtsecret
+        --http
+        --http.addr=0.0.0.0
+        --http.port=8545
+        --http.api=eth,net,web3,debug,txpool,admin
+        --http.vhosts=*
+        --http.corsdomain=*
+        --ws
+        --ws.addr=0.0.0.0
+        --ws.port=8546
+        --ws.origins=*
+        --ws.api=eth,net,web3,debug,txpool,admin
+        --datadir=/root/.ethereum
+        --syncmode=snap
+        --cache=4096
+        --maxpeers=25
+        --discovery.v5
+        --authrpc.addr=0.0.0.0
+        --authrpc.port=8551
+        --authrpc.vhosts=*
+      '
+
+  lighthouse:
+    image: sigp/lighthouse:latest
+    container_name: lighthouse-beacon
+    ports:
+      - "5052:5052"
+      - "9000:9000"
+    volumes:
+      - ./lighthouse-data:/root/.lighthouse
+    environment:
+      - JWT_SECRET=ccbc7632b83510c1e1422be9e8ac9f33b4c3d335aca247862678bc2341d64fc0
+    restart: unless-stopped
+    entrypoint: >
+      /bin/sh -c '
+        echo "$${JWT_SECRET}" > /tmp/jwtsecret &&
+        exec lighthouse bn --network mainnet --datadir /root/.lighthouse --execution-endpoint http://geth-full-node:8551 --execution-jwt /tmp/jwtsecret --checkpoint-sync-url https://beaconstate-mainnet.chainsafe.io --http --http-address 0.0.0.0 --http-port 5052
+      '
+    depends_on:
+      - geth

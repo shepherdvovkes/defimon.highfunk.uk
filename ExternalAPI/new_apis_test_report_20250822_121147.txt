@@ -1,0 +1,96 @@
+================================================================================
+NEW APIs TEST REPORT
+================================================================================
+Timestamp: 2025-08-22T12:11:43.243790
+
+Service: QUICKNODE
+----------------------------------------
+✗ Connectivity: FAILED - Unknown error
+✓ Get latest block number: SUCCESS (0.029s)
+✓ Get latest block info: SUCCESS (0.035s)
+✓ Get chain ID: SUCCESS (0.029s)
+✓ Get current gas price: SUCCESS (0.03s)
+✓ Get account balance: SUCCESS (0.031s)
+✓ Get network version: SUCCESS (0.029s)
+✓ Get client version: SUCCESS (0.03s)
+
+Service: BLAST
+----------------------------------------
+✗ Connectivity: FAILED - HTTPSConnectionPool(host='azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io', port=443): Max retries exceeded with url: /ping (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x102780910>: Failed to resolve 'azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ Get latest block number: FAILED - HTTPSConnectionPool(host='azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x102780190>: Failed to resolve 'azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ Get latest block info: FAILED - HTTPSConnectionPool(host='azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x102780cd0>: Failed to resolve 'azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ Get chain ID: FAILED - HTTPSConnectionPool(host='azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x102781090>: Failed to resolve 'azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ Get current gas price: FAILED - HTTPSConnectionPool(host='azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x102781450>: Failed to resolve 'azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io' ([Errno 8] nodename nor servname provided, or not known)"))
+✗ Get network version: FAILED - HTTPSConnectionPool(host='azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x102781810>: Failed to resolve 'azongu3cle2ybwfeluzvwncxw-g_f31rvqjqkjmfvcg.blastapi.io' ([Errno 8] nodename nor servname provided, or not known)"))
+
+Service: COINGECKO
+----------------------------------------
+✓ Connectivity: SUCCESS (0.355s)
+✓ Test API connectivity: SUCCESS (0.187s)
+✓ Get simple price data: SUCCESS (0.188s)
+✓ Get market data: SUCCESS (0.172s)
+✓ Get Bitcoin detailed data: SUCCESS (0.057s)
+
+Service: COINCAP
+----------------------------------------
+✗ Connectivity: FAILED - Unknown error
+✗ Get all assets: FAILED - <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot GET /v2/assets</pre>
+</body>
+</html>
+
+✗ Get Bitcoin asset data: FAILED - <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot GET /v2/assets/bitcoin</pre>
+</body>
+</html>
+
+✗ Get exchange rates: FAILED - <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot GET /v2/rates</pre>
+</body>
+</html>
+
+✗ Get exchange data: FAILED - <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot GET /v2/exchanges</pre>
+</body>
+</html>
+
+
+Service: GITHUB
+----------------------------------------
+✗ Connectivity: FAILED - Unknown error
+✓ Get authenticated user information: SUCCESS (0.279s)
+✓ Get user repositories: SUCCESS (0.672s)
+✓ Check API rate limits: SUCCESS (0.177s)
+✓ Search repositories: SUCCESS (1.095s)
+
+================================================================================
+SUMMARY
+================================================================================
+Total Tests: 29
+Passed: 16
+Failed: 13
+Success Rate: 55.2%

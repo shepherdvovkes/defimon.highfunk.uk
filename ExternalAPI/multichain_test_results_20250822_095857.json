@@ -1,0 +1,196 @@
+{
+  "config": {
+    "base_endpoint": "hidden-holy-seed",
+    "token_id": "97d6d8e7659b49b126c43455edc4607949bfb52b",
+    "networks_tested": 7
+  },
+  "test_time": "2025-08-22T09:58:57.101286",
+  "results": [
+    {
+      "network": "Ethereum",
+      "endpoint": "https://hidden-holy-seed.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_blockNumber",
+      "success": true,
+      "response_time": 0.09960103034973145,
+      "block_number": 23194973,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x161ed5d"
+      },
+      "timestamp": "2025-08-22T09:58:55.082863"
+    },
+    {
+      "network": "Ethereum",
+      "endpoint": "https://hidden-holy-seed.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_chainId",
+      "success": true,
+      "response_time": 0.09482502937316895,
+      "block_number": null,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x1"
+      },
+      "timestamp": "2025-08-22T09:58:55.178933"
+    },
+    {
+      "network": "Base",
+      "endpoint": "https://hidden-holy-seed.base-mainnet.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_blockNumber",
+      "success": true,
+      "response_time": 0.2883610725402832,
+      "block_number": 34528294,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x20edc26"
+      },
+      "timestamp": "2025-08-22T09:58:55.468520"
+    },
+    {
+      "network": "Base",
+      "endpoint": "https://hidden-holy-seed.base-mainnet.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_chainId",
+      "success": true,
+      "response_time": 0.1160898208618164,
+      "block_number": null,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x2105"
+      },
+      "timestamp": "2025-08-22T09:58:55.587148"
+    },
+    {
+      "network": "Binance Smart Chain",
+      "endpoint": "https://hidden-holy-seed.bsc.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_blockNumber",
+      "success": true,
+      "response_time": 0.3016390800476074,
+      "block_number": 58463672,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x37c15b8"
+      },
+      "timestamp": "2025-08-22T09:58:55.889824"
+    },
+    {
+      "network": "Binance Smart Chain",
+      "endpoint": "https://hidden-holy-seed.bsc.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_chainId",
+      "success": true,
+      "response_time": 0.10654616355895996,
+      "block_number": null,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x38"
+      },
+      "timestamp": "2025-08-22T09:58:55.997360"
+    },
+    {
+      "network": "Avalanche C-Chain",
+      "endpoint": "https://hidden-holy-seed.avalanche-mainnet.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b/ext/bc/C/rpc",
+      "method": "eth_blockNumber",
+      "success": true,
+      "response_time": 0.3754391670227051,
+      "block_number": 67454822,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x4054766"
+      },
+      "timestamp": "2025-08-22T09:58:56.373756"
+    },
+    {
+      "network": "Avalanche C-Chain",
+      "endpoint": "https://hidden-holy-seed.avalanche-mainnet.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b/ext/bc/C/rpc",
+      "method": "eth_chainId",
+      "success": true,
+      "response_time": 0.09385275840759277,
+      "block_number": null,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0xa86a"
+      },
+      "timestamp": "2025-08-22T09:58:56.468529"
+    },
+    {
+      "network": "Polygon",
+      "endpoint": "https://hidden-holy-seed.polygon-mainnet.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_blockNumber",
+      "success": false,
+      "response_time": 0.1376171112060547,
+      "block_number": null,
+      "error": "Request error: HTTPSConnectionPool(host='hidden-holy-seed.polygon-mainnet.quiknode.pro', port=443): Max retries exceeded with url: /97d6d8e7659b49b126c43455edc4607949bfb52b (Caused by SSLError(SSLCertVerificationError(1, \"[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'hidden-holy-seed.polygon-mainnet.quiknode.pro'. (_ssl.c:1028)\")))",
+      "data": null,
+      "timestamp": "2025-08-22T09:58:56.607085"
+    },
+    {
+      "network": "Polygon",
+      "endpoint": "https://hidden-holy-seed.polygon-mainnet.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_chainId",
+      "success": false,
+      "response_time": 0.06959104537963867,
+      "block_number": null,
+      "error": "Unexpected error: HTTPSConnectionPool(host='hidden-holy-seed.polygon-mainnet.quiknode.pro', port=443): Max retries exceeded with url: /97d6d8e7659b49b126c43455edc4607949bfb52b (Caused by SSLError(SSLCertVerificationError(1, \"[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'hidden-holy-seed.polygon-mainnet.quiknode.pro'. (_ssl.c:1028)\")))",
+      "data": null,
+      "timestamp": "2025-08-22T09:58:56.676905"
+    },
+    {
+      "network": "Arbitrum One",
+      "endpoint": "https://hidden-holy-seed.arbitrum-one.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_blockNumber",
+      "success": false,
+      "response_time": 0.14507699012756348,
+      "block_number": null,
+      "error": "Request error: HTTPSConnectionPool(host='hidden-holy-seed.arbitrum-one.quiknode.pro', port=443): Max retries exceeded with url: /97d6d8e7659b49b126c43455edc4607949bfb52b (Caused by SSLError(SSLCertVerificationError(1, \"[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'hidden-holy-seed.arbitrum-one.quiknode.pro'. (_ssl.c:1028)\")))",
+      "data": null,
+      "timestamp": "2025-08-22T09:58:56.822205"
+    },
+    {
+      "network": "Arbitrum One",
+      "endpoint": "https://hidden-holy-seed.arbitrum-one.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_chainId",
+      "success": false,
+      "response_time": 0.06559467315673828,
+      "block_number": null,
+      "error": "Unexpected error: HTTPSConnectionPool(host='hidden-holy-seed.arbitrum-one.quiknode.pro', port=443): Max retries exceeded with url: /97d6d8e7659b49b126c43455edc4607949bfb52b (Caused by SSLError(SSLCertVerificationError(1, \"[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'hidden-holy-seed.arbitrum-one.quiknode.pro'. (_ssl.c:1028)\")))",
+      "data": null,
+      "timestamp": "2025-08-22T09:58:56.887951"
+    },
+    {
+      "network": "Optimism",
+      "endpoint": "https://hidden-holy-seed.optimism-mainnet.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_blockNumber",
+      "success": false,
+      "response_time": 0.136322021484375,
+      "block_number": null,
+      "error": "Request error: HTTPSConnectionPool(host='hidden-holy-seed.optimism-mainnet.quiknode.pro', port=443): Max retries exceeded with url: /97d6d8e7659b49b126c43455edc4607949bfb52b (Caused by SSLError(SSLCertVerificationError(1, \"[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'hidden-holy-seed.optimism-mainnet.quiknode.pro'. (_ssl.c:1028)\")))",
+      "data": null,
+      "timestamp": "2025-08-22T09:58:57.024511"
+    },
+    {
+      "network": "Optimism",
+      "endpoint": "https://hidden-holy-seed.optimism-mainnet.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_chainId",
+      "success": false,
+      "response_time": 0.07608795166015625,
+      "block_number": null,
+      "error": "Unexpected error: HTTPSConnectionPool(host='hidden-holy-seed.optimism-mainnet.quiknode.pro', port=443): Max retries exceeded with url: /97d6d8e7659b49b126c43455edc4607949bfb52b (Caused by SSLError(SSLCertVerificationError(1, \"[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'hidden-holy-seed.optimism-mainnet.quiknode.pro'. (_ssl.c:1028)\")))",
+      "data": null,
+      "timestamp": "2025-08-22T09:58:57.100745"
+    }
+  ]
+}

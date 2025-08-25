@@ -1,0 +1,375 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage[russian,english]{babel}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{tikz}
+\usepackage{pgf-umlsd}
+\usepackage{pgf-umlcd}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\geometry{
+    left=1.8cm,
+    right=1.8cm,
+    top=2cm,
+    bottom=2cm,
+    includeheadfoot
+}
+
+\usetikzlibrary{shapes,shapes.geometric,arrows,positioning,fit,backgrounds,calc,shadows,decorations.pathreplacing,layers}
+
+\definecolor{lightblue}{RGB}{173,216,230}
+\definecolor{lightgreen}{RGB}{144,238,144}
+\definecolor{lightyellow}{RGB}{255,255,224}
+\definecolor{lightred}{RGB}{255,182,193}
+\definecolor{lightpurple}{RGB}{221,160,221}
+\definecolor{lightgray}{RGB}{245,245,245}
+\definecolor{darkblue}{RGB}{0,0,139}
+\definecolor{darkgreen}{RGB}{0,100,0}
+\definecolor{darkorange}{RGB}{255,140,0}
+
+\tikzset{
+    microservice/.style={rectangle, rounded corners=3pt, minimum width=2.2cm, minimum height=0.8cm, text centered, draw=black, fill=lightblue, text width=2cm, font=\small},
+    database/.style={cylinder, shape border rotate=90, minimum width=1.8cm, minimum height=1.2cm, text centered, draw=black, fill=lightgreen, text width=1.6cm, font=\small},
+    external/.style={rectangle, rounded corners=3pt, minimum width=2cm, minimum height=0.8cm, text centered, draw=black, fill=lightyellow, text width=1.8cm, font=\small},
+    gateway/.style={rectangle, rounded corners=3pt, minimum width=2.2cm, minimum height=0.8cm, text centered, draw=black, fill=lightpurple, text width=2cm, font=\small},
+    process/.style={diamond, minimum width=1.5cm, minimum height=1.2cm, text centered, draw=black, fill=lightyellow, text width=1.3cm, font=\scriptsize},
+    startend/.style={circle, draw, fill=lightgreen, minimum size=0.8cm, font=\scriptsize},
+    arrow/.style={thick,->,>=stealth},
+    dataflow/.style={thick,->,>=stealth, color=darkblue},
+    control/.style={thick,->,>=stealth, color=darkgreen}
+}
+
+\title{Архитектура аналитической системы DeFi\\ DEFIMON Analytics Platform}
+\author{DevOps Team\\ DEFIMON Project}
+\date{Август 2024}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Введение}
+
+Данный документ описывает архитектуру аналитической системы DeFi протоколов DEFIMON, развернутой на облачной инфраструктуре. Система предназначена для сбора, обработки и анализа данных из различных источников Web3 экосистемы, включая Ethereum, L2 сети, Cosmos, Polkadot и другие блокчейны.
+
+\section{Обзор архитектуры}
+
+Аналитическая система построена на микросервисной архитектуре и включает следующие основные компоненты:
+
+\begin{itemize}
+    \item \textbf{Уровень сбора данных}: Data Ingestion Service, Blockchain Node
+    \item \textbf{Уровень обработки}: Stream Processing Service, AI/ML Service
+    \item \textbf{Уровень хранения}: ClickHouse (временные ряды), PostgreSQL (метаданные), Redis (кэш)
+    \item \textbf{API уровень}: Analytics API, Admin Dashboard
+    \item \textbf{Инфраструктурные сервисы}: Kong (API Gateway), Kafka (очереди сообщений)
+    \item \textbf{Мониторинг}: Prometheus, Grafana
+\end{itemize}
+
+\section{UML диаграмма компонентов системы}
+
+\begin{figure}[H]
+\centering
+\begin{verbatim}
+graph TD
+    subgraph "Data Sources"
+        thegraph["The Graph<br/>Subgraphs"]
+        coingecko["CoinGecko<br/>API"]
+        defillama["DeFiLlama<br/>API"]
+        rpc["Blockchain<br/>RPCs"]
+    end
+
+    subgraph "Data Plane"
+        subgraph "Ingestion"
+            ingestion["Data<br/>Ingestion<br/>Service"]
+            blockchain["Blockchain<br/>Node<br/>Service"]
+        end
+        
+        kafka["Apache<br/>Kafka"]
+        
+        subgraph "Processing"
+            stream["Stream<br/>Processing<br/>Service"]
+            aiml["AI/ML<br/>Service"]
+        end
+        
+        subgraph "Storage"
+            clickhouse[("ClickHouse<br/>Time-series")]
+            postgres[("PostgreSQL<br/>Metadata")]
+            redis[("Redis<br/>Cache")]
+        end
+    end
+
+    subgraph "Control Plane"
+        subgraph "API & UI"
+            api["Analytics<br/>API"]
+            admin["Admin<br/>Dashboard"]
+            gateway["Kong<br/>API Gateway"]
+        end
+        
+        subgraph "Monitoring"
+            prometheus["Prometheus<br/>Metrics"]
+            grafana["Grafana<br/>Dashboards"]
+        end
+    end
+
+    subgraph "Clients"
+        clients["External<br/>Clients"]
+    end
+
+    thegraph --> ingestion
+    coingecko --> ingestion
+    defillama --> ingestion
+    rpc --> blockchain
+    
+    ingestion --> kafka
+    blockchain --> kafka
+    kafka --> stream
+    kafka --> aiml
+    
+    stream --> clickhouse
+    stream --> postgres
+    stream --> redis
+    
+    clickhouse --> api
+    postgres --> api
+    redis --> api
+    
+    api --> gateway
+    admin --> gateway
+    gateway --> clients
+    
+    ingestion -.-> prometheus
+    stream -.-> prometheus
+    api -.-> prometheus
+    prometheus --> grafana
+\end{verbatim}
+\caption{UML диаграмма компонентов аналитической системы}
+\label{fig:component-diagram}
+\end{figure}
+
+\section{Функциональная диаграмма}
+
+\begin{figure}[H]
+\centering
+\begin{verbatim}
+graph TD;
+    start("Start") --> collect["Collect Data<br/>from Sources"];
+    collect --> classify{"Classify<br/>Data<br/>Type?"};
+    classify -- "Protocol" --> protocol["Process<br/>Protocol<br/>Data"];
+    classify -- "Pool" --> pool["Process<br/>Pool<br/>Data"];
+    classify -- "Price" --> price["Process<br/>Price<br/>Data"];
+    protocol --> aggregate["Aggregate &<br/>Validate"];
+    pool --> aggregate;
+    price --> aggregate;
+    aggregate --> storage_choice{"Choose<br/>Storage?"};
+    storage_choice -- "Time-series" --> ch_save[("Save to<br/>ClickHouse")];
+    storage_choice -- "Metadata" --> pg_save[("Save to<br/>PostgreSQL")];
+    storage_choice -- "Cache" --> redis_save[("Cache in<br/>Redis")];
+    subgraph Data Storage and Retrieval
+        ch_save --> api_process["Process<br/>API<br/>Request"];
+        pg_save --> api_process;
+        redis_save --> api_process;
+    end
+    api_process --> cache_check{"Cache<br/>Hit?"};
+    cache_check -- "Yes" --> get_cache["Return<br/>Cached<br/>Data"];
+    cache_check -- "No" --> query_db["Query<br/>Database"];
+    get_cache --> response["Format<br/>Response"];
+    query_db --> response;
+    response --> finish("End");
+    query_db -- "Update Cache" --> redis_save;
+\end{verbatim}
+\caption{Функциональная диаграмма обработки данных}
+\label{fig:functional-diagram}
+\end{figure}
+
+\section{Диаграмма развертывания в Kubernetes}
+
+\begin{figure}[H]
+\centering
+\begin{verbatim}
+graph TD
+    subgraph "External Access"
+        lb["External<br/>Load Balancer"]
+    end
+    
+    subgraph "Kubernetes Cluster"
+        ingress["NGINX<br/>Ingress"]
+        
+        subgraph "Application Layer"
+            api_pod["Analytics API<br/>Pod (3 replicas)"]
+            admin_pod["Admin Dashboard<br/>Pod (2 replicas)"]
+            aiml_pod["AI/ML Service<br/>Pod (2 replicas)"]
+        end
+
+        subgraph "Processing Layer"
+            ingestion_pod["Data Ingestion<br/>Pod (3 replicas)"]
+            stream_pod["Stream Processing<br/>Pod (2 replicas)"]
+            blockchain_pod["Blockchain Node<br/>Pod (1 replica)"]
+        end
+        
+        subgraph "Messaging"
+            kafka_pod["Kafka<br/>Pod (3 replicas)"]
+        end
+
+        subgraph "Storage Layer"
+            postgres_pod[("PostgreSQL<br/>Pod (1 replica)<br/>100Gi SSD")]
+            clickhouse_pod[("ClickHouse<br/>Pod (1 replica)<br/>500Gi SSD")]
+            redis_pod[("Redis<br/>Pod (1 replica)<br/>50Gi SSD")]
+        end
+        
+        subgraph "Monitoring"
+             monitoring_pod["Monitoring Pod<br/>(1 replica)"]
+        end
+    end
+
+    lb --> ingress
+    
+    ingress --> api_pod
+    ingress --> admin_pod
+    ingress --> aiml_pod
+    
+    api_pod ==> postgres_pod
+    api_pod ==> clickhouse_pod
+    api_pod ==> redis_pod
+    
+    ingestion_pod --> kafka_pod
+    stream_pod --> kafka_pod
+    blockchain_pod --> kafka_pod
+    
+    stream_pod ==> postgres_pod
+    stream_pod ==> clickhouse_pod
+    stream_pod ==> redis_pod
+    
+    api_pod -.-> monitoring_pod
+    stream_pod -.-> monitoring_pod
+    ingestion_pod -.-> monitoring_pod
+\end{verbatim}
+\caption{Диаграмма развертывания в Kubernetes}
+\label{fig:deployment-diagram}
+\end{figure}
+
+\section{Схема данных}
+
+\subsection{ClickHouse (временные ряды)}
+\begin{itemize}
+    \item \texttt{protocol\_metrics} - метрики протоколов (TVL, объем, комиссии)
+    \item \texttt{pool\_metrics} - метрики пулов ликвидности
+    \item \texttt{user\_events} - события пользователей
+    \item \texttt{model\_performance} - производительность ML моделей
+\end{itemize}
+
+\subsection{PostgreSQL (метаданные)}
+\begin{itemize}
+    \item \texttt{users} - пользователи системы
+    \item \texttt{protocols} - каталог DeFi протоколов
+    \item \texttt{api\_keys} - API ключи доступа
+    \item \texttt{l2\_networks} - конфигурация L2 сетей
+\end{itemize}
+
+\subsection{Redis (кэш и сессии)}
+\begin{itemize}
+    \item Кэширование результатов API запросов
+    \item Управление сессиями пользователей
+    \item Rate limiting для API
+    \item Временное хранение ML предсказаний
+\end{itemize}
+
+\section{Технические характеристики}
+
+\subsection{Требования к ресурсам}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Компонент} & \textbf{CPU} & \textbf{RAM} & \textbf{Storage} \\
+\hline
+Analytics API & 500m-1000m & 1-2Gi & - \\
+Data Ingestion & 1000m-2000m & 2-4Gi & - \\
+Stream Processing & 1000m-2000m & 2-4Gi & - \\
+AI/ML Service & 2000m-4000m & 4-8Gi & - \\
+Blockchain Node & 2000m-4000m & 8-16Gi & 50Gi \\
+ClickHouse & 2000m-4000m & 8-16Gi & 500Gi \\
+PostgreSQL & 1000m-2000m & 4-8Gi & 100Gi \\
+Redis & 500m-1000m & 2-4Gi & 50Gi \\
+\hline
+\end{tabular}
+\caption{Требования к ресурсам компонентов}
+\end{table}
+
+\subsection{Производительность}
+\begin{itemize}
+    \item \textbf{API Throughput}: 10,000+ запросов/секунду
+    \item \textbf{Latency}: <50ms для кэшированных данных, <200ms для запросов к БД
+    \item \textbf{Data Ingestion}: 5GB+ данных в день
+    \item \textbf{ML Predictions}: 1000+ предсказаний/минуту
+    \item \textbf{Data Retention}: 2 года для временных рядов
+\end{itemize}
+
+\section{Безопасность и мониторинг}
+
+\subsection{Безопасность}
+\begin{itemize}
+    \item JWT токены для аутентификации API
+    \item Rate limiting на уровне пользователя и IP
+    \item RBAC (Role-Based Access Control) в Kubernetes
+    \item Network Policies для изоляции трафика
+    \item Шифрование данных в покое и передаче
+\end{itemize}
+
+\subsection{Мониторинг}
+\begin{itemize}
+    \item \textbf{Метрики}: CPU, RAM, сеть, диск, бизнес-метрики
+    \item \textbf{Логирование}: Централизованные логи через ELK stack
+    \item \textbf{Алерты}: Критические события и пороговые значения
+    \item \textbf{Трассировка}: Распределенная трассировка запросов
+\end{itemize}
+
+\section{Масштабирование и отказоустойчивость}
+
+\subsection{Горизонтальное масштабирование}
+\begin{itemize}
+    \item Horizontal Pod Autoscaler (HPA) для stateless сервисов
+    \item Kafka partitioning для распределения нагрузки
+    \item Read replicas для баз данных
+    \item CDN для статического контента
+\end{itemize}
+
+\subsection{Отказоустойчивость}
+\begin{itemize}
+    \item Multi-AZ развертывание в Kubernetes
+    \item Автоматический restart failed pods
+    \item Circuit breaker pattern для внешних API
+    \item Backup стратегия для всех критических данных
+\end{itemize}
+
+\section{Заключение}
+
+Представленная архитектура аналитической системы DEFIMON обеспечивает:
+
+\begin{itemize}
+    \item \textbf{Высокую производительность} - обработка больших объемов данных в реальном времени
+    \item \textbf{Масштабируемость} - горизонтальное и вертикальное масштабирование
+    \item \textbf{Надежность} - отказоустойчивость и автоматическое восстановление
+    \item \textbf{Безопасность} - современные практики защиты данных
+    \item \textbf{Наблюдаемость} - полный мониторинг всех компонентов системы
+\end{itemize}
+
+Система готова к production использованию и может быть развернута в любой Kubernetes среде с минимальными изменениями конфигурации.
+
+\end{document}

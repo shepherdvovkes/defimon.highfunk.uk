@@ -1,0 +1,27 @@
+# L2 Analytics Dependencies - Minimal for Python 3.13
+
+# FastAPI and web framework
+fastapi
+uvicorn[standard]
+pydantic
+
+# HTTP client for API requests
+aiohttp
+requests
+
+# Environment variables
+python-dotenv
+
+# Date and time handling
+python-dateutil
+
+# JSON handling
+orjson
+
+# WebSocket support
+websockets
+
+# Testing
+pytest
+pytest-asyncio
+httpx

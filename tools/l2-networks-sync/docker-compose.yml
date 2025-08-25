@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  l2-networks-sync:
+    build: .
+    container_name: l2-networks-sync
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_DB=${POSTGRES_DB:-admin_dashboard}
+      - POSTGRES_USER=${POSTGRES_USER:-admin_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_SSL=${POSTGRES_SSL:-false}
+      - GETH_RPC_URL=${GETH_RPC_URL:-http://geth:8545}
+      - LIGHTHOUSE_RPC_URL=${LIGHTHOUSE_RPC_URL:-http://lighthouse:5052}
+      - GETH_JWT_SECRET_PATH=${GETH_JWT_SECRET_PATH:-/jwtsecret}
+      - SYNC_INTERVAL_HOURS=${SYNC_INTERVAL_HOURS:-24}
+      - MAX_NETWORKS_PER_PAGE=${MAX_NETWORKS_PER_PAGE:-20}
+      - SEARCH_MIN_LENGTH=${SEARCH_MIN_LENGTH:-2}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - ./logs:/app/logs
+      - ${GETH_JWT_SECRET_PATH:-/dev/null}:/jwtsecret:ro
+    networks:
+      - admin-dashboard-network
+    depends_on:
+      - postgres
+    profiles:
+      - tools
+      - monitoring
+
+  # Service for scheduled sync (optional)
+  l2-networks-sync-cron:
+    build: .
+    container_name: l2-networks-sync-cron
+    restart: unless-stopped
+    command: >
+      sh -c "
+        echo 'Starting L2 networks sync cron service...' &&
+        while true; do
+          echo 'Running scheduled sync at $$(date)' &&
+          node index.js sync &&
+          echo 'Sync completed at $$(date)' &&
+          sleep $$((SYNC_INTERVAL_HOURS * 3600))
+        done
+      "
+    environment:
+      - NODE_ENV=production
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_DB=${POSTGRES_DB:-admin_dashboard}
+      - POSTGRES_USER=${POSTGRES_USER:-admin_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_SSL=${POSTGRES_SSL:-false}
+      - GETH_RPC_URL=${GETH_RPC_URL:-http://geth:8545}
+      - LIGHTHOUSE_RPC_URL=${LIGHTHOUSE_RPC_URL:-http://lighthouse:5052}
+      - GETH_JWT_SECRET_PATH=${GETH_JWT_SECRET_PATH:-/jwtsecret}
+      - SYNC_INTERVAL_HOURS=${SYNC_INTERVAL_HOURS:-24}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - ./logs:/app/logs
+      - ${GETH_JWT_SECRET_PATH:-/dev/null}:/jwtsecret:ro
+    networks:
+      - admin-dashboard-network
+    depends_on:
+      - postgres
+    profiles:
+      - cron
+      - monitoring
+
+networks:
+  admin-dashboard-network:
+    external: true
+    name: admin-dashboard_default
+
+volumes:
+  logs:

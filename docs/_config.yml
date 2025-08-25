@@ -1,0 +1,71 @@
+# GitHub Pages Configuration for DEFIMON Project
+# This file configures the GitHub Pages site
+
+# Site settings
+title: DEFIMON Project Documentation
+description: Comprehensive documentation for the DeFi Analytics Platform
+url: "https://your-username.github.io"
+baseurl: "/defimon.highfunk.uk"
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+permalink: pretty
+
+# Collections
+collections:
+  docs:
+    output: true
+    permalink: /:collection/:name/
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "docs"
+    values:
+      layout: "default"
+
+# Plugins
+plugins:
+  - jekyll-relative-links
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+
+# Include in processing
+include:
+  - _pages
+  - assets
+  - pdfs
+
+# Navigation
+nav:
+  - title: Home
+    url: /
+  - title: Documentation
+    url: /docs/
+  - title: MediaWiki
+    url: /DEFIMON_PROJECT_DOCUMENTATION.wiki
+  - title: Architecture
+    url: /pdfs/
+  - title: GitHub
+    url: https://github.com/your-username/defimon.highfunk.uk
+
+# Footer
+footer:
+  - title: GitHub
+    url: https://github.com/your-username/defimon.highfunk.uk
+  - title: Issues
+    url: https://github.com/your-username/defimon.highfunk.uk/issues
+  - title: Wiki
+    url: /DEFIMON_PROJECT_DOCUMENTATION.wiki

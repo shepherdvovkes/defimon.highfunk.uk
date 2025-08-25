@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ethereum-geth-service
+  namespace: defimon
+  labels:
+    app: ethereum-geth
+    component: execution-client
+spec:
+  selector:
+    app: ethereum-geth
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8545
+    targetPort: 8545
+  - name: websocket
+    protocol: TCP
+    port: 8546
+    targetPort: 8546
+  - name: authrpc
+    protocol: TCP
+    port: 8551
+    targetPort: 8551
+  - name: p2p
+    protocol: TCP
+    port: 30303
+    targetPort: 30303
+  - name: metrics
+    protocol: TCP
+    port: 6060
+    targetPort: 6060
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ethereum-lighthouse-service
+  namespace: defimon
+  labels:
+    app: ethereum-lighthouse
+    component: consensus-client
+spec:
+  selector:
+    app: ethereum-lighthouse
+  ports:
+  - name: http
+    protocol: TCP
+    port: 5052
+    targetPort: 5052
+  - name: p2p
+    protocol: TCP
+    port: 9000
+    targetPort: 9000
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ethereum-node-external
+  namespace: defimon
+  labels:
+    app: ethereum-node
+    component: external-access
+  annotations:
+    cloud.google.com/load-balancer-type: "External"
+    cloud.google.com/backend-config: '{"default": "ethereum-backend-config"}'
+spec:
+  selector:
+    app: ethereum-geth
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 8545
+  - name: websocket
+    protocol: TCP
+    port: 443
+    targetPort: 8546
+  type: LoadBalancer
+  loadBalancerIP: "34.120.0.0"  # Replace with your static IP

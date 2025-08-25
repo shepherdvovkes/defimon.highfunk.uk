@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            padding: 20px;
+        }
+        .video-container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        video {
+            width: 100%;
+            border-radius: 8px;
+        }
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            background: #333;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Video Test Page</h1>
+    
+    <div class="video-container">
+        <h2>Test Video 1</h2>
+        <video id="video1" controls>
+            <source src="/1.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <div class="status" id="status1">Status: Loading...</div>
+    </div>
+
+    <div class="video-container">
+        <h2>Test Video 2</h2>
+        <video id="video2" controls>
+            <source src="/2.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <div class="status" id="status2">Status: Loading...</div>
+    </div>
+
+    <div class="video-container">
+        <h2>Test Video 3</h2>
+        <video id="video3" controls>
+            <source src="/3.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <div class="status" id="status3">Status: Loading...</div>
+    </div>
+
+    <div class="video-container">
+        <h2>Test Video 4</h2>
+        <video id="video4" controls>
+            <source src="/4.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <div class="status" id="status4">Status: Loading...</div>
+    </div>
+
+    <div class="controls">
+        <button onclick="testAllVideos()">Test All Videos</button>
+        <button onclick="checkVideoUrls()">Check Video URLs</button>
+    </div>
+
+    <script>
+        function updateStatus(videoId, status) {
+            document.getElementById(`status${videoId}`).textContent = `Status: ${status}`;
+        }
+
+        function testAllVideos() {
+            for (let i = 1; i <= 4; i++) {
+                const video = document.getElementById(`video${i}`);
+                const status = document.getElementById(`status${i}`);
+                
+                video.addEventListener('loadstart', () => updateStatus(i, 'Loading...'));
+                video.addEventListener('canplay', () => updateStatus(i, 'Ready to play'));
+                video.addEventListener('error', (e) => {
+                    console.error(`Video ${i} error:`, e);
+                    updateStatus(i, 'Error loading video');
+                });
+                video.addEventListener('play', () => updateStatus(i, 'Playing'));
+                video.addEventListener('pause', () => updateStatus(i, 'Paused'));
+            }
+        }
+
+        function checkVideoUrls() {
+            const videos = ['/1.mp4', '/2.mp4', '/3.mp4', '/4.mp4'];
+            
+            videos.forEach((url, index) => {
+                fetch(url)
+                    .then(response => {
+                        if (response.ok) {
+                            updateStatus(index + 1, `URL accessible (${response.status})`);
+                        } else {
+                            updateStatus(index + 1, `URL error (${response.status})`);
+                        }
+                    })
+                    .catch(error => {
+                        console.error(`Error fetching ${url}:`, error);
+                        updateStatus(index + 1, `Network error`);
+                    });
+            });
+        }
+
+        // Initialize
+        testAllVideos();
+        checkVideoUrls();
+    </script>
+</body>
+</html>

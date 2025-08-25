@@ -1,0 +1,111 @@
+services:
+  geth:
+    image: ethereum/client-go:stable
+    container_name: geth-full-node
+    entrypoint: []
+    ports:
+      - "8545:8545"
+      - "8546:8546"
+      - "30303:30303"
+      - "30303:30303/udp"
+      - "6060:6060"
+      - "8551:8551"
+    volumes:
+      - ./geth-data:/root/.ethereum
+      - ./jwtsecret.raw:/jwtsecret
+    command: >
+      /bin/sh -c '
+        exec /usr/local/bin/geth --http --http.addr=0.0.0.0 --http.port=8545 --http.api=eth,net,web3,debug,txpool,personal,admin --http.vhosts=* --http.corsdomain=* --ws --ws.addr=0.0.0.0 --ws.port=8546 --ws.origins=* --ws.api=eth,net,web3,debug,txpool,personal,admin --datadir=/root/.ethereum --syncmode=snap --cache=8192 --maxpeers=50 --discovery.v5 --metrics --metrics.addr=0.0.0.0 --metrics.port=6060 --authrpc.addr=0.0.0.0 --authrpc.port=8551 --authrpc.vhosts=* --authrpc.jwtsecret=/jwtsecret
+      '
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
+
+  lighthouse:
+    image: sigp/lighthouse:latest
+    container_name: lighthouse-beacon
+    ports:
+      - "5052:5052"
+      - "9000:9000"
+      - "5054:5054"
+    command: >-
+      sh -lc '
+        lighthouse bn \
+          --network mainnet \
+          --datadir /root/.lighthouse \
+          --execution-endpoint $${EXECUTION_ENDPOINT:-http://geth-full-node:8551} \
+          --execution-jwt /jwtsecret \
+          $${CHECKPOINT_SYNC_URL:+--checkpoint-sync-url $${CHECKPOINT_SYNC_URL}} \
+          --http \
+          --http-address 0.0.0.0 \
+          --http-port 5052 \
+          --metrics \
+          --metrics-address 0.0.0.0 \
+          --metrics-port 5054 \
+      '
+    environment:
+      - CHECKPOINT_SYNC_URL=${CHECKPOINT_SYNC_URL}
+    volumes:
+      - ./lighthouse-data:/root/.lighthouse
+      - ./jwtsecret.hex:/jwtsecret
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
+
+  node-exporter:
+    image: prom/node-exporter:v1.6.1
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+
+  prometheus:
+    image: prom/prometheus:v2.37.0
+    container_name: prometheus-monitor
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9091:9090"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana-oss:8.5.2
+    container_name: grafana-dashboard
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana_config/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana_config/datasources:/etc/grafana/provisioning/datasources
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:
+  grafana_data:

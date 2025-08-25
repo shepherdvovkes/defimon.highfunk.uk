@@ -1,0 +1,336 @@
+= DEFIMON Project Templates =
+
+This page contains reusable templates for consistent formatting across the DEFIMON project documentation.
+
+== Information Box Templates ==
+
+=== Project Info Box ===
+<pre>
+{{Infobox Project
+| name = DEFIMON
+| fullname = DeFi Analytics Platform
+| description = Comprehensive platform for DeFi analytics and monitoring with AI/ML integration
+| version = 2.0
+| status = Active Development
+| license = MIT
+| website = https://defimon.com
+| repository = https://github.com/your-username/defimon.highfunk.uk
+| documentation = https://docs.defimon.com
+}}
+</pre>
+
+=== Service Info Box ===
+<pre>
+{{Infobox Service
+| name = Service Name
+| type = API/Microservice/Database
+| technology = Technology Stack
+| port = Port Number
+| status = Running/Stopped/Error
+| health = http://localhost:port/health
+| docs = http://localhost:port/docs
+}}
+</pre>
+
+=== Blockchain Info Box ===
+<pre>
+{{Infobox Blockchain
+| name = Blockchain Name
+| type = L1/L2/Parachain
+| priority = Priority Level
+| tvl = Total Value Locked
+| status = Syncing/Synced/Error
+| rpc = RPC Endpoint
+| explorer = Block Explorer URL
+}}
+</pre>
+
+== Navigation Templates ==
+
+=== Breadcrumb Navigation ===
+<pre>
+{{Breadcrumb
+| DEFIMON Project Documentation
+| Current Section
+| Current Page
+}}
+</pre>
+
+=== Related Pages ===
+<pre>
+{{Related Pages
+| [[Page 1|Description 1]]
+| [[Page 2|Description 2]]
+| [[Page 3|Description 3]]
+}}
+</pre>
+
+=== Table of Contents ===
+<pre>
+{{TOC
+| title = Table of Contents
+| depth = 3
+| numbered = yes
+}}
+</pre>
+
+== Code Block Templates ==
+
+=== Command Line ===
+<pre>
+{{Command
+| description = Command description
+| command = command to execute
+| output = expected output
+| notes = Additional notes
+}}
+</pre>
+
+=== Configuration File ===
+<pre>
+{{Config
+| filename = filename.ext
+| description = File description
+| content = Configuration content
+| notes = Usage notes
+}}
+</pre>
+
+=== API Endpoint ===
+<pre>
+{{API Endpoint
+| method = HTTP Method
+| endpoint = /api/endpoint
+| description = Endpoint description
+| parameters = Required parameters
+| response = Response format
+| example = Usage example
+}}
+</pre>
+
+== Status Templates ==
+
+=== Service Status ===
+<pre>
+{{Service Status
+| name = Service Name
+| status = {{Status|Running|green}}
+| uptime = 99.9%
+| last_check = 2024-01-01 12:00:00 UTC
+| health = http://localhost:port/health
+}}
+</pre>
+
+=== System Status ===
+<pre>
+{{System Status
+| overall = {{Status|Operational|green}}
+| infrastructure = {{Status|Operational|green}}
+| analytics = {{Status|Operational|green}}
+| ml = {{Status|Maintenance|yellow}}
+| last_updated = 2024-01-01 12:00:00 UTC
+}}
+</pre>
+
+== Alert Templates ==
+
+=== Warning ===
+<pre>
+{{Warning
+| title = Warning Title
+| message = Warning message content
+| action = Required action
+}}
+</pre>
+
+=== Info ===
+<pre>
+{{Info
+| title = Information Title
+| message = Information message content
+| details = Additional details
+}}
+</pre>
+
+=== Error ===
+<pre>
+{{Error
+| title = Error Title
+| message = Error message content
+| solution = Suggested solution
+| contact = Support contact
+}}
+</pre>
+
+== Performance Templates ==
+
+=== Performance Metrics ===
+<pre>
+{{Performance Metrics
+| service = Service Name
+| requests_per_sec = 5000
+| response_time = 50ms
+| error_rate = 0.1%
+| uptime = 99.9%
+| last_updated = 2024-01-01 12:00:00 UTC
+}}
+</pre>
+
+=== Benchmark Results ===
+<pre>
+{{Benchmark
+| test_name = Test Description
+| metric = Performance Metric
+| value = Measured Value
+| unit = Unit of Measurement
+| target = Target Value
+| status = {{Status|Pass|green}}
+}}
+</pre>
+
+== Deployment Templates ==
+
+=== Deployment Status ===
+<pre>
+{{Deployment Status
+| environment = Production/Staging/Development
+| version = 2.0.0
+| status = {{Status|Deployed|green}}
+| deployed_at = 2024-01-01 12:00:00 UTC
+| deployed_by = username
+| rollback_available = yes
+}}
+</pre>
+
+=== Environment Variables ===
+<pre>
+{{Environment Variables
+| variable = VARIABLE_NAME
+| description = Variable description
+| required = yes/no
+| default = Default value
+| example = Example value
+| notes = Additional notes
+}}
+</pre>
+
+== Monitoring Templates ==
+
+=== Dashboard Widget ===
+<pre>
+{{Dashboard Widget
+| title = Widget Title
+| type = Chart/Table/Metric
+| data_source = Data source description
+| refresh_interval = 10s
+| last_updated = 2024-01-01 12:00:00 UTC
+}}
+</pre>
+
+=== Alert Rule ===
+<pre>
+{{Alert Rule
+| name = Alert Rule Name
+| condition = Alert condition
+| threshold = Threshold value
+| severity = Critical/High/Medium/Low
+| action = Action to take
+| enabled = yes/no
+}}
+</pre>
+
+== Database Templates ==
+
+=== Table Schema ===
+<pre>
+{{Table Schema
+| table_name = table_name
+| description = Table description
+| columns = Column definitions
+| indexes = Index information
+| constraints = Table constraints
+| notes = Additional notes
+}}
+</pre>
+
+=== Query Example ===
+<pre>
+{{Query Example
+| description = Query description
+| sql = SQL query
+| result = Expected result
+| performance = Performance notes
+}}
+</pre>
+
+== Security Templates ==
+
+=== Security Checklist ===
+<pre>
+{{Security Checklist
+| item = Security item
+| status = {{Status|Completed|green}}
+| priority = High/Medium/Low
+| assigned_to = Responsible person
+| due_date = Due date
+| notes = Additional notes
+}}
+</pre>
+
+=== Vulnerability Report ===
+<pre>
+{{Vulnerability Report
+| id = VULN-001
+| severity = Critical/High/Medium/Low
+| description = Vulnerability description
+| affected_components = Affected components
+| remediation = Remediation steps
+| status = {{Status|Open|red}}
+| reported_date = 2024-01-01
+}}
+</pre>
+
+== Usage Examples ==
+
+=== Using Project Info Box ===
+<nowiki>
+{{Infobox Project
+| name = DEFIMON
+| fullname = DeFi Analytics Platform
+| description = Comprehensive platform for DeFi analytics and monitoring with AI/ML integration
+| version = 2.0
+| status = Active Development
+| license = MIT
+| website = https://defimon.com
+| repository = https://github.com/your-username/defimon.highfunk.uk
+| documentation = https://docs.defimon.com
+}}
+</nowiki>
+
+=== Using Service Status ===
+<nowiki>
+{{Service Status
+| name = Analytics API
+| status = {{Status|Running|green}}
+| uptime = 99.9%
+| last_check = 2024-01-01 12:00:00 UTC
+| health = http://localhost:8002/health
+}}
+</nowiki>
+
+=== Using Command Template ===
+<nowiki>
+{{Command
+| description = Deploy the entire system
+| command = ./scripts/deploy-linux-mint.sh
+| output = System deployment completed successfully
+| notes = This script will deploy all services and start monitoring
+}}
+</nowiki>
+
+== Template Categories ==
+
+[[Category:Templates]]
+[[Category:MediaWiki]]
+[[Category:Documentation]]
+[[Category:DEFIMON]]

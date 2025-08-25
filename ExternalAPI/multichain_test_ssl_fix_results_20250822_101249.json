@@ -1,0 +1,234 @@
+{
+  "config": {
+    "base_endpoint": "hidden-holy-seed",
+    "token_id": "97d6d8e7659b49b126c43455edc4607949bfb52b",
+    "networks_tested": 7
+  },
+  "test_time": "2025-08-22T10:12:49.515075",
+  "results": [
+    {
+      "network": "Ethereum",
+      "endpoint": "https://hidden-holy-seed.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_blockNumber",
+      "success": true,
+      "response_time": 0.17795085906982422,
+      "block_number": 23195042,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x161eda2"
+      },
+      "ssl_verified": true,
+      "timestamp": "2025-08-22T10:12:47.492476"
+    },
+    {
+      "network": "Ethereum",
+      "endpoint": "https://hidden-holy-seed.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_chainId",
+      "success": true,
+      "response_time": 0.09756088256835938,
+      "block_number": null,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x1"
+      },
+      "ssl_verified": true,
+      "timestamp": "2025-08-22T10:12:47.591656"
+    },
+    {
+      "network": "Base",
+      "endpoint": "https://hidden-holy-seed.base-mainnet.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_blockNumber",
+      "success": true,
+      "response_time": 0.27471423149108887,
+      "block_number": 34528710,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x20eddc6"
+      },
+      "ssl_verified": true,
+      "timestamp": "2025-08-22T10:12:47.867667"
+    },
+    {
+      "network": "Base",
+      "endpoint": "https://hidden-holy-seed.base-mainnet.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_chainId",
+      "success": true,
+      "response_time": 0.11563587188720703,
+      "block_number": null,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x2105"
+      },
+      "ssl_verified": true,
+      "timestamp": "2025-08-22T10:12:47.985724"
+    },
+    {
+      "network": "Binance Smart Chain",
+      "endpoint": "https://hidden-holy-seed.bsc.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_blockNumber",
+      "success": true,
+      "response_time": 0.20374321937561035,
+      "block_number": 58464782,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x37c1a0e"
+      },
+      "ssl_verified": true,
+      "timestamp": "2025-08-22T10:12:48.191047"
+    },
+    {
+      "network": "Binance Smart Chain",
+      "endpoint": "https://hidden-holy-seed.bsc.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_chainId",
+      "success": true,
+      "response_time": 0.10957503318786621,
+      "block_number": null,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x38"
+      },
+      "ssl_verified": true,
+      "timestamp": "2025-08-22T10:12:48.301580"
+    },
+    {
+      "network": "Avalanche C-Chain",
+      "endpoint": "https://hidden-holy-seed.avalanche-mainnet.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b/ext/bc/C/rpc",
+      "method": "eth_blockNumber",
+      "success": true,
+      "response_time": 0.17087721824645996,
+      "block_number": 67455324,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x405495c"
+      },
+      "ssl_verified": true,
+      "timestamp": "2025-08-22T10:12:48.473715"
+    },
+    {
+      "network": "Avalanche C-Chain",
+      "endpoint": "https://hidden-holy-seed.avalanche-mainnet.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b/ext/bc/C/rpc",
+      "method": "eth_chainId",
+      "success": true,
+      "response_time": 0.09744000434875488,
+      "block_number": null,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0xa86a"
+      },
+      "ssl_verified": true,
+      "timestamp": "2025-08-22T10:12:48.572482"
+    },
+    {
+      "network": "Polygon",
+      "endpoint": "https://hidden-holy-seed.polygon-mainnet.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_blockNumber",
+      "success": true,
+      "response_time": 0.22576904296875,
+      "block_number": 23195043,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x161eda3"
+      },
+      "ssl_verified": false,
+      "timestamp": "2025-08-22T10:12:48.799481"
+    },
+    {
+      "network": "Polygon",
+      "endpoint": "https://hidden-holy-seed.polygon-mainnet.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_chainId",
+      "success": true,
+      "response_time": 0.09834599494934082,
+      "block_number": null,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x1"
+      },
+      "ssl_verified": false,
+      "timestamp": "2025-08-22T10:12:48.899892"
+    },
+    {
+      "network": "Arbitrum One",
+      "endpoint": "https://hidden-holy-seed.arbitrum-one.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_blockNumber",
+      "success": true,
+      "response_time": 0.17151284217834473,
+      "block_number": 23195043,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x161eda3"
+      },
+      "ssl_verified": false,
+      "timestamp": "2025-08-22T10:12:49.073175"
+    },
+    {
+      "network": "Arbitrum One",
+      "endpoint": "https://hidden-holy-seed.arbitrum-one.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_chainId",
+      "success": true,
+      "response_time": 0.10184764862060547,
+      "block_number": null,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x1"
+      },
+      "ssl_verified": false,
+      "timestamp": "2025-08-22T10:12:49.176941"
+    },
+    {
+      "network": "Optimism",
+      "endpoint": "https://hidden-holy-seed.optimism-mainnet.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_blockNumber",
+      "success": true,
+      "response_time": 0.22469496726989746,
+      "block_number": 23195043,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x161eda3"
+      },
+      "ssl_verified": false,
+      "timestamp": "2025-08-22T10:12:49.403229"
+    },
+    {
+      "network": "Optimism",
+      "endpoint": "https://hidden-holy-seed.optimism-mainnet.quiknode.pro/97d6d8e7659b49b126c43455edc4607949bfb52b",
+      "method": "eth_chainId",
+      "success": true,
+      "response_time": 0.10593891143798828,
+      "block_number": null,
+      "error": null,
+      "data": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": "0x1"
+      },
+      "ssl_verified": false,
+      "timestamp": "2025-08-22T10:12:49.511496"
+    }
+  ]
+}
