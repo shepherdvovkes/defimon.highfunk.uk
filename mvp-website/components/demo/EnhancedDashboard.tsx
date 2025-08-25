@@ -20,7 +20,6 @@ import {
   Server,
   Database,
   Cpu,
-  Memory,
   HardDrive,
   Network,
   Settings,
@@ -364,7 +363,7 @@ export default function EnhancedDashboard() {
               {/* Memory Usage */}
               <ModernCard className="text-center">
                 <div className="flex items-center justify-center mb-4">
-                  <Memory className="w-8 h-8 text-purple-400 mr-3" />
+                  <HardDrive className="w-8 h-8 text-purple-400 mr-3" />
                   <h3 className="text-lg font-semibold text-white">Memory Usage</h3>
                 </div>
                 <ProgressRing progress={65} color="purple" />

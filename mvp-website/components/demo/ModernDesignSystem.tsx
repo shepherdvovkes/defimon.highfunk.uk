@@ -20,7 +20,6 @@ import {
   Server,
   Database,
   Cpu,
-  Memory,
   HardDrive,
   Network
 } from 'lucide-react'
