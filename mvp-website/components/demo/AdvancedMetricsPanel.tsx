@@ -14,7 +14,11 @@ import {
   Eye,
   Cpu,
   Database,
-  Globe
+  Globe,
+  Clock,
+  Target,
+  AlertTriangle,
+  CheckCircle
 } from 'lucide-react'
 
 interface MetricData {
@@ -25,9 +29,11 @@ interface MetricData {
   trend: 'up' | 'down'
   icon: any
   color: string
+  gradient: string
   description: string
   realTimeData: number[]
   accuracy: number
+  status: 'healthy' | 'warning' | 'critical'
 }
 
 const AdvancedMetricsPanel = () => {
@@ -53,10 +59,12 @@ const AdvancedMetricsPanel = () => {
       change: '+14.8%',
       trend: 'up',
       icon: DollarSign,
-      color: 'from-emerald-400 via-teal-500 to-cyan-600',
-      description: 'Общая заблокированная стоимость активов',
+      color: '#10B981',
+      gradient: 'from-emerald-500 via-teal-500 to-cyan-500',
+      description: 'Total value locked across all DeFi protocols',
       realTimeData: [2.1, 2.3, 2.5, 2.7, 2.8, 2.85],
-      accuracy: 98.7
+      accuracy: 98.7,
+      status: 'healthy'
     },
     {
       id: 'users',
@@ -65,10 +73,12 @@ const AdvancedMetricsPanel = () => {
       change: '+23.2%',
       trend: 'up',
       icon: Users,
-      color: 'from-violet-400 via-purple-500 to-indigo-600',
-      description: 'Активные пользователи за 24 часа',
+      color: '#8B5CF6',
+      gradient: 'from-purple-500 via-pink-500 to-rose-500',
+      description: 'Active users across all networks in 24h',
       realTimeData: [98, 105, 112, 119, 124, 127],
-      accuracy: 94.2
+      accuracy: 94.2,
+      status: 'healthy'
     },
     {
       id: 'tps',
@@ -77,10 +87,12 @@ const AdvancedMetricsPanel = () => {
       change: '+8.9%',
       trend: 'up',
       icon: Activity,
-      color: 'from-orange-400 via-red-500 to-pink-600',
-      description: 'Средняя пропускная способность сети',
+      color: '#F59E0B',
+      gradient: 'from-orange-500 via-red-500 to-pink-500',
+      description: 'Average network throughput across chains',
       realTimeData: [2800, 2950, 3100, 3180, 3220, 3247],
-      accuracy: 96.8
+      accuracy: 96.8,
+      status: 'warning'
     },
     {
       id: 'risk',
@@ -89,10 +101,12 @@ const AdvancedMetricsPanel = () => {
       change: '+0.7',
       trend: 'up',
       icon: Shield,
-      color: 'from-blue-400 via-sky-500 to-cyan-600',
-      description: 'Оценка безопасности на основе ML',
+      color: '#3B82F6',
+      gradient: 'from-blue-500 via-cyan-500 to-teal-500',
+      description: 'ML-powered security assessment score',
       realTimeData: [7.2, 7.6, 7.9, 8.1, 8.3, 8.4],
-      accuracy: 97.5
+      accuracy: 97.5,
+      status: 'healthy'
     }
   ]
 
@@ -104,7 +118,7 @@ const AdvancedMetricsPanel = () => {
     mouseY.set(event.clientY - centerY)
   }
 
-  // Имитация обновления данных в реальном времени
+  // Real-time data simulation
   useEffect(() => {
     if (realTimeMode) {
       const interval = setInterval(() => {
@@ -112,7 +126,7 @@ const AdvancedMetricsPanel = () => {
           const newValues = {...prev}
           metrics.forEach(metric => {
             const baseValue = parseFloat(metric.value.replace(/[^\d.]/g, ''))
-            const variation = (Math.random() - 0.5) * 0.1 // ±5% вариация
+            const variation = (Math.random() - 0.5) * 0.1 // ±5% variation
             newValues[metric.id] = baseValue * (1 + variation)
           })
           return newValues
@@ -123,7 +137,7 @@ const AdvancedMetricsPanel = () => {
     }
   }, [realTimeMode])
 
-  const MiniChart = ({ data, color }: { data: number[], color: string }) => {
+  const MiniChart = ({ data, gradient }: { data: number[], gradient: string }) => {
     const maxValue = Math.max(...data)
     const minValue = Math.min(...data)
     const range = maxValue - minValue || 1
@@ -135,18 +149,18 @@ const AdvancedMetricsPanel = () => {
     }).join(' ')
 
     return (
-      <div className="h-16 w-full relative overflow-hidden">
+      <div className="h-20 w-full relative overflow-hidden">
         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
           <defs>
-            <linearGradient id={`gradient-${color}`} x1="0%" y1="0%" x2="100%" y2="0%">
+            <linearGradient id={`gradient-${gradient}`} x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="currentColor" stopOpacity="0.8" />
               <stop offset="100%" stopColor="currentColor" stopOpacity="0.3" />
             </linearGradient>
           </defs>
           <motion.path
             d={pathData}
-            stroke={`url(#gradient-${color})`}
-            strokeWidth="2"
+            stroke={`url(#gradient-${gradient})`}
+            strokeWidth="2.5"
             fill="none"
             className="text-current"
             initial={{ pathLength: 0 }}
@@ -155,7 +169,7 @@ const AdvancedMetricsPanel = () => {
           />
           <motion.path
             d={`${pathData} L 100 100 L 0 100 Z`}
-            fill={`url(#gradient-${color})`}
+            fill={`url(#gradient-${gradient})`}
             className="text-current opacity-20"
             initial={{ pathLength: 0 }}
             animate={{ pathLength: 1 }}
@@ -166,38 +180,51 @@ const AdvancedMetricsPanel = () => {
     )
   }
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'healthy':
+        return <CheckCircle className="w-4 h-4 text-emerald-400" />
+      case 'warning':
+        return <AlertTriangle className="w-4 h-4 text-orange-400" />
+      case 'critical':
+        return <AlertTriangle className="w-4 h-4 text-red-400" />
+      default:
+        return <CheckCircle className="w-4 h-4 text-emerald-400" />
+    }
+  }
+
   return (
     <div className="relative">
       {/* Control Panel */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <div className={`w-3 h-3 rounded-full ${realTimeMode ? 'bg-green-400' : 'bg-gray-400'} animate-pulse`}></div>
-            <span className="text-white font-medium">Real-time Analytics</span>
+      <div className="flex items-center justify-between mb-12">
+        <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-3">
+            <div className={`w-3 h-3 rounded-full ${realTimeMode ? 'bg-emerald-400' : 'bg-neutral-400'} animate-pulse`}></div>
+            <span className="text-white font-semibold text-lg">Real-time Analytics</span>
           </div>
           <motion.button
             onClick={() => setRealTimeMode(!realTimeMode)}
-            className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 ${
+            className={`px-6 py-3 rounded-2xl font-semibold transition-all duration-300 ${
               realTimeMode 
-                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/25' 
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25' 
+                : 'glass text-neutral-300 hover:bg-white/10 border border-white/10'
             }`}
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
           >
             {realTimeMode ? 'Live Mode' : 'Static Mode'}
           </motion.button>
         </div>
         
-        <div className="flex items-center space-x-2">
-          <Eye className="w-5 h-5 text-gray-400" />
-          <span className="text-gray-400 text-sm">Advanced View</span>
+        <div className="flex items-center space-x-3">
+          <Eye className="w-5 h-5 text-neutral-400" />
+          <span className="text-neutral-400 font-medium">Advanced View</span>
         </div>
       </div>
 
       {/* Main Metrics Panel */}
       <motion.div
-        className="relative perspective-1000"
+        className="relative"
         onMouseMove={handleMouseMove}
         style={{
           rotateX: rotateXSpring,
@@ -205,14 +232,14 @@ const AdvancedMetricsPanel = () => {
           transformStyle: "preserve-3d"
         }}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {metrics.map((metric, index) => (
             <motion.div
               key={metric.id}
-              className={`relative p-8 rounded-3xl backdrop-blur-xl transition-all duration-500 cursor-pointer ${
+              className={`relative p-8 rounded-3xl transition-all duration-500 cursor-pointer ${
                 activeMetric === metric.id
-                  ? 'bg-white/15 shadow-2xl shadow-white/10 ring-2 ring-white/20 scale-[1.02]'
-                  : 'bg-white/5 shadow-xl shadow-black/20 hover:bg-white/10 hover:scale-[1.01]'
+                  ? 'glass border border-white/20 shadow-2xl shadow-white/10 scale-[1.02]'
+                  : 'glass hover:bg-white/10 hover:scale-[1.01] border border-white/5'
               }`}
               style={{ transformStyle: "preserve-3d" }}
               onClick={() => setActiveMetric(activeMetric === metric.id ? null : metric.id)}
@@ -230,12 +257,12 @@ const AdvancedMetricsPanel = () => {
               }}
             >
               {/* Background Gradient */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-10 rounded-3xl`}></div>
+              <div className={`absolute inset-0 bg-gradient-to-br ${metric.gradient} opacity-5 rounded-3xl`}></div>
               
               {/* Animated Border */}
               <div className="absolute inset-0 rounded-3xl overflow-hidden">
                 <motion.div
-                  className={`absolute inset-0 bg-gradient-to-r ${metric.color} opacity-50`}
+                  className={`absolute inset-0 bg-gradient-to-r ${metric.gradient} opacity-30`}
                   style={{ 
                     maskImage: 'linear-gradient(90deg, transparent, white, transparent)',
                     maskSize: '200% 100%'
@@ -255,31 +282,31 @@ const AdvancedMetricsPanel = () => {
               {/* Content */}
               <div className="relative z-10">
                 {/* Header */}
-                <div className="flex items-start justify-between mb-6">
-                  <div className={`p-4 rounded-2xl bg-gradient-to-br ${metric.color} shadow-lg`}>
+                <div className="flex items-start justify-between mb-8">
+                  <div className={`p-4 rounded-2xl bg-gradient-to-br ${metric.gradient} shadow-lg`}>
                     <metric.icon className="w-8 h-8 text-white" />
                   </div>
                   <div className="text-right">
-                    <div className="flex items-center space-x-2 mb-1">
+                    <div className="flex items-center space-x-2 mb-2">
                       {metric.trend === 'up' ? (
-                        <TrendingUp className="w-5 h-5 text-green-400" />
+                        <TrendingUp className="w-5 h-5 text-emerald-400" />
                       ) : (
                         <TrendingDown className="w-5 h-5 text-red-400" />
                       )}
                       <span className={`font-bold text-lg ${
-                        metric.trend === 'up' ? 'text-green-400' : 'text-red-400'
+                        metric.trend === 'up' ? 'text-emerald-400' : 'text-red-400'
                       }`}>
                         {metric.change}
                       </span>
                     </div>
-                    <div className="text-sm text-gray-400">24h change</div>
+                    <div className="text-sm text-neutral-400 font-medium">24h change</div>
                   </div>
                 </div>
 
                 {/* Value */}
-                <div className="mb-4">
+                <div className="mb-6">
                   <motion.div 
-                    className="text-4xl font-black text-white mb-2"
+                    className="text-5xl font-black text-white mb-3 font-display"
                     key={animatedValues[metric.id]}
                     initial={{ scale: 1.1, opacity: 0.7 }}
                     animate={{ scale: 1, opacity: 1 }}
@@ -293,23 +320,27 @@ const AdvancedMetricsPanel = () => {
                       metric.value
                     }
                   </motion.div>
-                  <div className="text-lg font-semibold text-gray-300">{metric.name}</div>
-                  <div className="text-sm text-gray-500 mt-1">{metric.description}</div>
+                  <div className="text-xl font-bold text-neutral-200 mb-2">{metric.name}</div>
+                  <div className="text-sm text-neutral-400 font-medium">{metric.description}</div>
                 </div>
 
                 {/* Mini Chart */}
-                <div className={`text-current ${metric.color.split(' ')[1]} opacity-80`}>
-                  <MiniChart data={metric.realTimeData} color={metric.id} />
+                <div className={`text-current ${metric.gradient.split(' ')[1]} opacity-80 mb-6`}>
+                  <MiniChart data={metric.realTimeData} gradient={metric.id} />
                 </div>
 
-                {/* Accuracy Badge */}
-                <div className="flex items-center justify-between mt-4">
-                  <div className="flex items-center space-x-2">
-                    <Cpu className="w-4 h-4 text-purple-400" />
-                    <span className="text-sm text-purple-400">AI Accuracy</span>
+                {/* Status and Accuracy */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    {getStatusIcon(metric.status)}
+                    <span className="text-sm font-semibold text-neutral-300">Status</span>
                   </div>
-                  <div className="text-sm font-bold text-purple-400">
-                    {metric.accuracy}%
+                  <div className="flex items-center space-x-3">
+                    <Cpu className="w-4 h-4 text-purple-400" />
+                    <span className="text-sm text-purple-400 font-semibold">AI Accuracy</span>
+                    <span className="text-sm font-bold text-purple-400">
+                      {metric.accuracy}%
+                    </span>
                   </div>
                 </div>
 
@@ -323,21 +354,25 @@ const AdvancedMetricsPanel = () => {
                     className="mt-6 pt-6 border-t border-white/10"
                   >
                     <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-400">Source:</span>
-                        <span className="text-white ml-2">Multiple APIs</span>
+                      <div className="flex items-center space-x-2">
+                        <Database className="w-4 h-4 text-neutral-400" />
+                        <span className="text-neutral-400">Source:</span>
+                        <span className="text-white font-medium">Multiple APIs</span>
                       </div>
-                      <div>
-                        <span className="text-gray-400">Updated:</span>
-                        <span className="text-white ml-2">2s ago</span>
+                      <div className="flex items-center space-x-2">
+                        <Clock className="w-4 h-4 text-neutral-400" />
+                        <span className="text-neutral-400">Updated:</span>
+                        <span className="text-white font-medium">2s ago</span>
                       </div>
-                      <div>
-                        <span className="text-gray-400">Confidence:</span>
-                        <span className="text-green-400 ml-2">High</span>
+                      <div className="flex items-center space-x-2">
+                        <Target className="w-4 h-4 text-neutral-400" />
+                        <span className="text-neutral-400">Confidence:</span>
+                        <span className="text-emerald-400 font-medium">High</span>
                       </div>
-                      <div>
-                        <span className="text-gray-400">Trend:</span>
-                        <span className="text-blue-400 ml-2">Bullish</span>
+                      <div className="flex items-center space-x-2">
+                        <TrendingUp className="w-4 h-4 text-neutral-400" />
+                        <span className="text-neutral-400">Trend:</span>
+                        <span className="text-blue-400 font-medium">Bullish</span>
                       </div>
                     </div>
                   </motion.div>
@@ -370,11 +405,11 @@ const AdvancedMetricsPanel = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.5 }}
-        className="mt-8 flex items-center justify-center space-x-4"
+        className="mt-12 flex items-center justify-center space-x-6"
       >
         <motion.button
-          className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium shadow-lg shadow-blue-500/25"
-          whileHover={{ scale: 1.05, boxShadow: "0 25px 50px -12px rgba(59, 130, 246, 0.25)" }}
+          className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl font-semibold shadow-lg shadow-blue-500/25"
+          whileHover={{ scale: 1.05, y: -2, boxShadow: "0 25px 50px -12px rgba(59, 130, 246, 0.25)" }}
           whileTap={{ scale: 0.95 }}
         >
           <Database className="w-5 h-5" />
@@ -382,8 +417,8 @@ const AdvancedMetricsPanel = () => {
         </motion.button>
         
         <motion.button
-          className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-medium shadow-lg shadow-emerald-500/25"
-          whileHover={{ scale: 1.05, boxShadow: "0 25px 50px -12px rgba(16, 185, 129, 0.25)" }}
+          className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-2xl font-semibold shadow-lg shadow-emerald-500/25"
+          whileHover={{ scale: 1.05, y: -2, boxShadow: "0 25px 50px -12px rgba(16, 185, 129, 0.25)" }}
           whileTap={{ scale: 0.95 }}
         >
           <Globe className="w-5 h-5" />

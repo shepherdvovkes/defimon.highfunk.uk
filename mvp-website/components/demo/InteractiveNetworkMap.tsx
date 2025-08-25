@@ -31,13 +31,17 @@ import {
   WifiOff,
   CheckCircle,
   AlertTriangle,
-  XCircle
+  XCircle,
+  RefreshCw,
+  BarChart,
+  PieChart,
+  LineChart
 } from 'lucide-react'
 
 interface NetworkNode {
   id: string
   name: string
-  type: 'validator' | 'rpc' | 'bridge' | 'dex' | 'liquidity' | 'oracle'
+  type: 'validator' | 'rpc' | 'bridge' | 'dex' | 'liquidity' | 'oracle' | 'protocol'
   x: number
   y: number
   z: number
@@ -52,6 +56,11 @@ interface NetworkNode {
   size: number
   dataFlow: number
   lastUpdate: Date
+  tvl?: number
+  volume24h?: number
+  fees24h?: number
+  price?: number
+  marketCap?: number
 }
 
 interface NetworkConnection {
@@ -72,22 +81,31 @@ interface NetworkRegion {
   center: { x: number, y: number }
 }
 
+interface RealTimeData {
+  protocols: any[]
+  tokenPrices: any[]
+  networkMetrics: any[]
+}
+
 const InteractiveNetworkMap = () => {
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
   const [hoveredNode, setHoveredNode] = useState<string | null>(null)
   const [animationRunning, setAnimationRunning] = useState(true)
-  const [viewMode, setViewMode] = useState<'topology' | 'geographic' | 'dataflow'>('topology')
+  const [viewMode, setViewMode] = useState<'topology' | 'geographic' | 'dataflow' | 'analytics'>('topology')
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null)
   const [timeScale, setTimeScale] = useState<'realtime' | '1h' | '24h' | '7d'>('realtime')
   const [showConnections, setShowConnections] = useState(true)
   const [showDataFlows, setShowDataFlows] = useState(true)
+  const [realTimeData, setRealTimeData] = useState<RealTimeData>({ protocols: [], tokenPrices: [], networkMetrics: [] })
+  const [isLoading, setIsLoading] = useState(false)
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
   
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number>()
   
-  // Network topology data
-  const networkNodes: NetworkNode[] = [
+  // Enhanced network topology data with real protocols
+  const [networkNodes, setNetworkNodes] = useState<NetworkNode[]>([
     // Ethereum Mainnet Validators
     { id: 'eth-validator-1', name: 'ETH Validator #1', type: 'validator', x: 200, y: 150, z: 0, region: 'North America', country: 'USA', connections: ['eth-rpc-1', 'eth-bridge-1'], status: 'online', latency: 45, bandwidth: 1000, uptime: 99.9, color: '#627EEA', size: 80, dataFlow: 1250, lastUpdate: new Date() },
     { id: 'eth-validator-2', name: 'ETH Validator #2', type: 'validator', x: 180, y: 180, z: 0, region: 'Europe', country: 'Germany', connections: ['eth-rpc-2', 'eth-bridge-2'], status: 'online', latency: 52, bandwidth: 950, uptime: 99.8, color: '#627EEA', size: 75, dataFlow: 1180, lastUpdate: new Date() },
@@ -114,7 +132,7 @@ const InteractiveNetworkMap = () => {
     // Additional nodes for geographic distribution
     { id: 'cosmos-validator', name: 'Cosmos Validator', type: 'validator', x: 80, y: 400, z: 0, region: 'Europe', country: 'France', connections: ['cosmos-rpc'], status: 'online', latency: 42, bandwidth: 1200, uptime: 99.7, color: '#2E3148', size: 70, dataFlow: 1250, lastUpdate: new Date() },
     { id: 'solana-validator', name: 'Solana Validator', type: 'validator', x: 450, y: 350, z: 0, region: 'North America', country: 'Canada', connections: ['solana-rpc'], status: 'online', latency: 35, bandwidth: 1500, uptime: 99.6, color: '#9945FF', size: 80, dataFlow: 1550, lastUpdate: new Date() }
-  ]
+  ])
 
   const networkConnections: NetworkConnection[] = [
     // Direct connections
@@ -142,6 +160,84 @@ const InteractiveNetworkMap = () => {
     { name: 'Asia', nodes: ['eth-validator-3', 'poly-bridge-1', 'poly-rpc-1'], color: '#10B981', center: { x: 200, y: 350 } }
   ]
 
+  // Fetch real-time data from the analytics API
+  const fetchRealTimeData = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      // Fetch data from multiple endpoints
+      const [protocolsRes, tokenPricesRes, networkMetricsRes] = await Promise.allSettled([
+        fetch('/api/analytics/protocols/recent'),
+        fetch('/api/analytics/token-prices/recent'),
+        fetch('/api/analytics/network-metrics')
+      ])
+
+      const newData: RealTimeData = {
+        protocols: protocolsRes.status === 'fulfilled' ? await protocolsRes.value.json() : [],
+        tokenPrices: tokenPricesRes.status === 'fulfilled' ? await tokenPricesRes.value.json() : [],
+        networkMetrics: networkMetricsRes.status === 'fulfilled' ? await networkMetricsRes.value.json() : []
+      }
+
+      setRealTimeData(newData)
+      setLastUpdate(new Date())
+
+      // Update network nodes with real data
+      updateNetworkNodesWithRealData(newData)
+
+    } catch (error) {
+      console.error('Error fetching real-time data:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  // Update network nodes with real data from database
+  const updateNetworkNodesWithRealData = useCallback((data: RealTimeData) => {
+    setNetworkNodes(prevNodes => {
+      return prevNodes.map(node => {
+        // Find matching protocol data
+        const protocolData = data.protocols.find(p => 
+          p.name?.toLowerCase().includes(node.name.toLowerCase()) ||
+          node.name.toLowerCase().includes(p.name?.toLowerCase())
+        )
+
+        // Find matching token price data
+        const tokenData = data.tokenPrices.find(t => 
+          t.token_id?.toLowerCase().includes(node.name.toLowerCase()) ||
+          node.name.toLowerCase().includes(t.token_id?.toLowerCase())
+        )
+
+        if (protocolData || tokenData) {
+          return {
+            ...node,
+            tvl: protocolData?.total_value_locked || node.tvl,
+            volume24h: protocolData?.volume_24h || node.volume24h,
+            fees24h: protocolData?.fees_24h || node.fees24h,
+            price: tokenData?.price_usd || node.price,
+            marketCap: tokenData?.market_cap_usd || node.marketCap,
+            dataFlow: protocolData?.volume_24h ? protocolData.volume_24h / 1000 : node.dataFlow,
+            size: protocolData?.total_value_locked ? Math.min(150, Math.max(50, protocolData.total_value_locked / 1000000)) : node.size,
+            lastUpdate: new Date()
+          }
+        }
+
+        return node
+      })
+    })
+  }, [])
+
+  // Auto-refresh data every 30 seconds
+  useEffect(() => {
+    fetchRealTimeData()
+    
+    const interval = setInterval(() => {
+      if (animationRunning) {
+        fetchRealTimeData()
+      }
+    }, 30000)
+
+    return () => clearInterval(interval)
+  }, [fetchRealTimeData, animationRunning])
+
   const getNodeIcon = (type: string) => {
     switch (type) {
       case 'validator': return Server
@@ -150,6 +246,7 @@ const InteractiveNetworkMap = () => {
       case 'dex': return BarChart3
       case 'liquidity': return DollarSign
       case 'oracle': return Shield
+      case 'protocol': return PieChart
       default: return Network
     }
   }
@@ -248,7 +345,7 @@ const InteractiveNetworkMap = () => {
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [filteredConnections, showConnections, showDataFlows, animationRunning])
+  }, [filteredConnections, showConnections, showDataFlows, animationRunning, networkNodes])
 
   return (
     <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-3xl overflow-hidden">
@@ -271,12 +368,29 @@ const InteractiveNetworkMap = () => {
               <span>{animationRunning ? 'Live' : 'Paused'}</span>
             </motion.button>
 
+            {/* Refresh Data Button */}
+            <motion.button
+              onClick={fetchRealTimeData}
+              disabled={isLoading}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-medium transition-all ${
+                isLoading
+                  ? 'bg-gray-700 text-gray-400'
+                  : 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
+              }`}
+              whileHover={{ scale: isLoading ? 1 : 1.05 }}
+              whileTap={{ scale: isLoading ? 1 : 0.95 }}
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <span>{isLoading ? 'Updating...' : 'Refresh'}</span>
+            </motion.button>
+
             {/* View Mode Toggle */}
             <div className="flex bg-gray-800/50 rounded-xl p-1">
               {[
                 { key: 'topology', label: 'Topology', icon: Network },
                 { key: 'geographic', label: 'Geographic', icon: MapPin },
-                { key: 'dataflow', label: 'Data Flow', icon: Zap }
+                { key: 'dataflow', label: 'Data Flow', icon: Zap },
+                { key: 'analytics', label: 'Analytics', icon: BarChart }
               ].map((mode) => (
                 <motion.button
                   key={mode.key}
@@ -329,6 +443,11 @@ const InteractiveNetworkMap = () => {
 
           {/* Right Controls */}
           <div className="flex items-center space-x-4">
+            {/* Last Update Indicator */}
+            <div className="text-sm text-gray-400">
+              Last update: {lastUpdate.toLocaleTimeString()}
+            </div>
+
             {/* Region Filter */}
             <div className="flex space-x-2">
               <motion.button
@@ -447,6 +566,13 @@ const InteractiveNetworkMap = () => {
                     {Math.round(node.dataFlow / 100)}k
                   </div>
                 )}
+
+                {/* TVL Indicator for protocols */}
+                {node.tvl && (
+                  <div className="absolute -bottom-2 -right-2 bg-blue-500 text-white text-xs px-1 py-0.5 rounded-full font-bold">
+                    ${Math.round(node.tvl / 1000000)}M
+                  </div>
+                )}
               </div>
 
               {/* Node Label */}
@@ -540,6 +666,43 @@ const InteractiveNetworkMap = () => {
                         </div>
                       </div>
 
+                      {/* Real-time data for protocols */}
+                      {node.tvl && (
+                        <div className="bg-gray-800/50 rounded-lg p-3">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <DollarSign className="w-4 h-4 text-green-400" />
+                            <span className="text-sm text-gray-400">Total Value Locked</span>
+                          </div>
+                          <div className="text-lg font-bold text-white">
+                            ${(node.tvl / 1000000).toFixed(2)}M
+                          </div>
+                        </div>
+                      )}
+
+                      {node.volume24h && (
+                        <div className="bg-gray-800/50 rounded-lg p-3">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <BarChart3 className="w-4 h-4 text-blue-400" />
+                            <span className="text-sm text-gray-400">24h Volume</span>
+                          </div>
+                          <div className="text-lg font-bold text-white">
+                            ${(node.volume24h / 1000000).toFixed(2)}M
+                          </div>
+                        </div>
+                      )}
+
+                      {node.price && (
+                        <div className="bg-gray-800/50 rounded-lg p-3">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <TrendingUp className="w-4 h-4 text-purple-400" />
+                            <span className="text-sm text-gray-400">Token Price</span>
+                          </div>
+                          <div className="text-lg font-bold text-white">
+                            ${node.price.toFixed(4)}
+                          </div>
+                        </div>
+                      )}
+
                       <div className="bg-gray-800/50 rounded-lg p-3">
                         <div className="flex items-center space-x-2 mb-2">
                           <MapPin className="w-4 h-4 text-gray-400" />
@@ -577,6 +740,57 @@ const InteractiveNetworkMap = () => {
         </AnimatePresence>
       </div>
 
+      {/* Analytics Panel for Analytics View */}
+      {viewMode === 'analytics' && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute bottom-6 left-6 right-6 bg-gray-900/95 backdrop-blur-xl rounded-2xl p-6 border border-white/10"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-gray-800/50 rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <DollarSign className="w-5 h-5 text-green-400" />
+                <span className="text-sm text-gray-400">Total TVL</span>
+              </div>
+              <div className="text-2xl font-bold text-white">
+                ${(realTimeData.protocols.reduce((sum, p) => sum + (p.total_value_locked || 0), 0) / 1000000000).toFixed(2)}B
+              </div>
+            </div>
+
+            <div className="bg-gray-800/50 rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <BarChart3 className="w-5 h-5 text-blue-400" />
+                <span className="text-sm text-gray-400">24h Volume</span>
+              </div>
+              <div className="text-2xl font-bold text-white">
+                ${(realTimeData.protocols.reduce((sum, p) => sum + (p.volume_24h || 0), 0) / 1000000000).toFixed(2)}B
+              </div>
+            </div>
+
+            <div className="bg-gray-800/50 rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <TrendingUp className="w-5 h-5 text-purple-400" />
+                <span className="text-sm text-gray-400">Active Protocols</span>
+              </div>
+              <div className="text-2xl font-bold text-white">
+                {realTimeData.protocols.length}
+              </div>
+            </div>
+
+            <div className="bg-gray-800/50 rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <Network className="w-5 h-5 text-yellow-400" />
+                <span className="text-sm text-gray-400">Network Nodes</span>
+              </div>
+              <div className="text-2xl font-bold text-white">
+                {filteredNodes.length}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Legend */}
       <div className="absolute bottom-6 left-6 bg-gray-900/90 backdrop-blur-xl rounded-2xl p-4 border border-white/10">
         <h4 className="text-sm font-semibold text-white mb-3">Network Status</h4>
@@ -612,6 +826,10 @@ const InteractiveNetworkMap = () => {
           <div className="flex items-center space-x-2">
             <BarChart3 className="w-4 h-4 text-white" />
             <span className="text-xs text-gray-400">DEX</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <PieChart className="w-4 h-4 text-white" />
+            <span className="text-xs text-gray-400">Protocol</span>
           </div>
         </div>
       </div>
