@@ -1,0 +1,35 @@
+{
+  "name": "defimon-analytics-platform",
+  "version": "1.0.0",
+  "description": "DeFiMon Advanced Analytics Platform",
+  "main": "mvp-website/server.js",
+  "scripts": {
+    "start": "cd mvp-website && npm start",
+    "dev": "cd mvp-website && npm run dev",
+    "deploy": "gcloud app deploy"
+  },
+  "engines": {
+    "node": "20.x"
+  },
+  "dependencies": {
+    "next": "^15.5.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vovkes/defimon.highfunk.uk.git"
+  },
+  "keywords": [
+    "defi",
+    "analytics",
+    "blockchain",
+    "ethereum",
+    "cryptocurrency",
+    "trading",
+    "monitoring"
+  ],
+  "author": "Vovkes",
+  "license": "MIT"
+}

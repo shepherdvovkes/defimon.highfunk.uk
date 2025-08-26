@@ -1,0 +1,49 @@
+# Exclude everything by default
+*
+
+# Only include the essential DeFiMon application files
+!app.yaml
+!package.json
+!mvp-website/
+!mvp-website/app/
+!mvp-website/components/
+!mvp-website/public/
+!mvp-website/.next/
+!mvp-website/package.json
+!mvp-website/next.config.js
+!mvp-website/tailwind.config.js
+!mvp-website/tsconfig.json
+!mvp-website/postcss.config.js
+!mvp-website/globals.css
+!mvp-website/next-env.d.ts
+
+# Exclude node_modules completely - it will be installed during build
+mvp-website/node_modules/
+
+# But exclude these specific directories/files from mvp-website
+mvp-website/.next/cache/
+mvp-website/.next/types/
+mvp-website/.next/diagnostics/
+mvp-website/node_modules/.cache/
+mvp-website/.git/
+mvp-website/.gitignore
+mvp-website/README.md
+mvp-website/*.md
+mvp-website/*.sh
+mvp-website/*.py
+mvp-website/Dockerfile*
+mvp-website/cloudbuild.yaml
+mvp-website/test-*.html
+mvp-website/tsconfig.tsbuildinfo
+mvp-website/package-lock.json
+mvp-website/yarn.lock
+mvp-website/.env*
+mvp-website/.DS_Store
+mvp-website/.vscode/
+mvp-website/.idea/
+mvp-website/coverage/
+mvp-website/.nyc_output/
+mvp-website/.next/trace
+mvp-website/.next/cache/
+mvp-website/.next/types/
+mvp-website/.next/diagnostics/

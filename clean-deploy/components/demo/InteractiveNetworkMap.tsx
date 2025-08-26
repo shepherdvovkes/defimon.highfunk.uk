@@ -160,49 +160,28 @@ const InteractiveNetworkMap = () => {
     { name: 'Asia', nodes: ['eth-validator-3', 'poly-bridge-1', 'poly-rpc-1'], color: '#10B981', center: { x: 1400, y: 300 } }
   ]
 
-  // Mock data for demonstration - replace with real API calls
-  const mockRealTimeData: RealTimeData = {
-    protocols: [
-      { name: 'Uniswap', total_value_locked: 4500000000, volume_24h: 1200000000, fees_24h: 2500000 },
-      { name: 'Aave', total_value_locked: 3200000000, volume_24h: 850000000, fees_24h: 1800000 },
-      { name: 'Compound', total_value_locked: 2800000000, volume_24h: 650000000, fees_24h: 1200000 },
-      { name: 'Curve', total_value_locked: 3800000000, volume_24h: 950000000, fees_24h: 2200000 },
-      { name: 'SushiSwap', total_value_locked: 1200000000, volume_24h: 450000000, fees_24h: 950000 }
-    ],
-    tokenPrices: [
-      { token_id: 'ethereum', price_usd: 2450.50, market_cap_usd: 295000000000 },
-      { token_id: 'uniswap', price_usd: 8.75, market_cap_usd: 5200000000 },
-      { token_id: 'aave', price_usd: 125.30, market_cap_usd: 1850000000 },
-      { token_id: 'compound', price_usd: 45.20, market_cap_usd: 320000000 },
-      { token_id: 'curve', price_usd: 0.85, market_cap_usd: 450000000 }
-    ],
-    networkMetrics: [
-      { network: 'ethereum', tps: 15.2, gas_price: 25.5, active_addresses: 850000 },
-      { network: 'polygon', tps: 65.8, gas_price: 0.8, active_addresses: 1200000 },
-      { network: 'arbitrum', tps: 12.5, gas_price: 0.15, active_addresses: 450000 },
-      { network: 'optimism', tps: 8.9, gas_price: 0.12, active_addresses: 320000 }
-    ]
-  }
-
   // Fetch real-time data from the analytics API
   const fetchRealTimeData = useCallback(async () => {
     setIsLoading(true)
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // In real implementation, fetch from API
-      // const [protocolsRes, tokenPricesRes, networkMetricsRes] = await Promise.allSettled([
-      //   fetch('/api/analytics/protocols/recent'),
-      //   fetch('/api/analytics/token-prices/recent'),
-      //   fetch('/api/analytics/network-metrics')
-      // ])
-      
-      setRealTimeData(mockRealTimeData)
+      // Fetch data from multiple endpoints
+      const [protocolsRes, tokenPricesRes, networkMetricsRes] = await Promise.allSettled([
+        fetch('/api/analytics/protocols/recent'),
+        fetch('/api/analytics/token-prices/recent'),
+        fetch('/api/analytics/network-metrics')
+      ])
+
+      const newData: RealTimeData = {
+        protocols: protocolsRes.status === 'fulfilled' ? await protocolsRes.value.json() : [],
+        tokenPrices: tokenPricesRes.status === 'fulfilled' ? await tokenPricesRes.value.json() : [],
+        networkMetrics: networkMetricsRes.status === 'fulfilled' ? await networkMetricsRes.value.json() : []
+      }
+
+      setRealTimeData(newData)
       setLastUpdate(new Date())
 
       // Update network nodes with real data
-      updateNetworkNodesWithRealData(mockRealTimeData)
+      updateNetworkNodesWithRealData(newData)
 
     } catch (error) {
       console.error('Error fetching real-time data:', error)
