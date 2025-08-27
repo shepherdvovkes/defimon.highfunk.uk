@@ -69,8 +69,8 @@ class PolygonQuickNodeConfig:
             "polygon_mainnet": PolygonEndpoint(
                 name="Polygon Mainnet",
                 network_name="polygon-mainnet",
-                http_url=f"https://{self.endpoint_name}.polygon-mainnet.quiknode.pro/{self.token_id}",
-                ws_url=f"wss://{self.endpoint_name}.polygon-mainnet.quiknode.pro/{self.token_id}",
+                http_url=f"https://{self.endpoint_name}.matic.quiknode.pro/{self.token_id}",
+                ws_url=f"wss://{self.endpoint_name}.matic.quiknode.pro/{self.token_id}",
                 chain_id=137,
                 currency_symbol="MATIC",
                 ssl_verify=False,

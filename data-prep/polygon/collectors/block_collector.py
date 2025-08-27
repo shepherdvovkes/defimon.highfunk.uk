@@ -144,8 +144,8 @@ class PolygonBlockCollector:
                 gas_limit=self.client.hex_to_int(block_data["gasLimit"]),
                 gas_used=self.client.hex_to_int(block_data["gasUsed"]),
                 miner=block_data["miner"],
-                difficulty=block_data["difficulty"],
-                total_difficulty=block_data["totalDifficulty"],
+                difficulty=block_data.get("difficulty", "0"),
+                total_difficulty=block_data.get("totalDifficulty", "0"),  # Polygon doesn't have this
                 size=self.client.hex_to_int(block_data["size"]),
                 extra_data=block_data["extraData"],
                 nonce=block_data["nonce"],

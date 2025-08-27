@@ -50,8 +50,13 @@ class PolygonDatabaseManager:
         user = os.getenv('GOOGLE_CLOUD_SQL_USER', 'defimon_user')
         password = os.getenv('GOOGLE_CLOUD_SQL_PASSWORD', 'defimon_secure_password_2024')
         
-        # Create connection string
-        connection_string = f"postgresql://{user}:{password}@/{database_name}?host=/cloudsql/{project_id}:{region}:{instance_name}"
+        # Create connection string - using direct connection for now
+        # For Google Cloud SQL, we need to use the public IP or Cloud SQL Proxy
+        connection_string = f"postgresql://{user}:{password}@localhost:5432/{database_name}"
+        
+        # Alternative: Use environment variable if available
+        if os.getenv('DATABASE_URL'):
+            connection_string = os.getenv('DATABASE_URL')
         
         logger.info(f"Using database: {database_name} on instance: {instance_name}")
         return connection_string

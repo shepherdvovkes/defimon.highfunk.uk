@@ -47,7 +47,7 @@ class PolygonAPIClient:
     async def create_session(self):
         """Create aiohttp session"""
         if self.session is None:
-            connector = aiohttp.TCPConnector(limit=100)
+            connector = aiohttp.TCPConnector(limit=100, ssl=False)
             timeout = aiohttp.ClientTimeout(total=60)
             self.session = aiohttp.ClientSession(
                 connector=connector, 

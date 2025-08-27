@@ -5,49 +5,49 @@ web3==6.15.1
 backoff==2.2.1
 
 # Data processing
-pandas==2.1.4
-numpy==1.24.3
-pydantic==2.5.2
+pandas>=2.0.0
+numpy>=1.24.0
+pydantic>=2.0.0
 
 # Database and storage
-psycopg2-binary==2.9.9
-sqlalchemy==2.0.23
+psycopg2-binary>=2.9.0
+sqlalchemy>=2.0.0
 
 # Async utilities
-asyncio-mqtt==0.16.1
-aiofiles==23.2.1
+asyncio-mqtt>=0.16.0
+aiofiles>=23.0.0
 
 # Monitoring and logging
-prometheus-client==0.19.0
-structlog==23.2.0
+prometheus-client>=0.19.0
+structlog>=23.0.0
 
 # Configuration
-python-dotenv==1.0.0
-pyyaml==6.0.1
+python-dotenv>=1.0.0
+pyyaml>=6.0.0
 
 # HTTP and networking
-httpx==0.25.2
-websockets==12.0
+httpx>=0.25.0
+websockets>=12.0.0
 
 # Data validation and serialization
-marshmallow==3.20.1
-jsonschema==4.20.0
+marshmallow>=3.20.0
+jsonschema>=4.20.0
 
 # Time and date handling
-python-dateutil==2.8.2
-pytz==2023.3
+python-dateutil>=2.8.0
+pytz>=2023.0
 
 # Utilities
-click==8.1.7
-rich==13.7.0
-tqdm==4.66.1
+click>=8.1.0
+rich>=13.7.0
+tqdm>=4.66.0
 
 # Testing
-pytest==7.4.3
-pytest-asyncio==0.21.1
-pytest-mock==3.12.0
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.12.0
 
 # Development
-black==23.12.1
-flake8==6.1.0
-mypy==1.8.0
+black>=23.12.0
+flake8>=6.1.0
+mypy>=1.8.0
