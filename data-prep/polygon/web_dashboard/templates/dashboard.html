@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polygon Data Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: transform 0.2s ease-in-out;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+        }
+        .loading {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-chart-line text-2xl"></i>
+                    <h1 class="text-2xl font-bold">Polygon Data Dashboard</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="network-status" class="px-3 py-1 rounded-full text-sm font-medium bg-green-500">
+                        <i class="fas fa-circle mr-1"></i>Connected
+                    </span>
+                    <span id="current-block" class="text-sm">Block: Loading...</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-6 py-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                        <i class="fas fa-database text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Data Files</p>
+                        <p id="file-count" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                        <i class="fas fa-cube text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Blocks</p>
+                        <p id="total-blocks" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                        <i class="fas fa-exchange-alt text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Transactions</p>
+                        <p id="total-transactions" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-orange-100 text-orange-600">
+                        <i class="fas fa-hdd text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Data Size</p>
+                        <p id="total-size" class="text-2xl font-bold text-gray-900">0 MB</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-lg shadow-md mb-8">
+            <div class="border-b border-gray-200">
+                <nav class="flex space-x-8 px-6" aria-label="Tabs">
+                    <button id="data-tab" class="tab-button py-4 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600" onclick="showTab('data')">
+                        <i class="fas fa-file-alt mr-2"></i>Collected Data
+                    </button>
+                    <button id="db-tab" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700" onclick="showTab('db')">
+                        <i class="fas fa-database mr-2"></i>Database Config
+                    </button>
+                    <button id="network-tab" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700" onclick="showTab('network')">
+                        <i class="fas fa-network-wired mr-2"></i>Network Status
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Data Tab -->
+            <div id="data-content" class="tab-content p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900">Collected Data Files</h2>
+                    <button onclick="refreshData()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                <div id="data-files" class="space-y-4">
+                    <div class="text-center py-8">
+                        <i class="fas fa-spinner loading text-2xl text-gray-400"></i>
+                        <p class="mt-2 text-gray-500">Loading data files...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Database Tab -->
+            <div id="db-content" class="tab-content p-6 hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900">PostgreSQL Configuration</h2>
+                    <div class="space-x-2">
+                        <button onclick="testDatabase()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-plug mr-2"></i>Test Connection
+                        </button>
+                        <button onclick="setupDatabase()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-cogs mr-2"></i>Setup Schema
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Configuration -->
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Configuration</h3>
+                        <div id="db-config" class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Instance Name:</span>
+                                <span id="instance-name" class="font-mono">Loading...</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Database:</span>
+                                <span id="database-name" class="font-mono">Loading...</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">User:</span>
+                                <span id="db-user" class="font-mono">Loading...</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Project ID:</span>
+                                <span id="project-id" class="font-mono">Loading...</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Region:</span>
+                                <span id="region" class="font-mono">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Connection Status -->
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Connection Status</h3>
+                        <div id="db-status" class="space-y-3">
+                            <div class="flex items-center">
+                                <span class="text-gray-600 mr-2">Status:</span>
+                                <span id="connection-status" class="px-2 py-1 rounded text-sm font-medium bg-gray-200 text-gray-700">
+                                    Unknown
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Blocks in DB:</span>
+                                <span id="db-blocks" class="font-mono">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Transactions in DB:</span>
+                                <span id="db-transactions" class="font-mono">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Latest Block:</span>
+                                <span id="db-latest-block" class="font-mono">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network Tab -->
+            <div id="network-content" class="tab-content p-6 hidden">
+                <h2 class="text-xl font-semibold text-gray-900 mb-6">Network Status</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">QuickNode Connection</h3>
+                        <div id="network-info" class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Endpoint:</span>
+                                <span id="endpoint-name" class="font-mono">Loading...</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Status:</span>
+                                <span id="network-connection-status" class="px-2 py-1 rounded text-sm font-medium bg-gray-200 text-gray-700">
+                                    Unknown
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Current Block:</span>
+                                <span id="network-current-block" class="font-mono">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for File Analysis -->
+    <div id="analysis-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
+                <div class="flex justify-between items-center p-6 border-b">
+                    <h3 class="text-lg font-semibold text-gray-900">File Analysis</h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div id="modal-content" class="p-6">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentTab = 'data';
+        let dataFiles = [];
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboard();
+        });
+
+        async function loadDashboard() {
+            await Promise.all([
+                loadDataFiles(),
+                loadNetworkStats(),
+                loadDatabaseConfig()
+            ]);
+            updateStats();
+        }
+
+        async function loadDataFiles() {
+            try {
+                const response = await fetch('/api/data-files');
+                dataFiles = await response.json();
+                displayDataFiles();
+            } catch (error) {
+                console.error('Error loading data files:', error);
+            }
+        }
+
+        function displayDataFiles() {
+            const container = document.getElementById('data-files');
+            
+            if (dataFiles.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-folder-open text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-500">No data files found</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = dataFiles.map(file => `
+                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-medium text-gray-900">${file.name}</h3>
+                            <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+                                <div>
+                                    <span class="font-medium">Size:</span> ${file.size_mb} MB
+                                </div>
+                                <div>
+                                    <span class="font-medium">Modified:</span> ${file.modified}
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="analyzeFile('${file.path}')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-chart-bar mr-2"></i>Analyze
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function analyzeFile(filePath) {
+            try {
+                const response = await fetch(`/api/analyze-file?file=${encodeURIComponent(filePath)}`);
+                const analysis = await response.json();
+                showAnalysisModal(analysis);
+            } catch (error) {
+                console.error('Error analyzing file:', error);
+                alert('Error analyzing file');
+            }
+        }
+
+        function showAnalysisModal(analysis) {
+            const modal = document.getElementById('analysis-modal');
+            const content = document.getElementById('modal-content');
+            
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <div class="text-2xl font-bold text-blue-600">${analysis.summary.total_blocks}</div>
+                            <div class="text-sm text-blue-600">Blocks</div>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <div class="text-2xl font-bold text-green-600">${analysis.summary.total_transactions}</div>
+                            <div class="text-sm text-green-600">Transactions</div>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg">
+                            <div class="text-2xl font-bold text-purple-600">${analysis.summary.total_receipts}</div>
+                            <div class="text-sm text-purple-600">Receipts</div>
+                        </div>
+                        <div class="bg-orange-50 p-4 rounded-lg">
+                            <div class="text-2xl font-bold text-orange-600">${analysis.summary.errors}</div>
+                            <div class="text-sm text-orange-600">Errors</div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-medium text-gray-900 mb-2">Block Range</h4>
+                        <p class="text-sm text-gray-600">${analysis.block_range.start} - ${analysis.block_range.end}</p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <h4 class="font-medium text-gray-900">Sample Data</h4>
+                        
+                        <div class="bg-white border rounded-lg p-4">
+                            <h5 class="font-medium text-gray-900 mb-2">Sample Blocks</h5>
+                            <div class="space-y-2">
+                                ${analysis.sample_data.blocks.map(block => `
+                                    <div class="text-sm">
+                                        <span class="font-medium">Block ${block.block_number}:</span>
+                                        ${block.transactions_count} transactions, ${block.gas_used} gas used
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white border rounded-lg p-4">
+                            <h5 class="font-medium text-gray-900 mb-2">Sample Transactions</h5>
+                            <div class="space-y-2">
+                                ${analysis.sample_data.transactions.map(tx => `
+                                    <div class="text-sm">
+                                        <span class="font-medium">${tx.hash.substring(0, 20)}...</span>
+                                        <br>From: ${tx.from_address.substring(0, 20)}...
+                                        <br>To: ${tx.to_address.substring(0, 20)}...
+                                        <br>Value: ${tx.value} wei
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('analysis-modal').classList.add('hidden');
+        }
+
+        async function loadNetworkStats() {
+            try {
+                const response = await fetch('/api/network-stats');
+                const stats = await response.json();
+                
+                document.getElementById('current-block').textContent = `Block: ${stats.current_block || 'Unknown'}`;
+                document.getElementById('endpoint-name').textContent = stats.endpoint || 'Unknown';
+                document.getElementById('network-current-block').textContent = stats.current_block || 'Unknown';
+                
+                const statusElement = document.getElementById('network-connection-status');
+                if (stats.status === 'Connected') {
+                    statusElement.className = 'px-2 py-1 rounded text-sm font-medium bg-green-100 text-green-800';
+                    statusElement.textContent = 'Connected';
+                } else {
+                    statusElement.className = 'px-2 py-1 rounded text-sm font-medium bg-red-100 text-red-800';
+                    statusElement.textContent = 'Disconnected';
+                }
+            } catch (error) {
+                console.error('Error loading network stats:', error);
+            }
+        }
+
+        async function loadDatabaseConfig() {
+            try {
+                const response = await fetch('/api/db-config');
+                const config = await response.json();
+                
+                document.getElementById('instance-name').textContent = config.instance_name;
+                document.getElementById('database-name').textContent = config.database_name;
+                document.getElementById('db-user').textContent = config.user;
+                document.getElementById('project-id').textContent = config.project_id;
+                document.getElementById('region').textContent = config.region;
+            } catch (error) {
+                console.error('Error loading database config:', error);
+            }
+        }
+
+        async function testDatabase() {
+            try {
+                const response = await fetch('/api/db-test');
+                const result = await response.json();
+                
+                const statusElement = document.getElementById('connection-status');
+                if (result.connected) {
+                    statusElement.className = 'px-2 py-1 rounded text-sm font-medium bg-green-100 text-green-800';
+                    statusElement.textContent = 'Connected';
+                    document.getElementById('db-blocks').textContent = result.block_count || 0;
+                    document.getElementById('db-transactions').textContent = result.transaction_count || 0;
+                    document.getElementById('db-latest-block').textContent = result.latest_block || 'None';
+                } else {
+                    statusElement.className = 'px-2 py-1 rounded text-sm font-medium bg-red-100 text-red-800';
+                    statusElement.textContent = 'Disconnected';
+                    document.getElementById('db-blocks').textContent = '-';
+                    document.getElementById('db-transactions').textContent = '-';
+                    document.getElementById('db-latest-block').textContent = '-';
+                }
+            } catch (error) {
+                console.error('Error testing database:', error);
+            }
+        }
+
+        async function setupDatabase() {
+            try {
+                const response = await fetch('/api/setup-database');
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Database schema created successfully!');
+                    testDatabase(); // Refresh connection status
+                } else {
+                    alert('Error setting up database: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error setting up database:', error);
+                alert('Error setting up database');
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('file-count').textContent = dataFiles.length;
+            
+            let totalBlocks = 0;
+            let totalTransactions = 0;
+            let totalSize = 0;
+            
+            dataFiles.forEach(file => {
+                totalSize += file.size_mb;
+            });
+            
+            document.getElementById('total-size').textContent = totalSize.toFixed(2) + ' MB';
+        }
+
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active state from all tab buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('border-blue-500', 'text-blue-600');
+                button.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName + '-content').classList.remove('hidden');
+            
+            // Activate selected tab button
+            document.getElementById(tabName + '-tab').classList.remove('border-transparent', 'text-gray-500');
+            document.getElementById(tabName + '-tab').classList.add('border-blue-500', 'text-blue-600');
+            
+            currentTab = tabName;
+        }
+
+        function refreshData() {
+            loadDashboard();
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('analysis-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
