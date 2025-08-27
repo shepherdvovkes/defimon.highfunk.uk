@@ -25,7 +25,8 @@ import {
   BarChart3,
   TrendingUp,
   Shield,
-  Cpu
+  Cpu,
+  DollarSign
 } from 'lucide-react'
 
 // Import our custom components
@@ -243,8 +244,18 @@ export default function DemoPage() {
                   </motion.button>
 
                   <motion.a
+                    href="/investor-insights"
+                    className="flex items-center space-x-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-300"
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <DollarSign className="w-4 h-4" />
+                    <span>Investor Insights</span>
+                  </motion.a>
+
+                  <motion.a
                     href="/"
-                    className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-300"
+                    className="flex items-center space-x-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-semibold border border-slate-600 transition-all duration-300"
                     whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
                   >

@@ -42,12 +42,12 @@ def get_quicknode_config() -> APIConfig:
     )
 
 def get_blast_config() -> APIConfig:
-    """Get Blast configuration"""
-    api_key = os.getenv("BLAST_API_KEY", "")
+    """Get Blast configuration - Now using Alchemy"""
+    api_key = os.getenv("ALCHEMY_API_KEY", "")
     return APIConfig(
         api_key=api_key,
-        base_url="https://api.blast.io",
-        headers={"Authorization": f"Bearer {api_key}"} if api_key else {}
+        base_url="https://eth-mainnet.g.alchemy.com/v2",
+        headers={"Content-Type": "application/json"}
     )
 
 def get_coingecko_config() -> APIConfig:
@@ -163,6 +163,96 @@ class QuickNodeService:
             }
         except Exception as e:
             logger.error(f"QuickNode get_balance error: {e}")
+            return {"success": False, "error": str(e)}
+
+class BlastService:
+    """Blast API service - Now using Alchemy"""
+    
+    def __init__(self):
+        self.config = get_blast_config()
+    
+    async def get_block_number(self) -> Dict[str, Any]:
+        """Get latest block number using Alchemy"""
+        try:
+            payload = {
+                "jsonrpc": "2.0",
+                "method": "eth_blockNumber",
+                "params": [],
+                "id": 1
+            }
+            
+            url = f"{self.config.base_url}/{self.config.api_key}"
+            response = self.config.session.post(url, json=payload)
+            response.raise_for_status()
+            
+            result = response.json()
+            return {
+                "success": True,
+                "block_number": int(result.get("result", "0x0"), 16),
+                "hex_block_number": result.get("result", "0x0"),
+                "provider": "Alchemy (Blast)"
+            }
+        except Exception as e:
+            logger.error(f"Blast/Alchemy get_block_number error: {e}")
+            return {"success": False, "error": str(e)}
+    
+    async def get_gas_price(self) -> Dict[str, Any]:
+        """Get current gas price using Alchemy"""
+        try:
+            payload = {
+                "jsonrpc": "2.0",
+                "method": "eth_gasPrice",
+                "params": [],
+                "id": 1
+            }
+            
+            url = f"{self.config.base_url}/{self.config.api_key}"
+            response = self.config.session.post(url, json=payload)
+            response.raise_for_status()
+            
+            result = response.json()
+            gas_price_hex = result.get("result", "0x0")
+            gas_price_int = int(gas_price_hex, 16)
+            
+            return {
+                "success": True,
+                "gas_price_wei": gas_price_int,
+                "gas_price_gwei": gas_price_int / 10**9,
+                "hex_gas_price": gas_price_hex,
+                "provider": "Alchemy (Blast)"
+            }
+        except Exception as e:
+            logger.error(f"Blast/Alchemy get_gas_price error: {e}")
+            return {"success": False, "error": str(e)}
+    
+    async def get_balance(self, address: str) -> Dict[str, Any]:
+        """Get account balance using Alchemy"""
+        try:
+            payload = {
+                "jsonrpc": "2.0",
+                "method": "eth_getBalance",
+                "params": [address, "latest"],
+                "id": 1
+            }
+            
+            url = f"{self.config.base_url}/{self.config.api_key}"
+            response = self.config.session.post(url, json=payload)
+            response.raise_for_status()
+            
+            result = response.json()
+            balance_hex = result.get("result", "0x0")
+            balance_int = int(balance_hex, 16)
+            
+            return {
+                "success": True,
+                "address": address,
+                "balance_wei": balance_int,
+                "balance_eth": balance_int / 10**18,
+                "hex_balance": balance_hex,
+                "provider": "Alchemy (Blast)"
+            }
+        except Exception as e:
+            logger.error(f"Blast/Alchemy get_balance error: {e}")
             return {"success": False, "error": str(e)}
 
 class CoinGeckoService:
@@ -296,7 +386,7 @@ async def health_check():
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "apis": ["quicknode", "coingecko", "coincap", "github"]
+        "apis": ["quicknode", "blast", "coingecko", "coincap", "github"]
     }
 
 @router.get("/quicknode/block-number")
@@ -325,6 +415,39 @@ async def get_quicknode_gas_price():
 async def get_quicknode_balance(address: str):
     """Get account balance from QuickNode"""
     service = QuickNodeService()
+    result = await service.get_balance(address)
+    
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=result["error"])
+    
+    return result
+
+@router.get("/blast/block-number")
+async def get_blast_block_number():
+    """Get latest block number from Blast/Alchemy"""
+    service = BlastService()
+    result = await service.get_block_number()
+    
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=result["error"])
+    
+    return result
+
+@router.get("/blast/gas-price")
+async def get_blast_gas_price():
+    """Get current gas price from Blast/Alchemy"""
+    service = BlastService()
+    result = await service.get_gas_price()
+    
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=result["error"])
+    
+    return result
+
+@router.get("/blast/balance/{address}")
+async def get_blast_balance(address: str):
+    """Get account balance from Blast/Alchemy"""
+    service = BlastService()
     result = await service.get_balance(address)
     
     if not result["success"]:
@@ -404,6 +527,7 @@ async def get_all_apis_summary():
     try:
         # Create services
         quicknode_service = QuickNodeService()
+        blast_service = BlastService()
         coingecko_service = CoinGeckoService()
         coincap_service = CoinCapService()
         github_service = GitHubService()
@@ -412,6 +536,8 @@ async def get_all_apis_summary():
         tasks = [
             quicknode_service.get_block_number(),
             quicknode_service.get_gas_price(),
+            blast_service.get_block_number(),
+            blast_service.get_gas_price(),
             coingecko_service.get_bitcoin_price(),
             coincap_service.get_bitcoin_data(),
             github_service.get_user_info()
@@ -425,14 +551,18 @@ async def get_all_apis_summary():
                 "block_number": results[0] if not isinstance(results[0], Exception) else {"error": str(results[0])},
                 "gas_price": results[1] if not isinstance(results[1], Exception) else {"error": str(results[1])}
             },
+            "blast": {
+                "block_number": results[2] if not isinstance(results[2], Exception) else {"error": str(results[2])},
+                "gas_price": results[3] if not isinstance(results[3], Exception) else {"error": str(results[3])}
+            },
             "coingecko": {
-                "bitcoin_price": results[2] if not isinstance(results[2], Exception) else {"error": str(results[2])}
+                "bitcoin_price": results[4] if not isinstance(results[4], Exception) else {"error": str(results[4])}
             },
             "coincap": {
-                "bitcoin_data": results[3] if not isinstance(results[3], Exception) else {"error": str(results[3])}
+                "bitcoin_data": results[5] if not isinstance(results[5], Exception) else {"error": str(results[5])}
             },
             "github": {
-                "user_info": results[4] if not isinstance(results[4], Exception) else {"error": str(results[4])}
+                "user_info": results[6] if not isinstance(results[6], Exception) else {"error": str(results[6])}
             }
         }
         

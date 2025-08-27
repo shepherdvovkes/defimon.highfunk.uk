@@ -9,6 +9,7 @@ const navigation = [
   { name: 'Features', href: '#features' },
   { name: 'Analytics', href: '#analytics' },
   { name: 'Networks', href: '#networks' },
+  { name: 'API Dashboard', href: '/api-dashboard' },
   { name: 'About', href: '#about' },
 ]
 

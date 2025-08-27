@@ -30,8 +30,8 @@ class QuickNodeConfig:
 
 @dataclass
 class BlastConfig(APIConfig):
-    """Blast API configuration"""
-    base_url: str = "https://api.blast.io"
+    """Blast API configuration - Now using Alchemy"""
+    base_url: str = "https://eth-mainnet.g.alchemy.com/v2"
 
 @dataclass
 class CoinGeckoConfig(APIConfig):
@@ -64,11 +64,10 @@ def get_quicknode_config() -> QuickNodeConfig:
     )
 
 def get_blast_config() -> BlastConfig:
-    """Get Blast API configuration from environment variables"""
-    api_key = os.getenv("BLAST_API_KEY", "")
-    # Blast API provides personalized endpoints after registration
-    # This is a placeholder URL - users need to get their actual endpoint from https://blastapi.io
-    base_url = os.getenv("BLAST_API_URL", f"https://{api_key}.blastapi.io" if api_key else "https://blastapi.io")
+    """Get Blast API configuration from environment variables - Now using Alchemy"""
+    api_key = os.getenv("ALCHEMY_API_KEY", "")
+    # Blast has moved to Alchemy - using Alchemy's Ethereum mainnet endpoint
+    base_url = os.getenv("BLAST_API_URL", "https://eth-mainnet.g.alchemy.com/v2")
     return BlastConfig(
         api_key=api_key,
         base_url=base_url,

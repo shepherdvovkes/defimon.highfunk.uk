@@ -18,7 +18,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # Set environment variables for testing
 os.environ.update({
     "QUICKNODE_API_KEY": "QN_6a9c24b3a5fc491f88e8c24c3294ef36",
-    "BLAST_API_KEY": "azoNgu3Cle2YBWFElUzVWNCXw-g_F31RvQjQKJmfVcg",
+    "ALCHEMY_API_KEY": "YOUR_ALCHEMY_API_KEY_HERE",  # Blast now uses Alchemy
     "COINGECKO_API_KEY": "CG-32UZHngR3w1V7u2vQ76tP3Fi",
     "COINCAP_API_KEY": "dbdbfe12346bb92d9dac28504e5fee49ee721659429345b8a8fd8da5bab9c715",
     "GITHUB_API_TOKEN": "[GITHUB_TOKEN_PLACEHOLDER]",

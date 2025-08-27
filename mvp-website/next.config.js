@@ -21,6 +21,15 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: '/investor-insights',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+        ],
+      },
     ]
   },
 }

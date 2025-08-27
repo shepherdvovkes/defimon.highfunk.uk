@@ -259,6 +259,34 @@ export default function KeyMetrics() {
                 <Play className="w-5 h-5" />
                 <span>Посмотреть демо</span>
               </a>
+              <a
+                href="/investor-insights"
+                className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg font-semibold text-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/25"
+              >
+                <DollarSign className="w-5 h-5" />
+                <span>Investor Insights</span>
+              </a>
+              <a
+                href="/landing"
+                className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-semibold text-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg shadow-purple-500/25"
+              >
+                <Sparkles className="w-5 h-5" />
+                <span>Modern Landing</span>
+              </a>
+              <a
+                href="/landing-minimal"
+                className="px-8 py-4 bg-gradient-to-r from-gray-800 to-black text-white rounded-lg font-semibold text-lg hover:from-gray-700 hover:to-gray-800 transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg shadow-gray-800/25"
+              >
+                <Sparkles className="w-5 h-5" />
+                <span>Minimal Landing</span>
+              </a>
+              <a
+                href="/landing-saas"
+                className="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-semibold text-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg shadow-blue-500/25"
+              >
+                <Sparkles className="w-5 h-5" />
+                <span>SaaS Landing</span>
+              </a>
               <button className="px-8 py-4 bg-white/10 text-white rounded-lg font-semibold text-lg hover:bg-white/20 transition-colors border border-white/20">
                 Начать бесплатно
               </button>

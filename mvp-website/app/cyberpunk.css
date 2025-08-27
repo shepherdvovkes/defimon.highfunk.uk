@@ -1,0 +1,472 @@
+/* Cyberpunk Design System CSS */
+
+/* Base Cyberpunk Card */
+.cyberpunk-card {
+  background: linear-gradient(45deg, #0a0a0a, #1a1a1a);
+  border: 2px solid #ff00ff;
+  border-radius: 0;
+  box-shadow: 
+    0 0 20px #ff00ff,
+    inset 0 0 20px rgba(255, 0, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  font-family: 'Courier New', monospace;
+}
+
+.cyberpunk-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 0, 255, 0.4), transparent);
+  animation: glitch 2s infinite;
+}
+
+.cyberpunk-content {
+  position: relative;
+  z-index: 10;
+  padding: 1.5rem;
+  color: #ffffff;
+}
+
+/* Glitch Animation */
+@keyframes glitch {
+  0% {
+    left: -100%;
+  }
+  50% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.cyberpunk-glitch-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 0, 255, 0.1);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Cyberpunk Button */
+.cyberpunk-button {
+  background: rgba(255, 0, 255, 0.2);
+  border: 2px solid #ff00ff;
+  color: #ff00ff;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  outline: none;
+}
+
+.cyberpunk-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 0, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.cyberpunk-button:hover::before {
+  left: 100%;
+}
+
+.cyberpunk-button:hover {
+  box-shadow: 0 0 20px #ff00ff;
+  text-shadow: 0 0 10px #ff00ff;
+}
+
+.cyberpunk-button:active {
+  transform: scale(0.95);
+}
+
+.cyberpunk-button-icon {
+  margin-right: 0.5rem;
+}
+
+/* Cyberpunk Data Display */
+.cyberpunk-data-display {
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid #00ffff;
+  padding: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.cyberpunk-data-display::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #00ffff, transparent);
+  animation: scan 2s linear infinite;
+}
+
+@keyframes scan {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.cyberpunk-data-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.cyberpunk-data-title {
+  color: #00ffff;
+  font-size: 0.875rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.cyberpunk-status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.cyberpunk-data-value {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cyberpunk-data-value .value {
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+}
+
+.cyberpunk-data-value .unit {
+  color: #00ffff;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+}
+
+.cyberpunk-data-value .trend-icon {
+  color: #00ffff;
+}
+
+/* Cyberpunk Terminal */
+.cyberpunk-terminal {
+  background: #000000;
+  border: 2px solid #00ff00;
+  font-family: 'Courier New', monospace;
+  color: #00ff00;
+  position: relative;
+  overflow: hidden;
+}
+
+.cyberpunk-terminal.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1000;
+}
+
+.cyberpunk-terminal-header {
+  background: rgba(0, 255, 0, 0.1);
+  border-bottom: 1px solid #00ff00;
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.terminal-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.terminal-prefix {
+  color: #00ff00;
+  font-weight: bold;
+}
+
+.terminal-controls {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.terminal-control {
+  background: none;
+  border: 1px solid #00ff00;
+  color: #00ff00;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.terminal-control:hover {
+  background: rgba(0, 255, 0, 0.2);
+  box-shadow: 0 0 10px #00ff00;
+}
+
+.cyberpunk-terminal-content {
+  padding: 1rem;
+  min-height: 200px;
+  position: relative;
+}
+
+.terminal-cursor {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+}
+
+.cursor-blink {
+  animation: blink 1s infinite;
+  color: #00ff00;
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+/* Cyberpunk Progress Bar */
+.cyberpunk-progress {
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid #ff00ff;
+  padding: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-label {
+  color: #ff00ff;
+  font-size: 0.875rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+}
+
+.progress-container {
+  position: relative;
+  height: 20px;
+  background: rgba(255, 0, 255, 0.1);
+  border: 1px solid #ff00ff;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  position: relative;
+  transition: width 0.5s ease;
+}
+
+.progress-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: progress-glow 2s linear infinite;
+}
+
+@keyframes progress-glow {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ffffff;
+  font-weight: bold;
+  font-size: 0.75rem;
+  text-shadow: 0 0 5px #ff00ff;
+}
+
+/* Cyberpunk Alert */
+.cyberpunk-alert {
+  background: rgba(0, 0, 0, 0.9);
+  border: 2px solid;
+  padding: 1rem;
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Courier New', monospace;
+}
+
+.cyberpunk-alert::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, currentColor, transparent);
+  animation: alert-scan 1s linear infinite;
+}
+
+@keyframes alert-scan {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.alert-icon {
+  flex-shrink: 0;
+  animation: alert-pulse 2s ease-in-out infinite;
+}
+
+@keyframes alert-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.alert-content {
+  flex: 1;
+}
+
+.alert-title {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 0.25rem 0;
+}
+
+.alert-message {
+  color: #cccccc;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.alert-close {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: all 0.3s ease;
+}
+
+.alert-close:hover {
+  color: #ff0000;
+  transform: scale(1.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .cyberpunk-card {
+    border-width: 1px;
+    box-shadow: 0 0 10px #ff00ff;
+  }
+  
+  .cyberpunk-button {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+  }
+  
+  .cyberpunk-data-value .value {
+    font-size: 1.25rem;
+  }
+  
+  .cyberpunk-terminal-content {
+    min-height: 150px;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .cyberpunk-card {
+    border-width: 3px;
+  }
+  
+  .cyberpunk-button {
+    border-width: 3px;
+  }
+  
+  .cyberpunk-terminal {
+    border-width: 3px;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .cyberpunk-card::before,
+  .cyberpunk-button::before,
+  .cyberpunk-data-display::before,
+  .terminal-cursor .cursor-blink,
+  .progress-glow,
+  .cyberpunk-alert::before {
+    animation: none;
+  }
+  
+  .cyberpunk-status-indicator,
+  .alert-icon {
+    animation: none;
+  }
+}

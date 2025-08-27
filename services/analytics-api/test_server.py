@@ -52,6 +52,14 @@ def get_coingecko_config():
         headers={"X-CG-API-KEY": api_key} if api_key else {}
     )
 
+def get_blast_config():
+    api_key = os.getenv("ALCHEMY_API_KEY", "")
+    return APIConfig(
+        api_key=api_key,
+        base_url="https://eth-mainnet.g.alchemy.com/v2",
+        headers={"Content-Type": "application/json"}
+    )
+
 def get_coincap_config():
     api_key = os.getenv("COINCAP_API_KEY", "")
     return APIConfig(
@@ -107,6 +115,60 @@ class QuickNodeService:
                 "gas_price_wei": gas_price_int,
                 "gas_price_gwei": gas_price_int / 10**9,
                 "hex_gas_price": gas_price_hex
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+class BlastService:
+    def __init__(self):
+        self.config = get_blast_config()
+    
+    async def get_block_number(self):
+        try:
+            payload = {
+                "jsonrpc": "2.0",
+                "method": "eth_blockNumber",
+                "params": [],
+                "id": 1
+            }
+            
+            url = f"{self.config.base_url}/{self.config.api_key}"
+            response = self.config.session.post(url, json=payload)
+            response.raise_for_status()
+            
+            result = response.json()
+            return {
+                "success": True,
+                "block_number": int(result.get("result", "0x0"), 16),
+                "hex_block_number": result.get("result", "0x0"),
+                "provider": "Alchemy (Blast)"
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    async def get_gas_price(self):
+        try:
+            payload = {
+                "jsonrpc": "2.0",
+                "method": "eth_gasPrice",
+                "params": [],
+                "id": 1
+            }
+            
+            url = f"{self.config.base_url}/{self.config.api_key}"
+            response = self.config.session.post(url, json=payload)
+            response.raise_for_status()
+            
+            result = response.json()
+            gas_price_hex = result.get("result", "0x0")
+            gas_price_int = int(gas_price_hex, 16)
+            
+            return {
+                "success": True,
+                "gas_price_wei": gas_price_int,
+                "gas_price_gwei": gas_price_int / 10**9,
+                "hex_gas_price": gas_price_hex,
+                "provider": "Alchemy (Blast)"
             }
         except Exception as e:
             return {"success": False, "error": str(e)}
@@ -198,6 +260,8 @@ async def root():
             "/api/external-apis/health",
             "/api/external-apis/quicknode/block-number",
             "/api/external-apis/quicknode/gas-price",
+            "/api/external-apis/blast/block-number",
+            "/api/external-apis/blast/gas-price",
             "/api/external-apis/coingecko/bitcoin-price",
             "/api/external-apis/coingecko/top-coins",
             "/api/external-apis/coincap/assets",
@@ -219,7 +283,7 @@ async def external_apis_health():
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "apis": ["quicknode", "coingecko", "coincap"]
+        "apis": ["quicknode", "blast", "coingecko", "coincap"]
     }
 
 @app.get("/api/external-apis/quicknode/block-number")
@@ -231,6 +295,18 @@ async def get_quicknode_block_number():
 @app.get("/api/external-apis/quicknode/gas-price")
 async def get_quicknode_gas_price():
     service = QuickNodeService()
+    result = await service.get_gas_price()
+    return result
+
+@app.get("/api/external-apis/blast/block-number")
+async def get_blast_block_number():
+    service = BlastService()
+    result = await service.get_block_number()
+    return result
+
+@app.get("/api/external-apis/blast/gas-price")
+async def get_blast_gas_price():
+    service = BlastService()
     result = await service.get_gas_price()
     return result
 
@@ -258,16 +334,90 @@ async def get_coincap_bitcoin():
     result = await service.get_bitcoin_data()
     return result
 
+# Additional API endpoints for dashboard
+@app.get("/api/external-apis/defillama/protocols")
+async def get_defillama_protocols():
+    """Mock DeFiLlama protocols endpoint"""
+    return {
+        "success": True,
+        "data": {
+            "total_tvl": 45000000000,
+            "protocols": [
+                {"name": "Uniswap", "tvl": 3500000000},
+                {"name": "Aave", "tvl": 2800000000},
+                {"name": "Compound", "tvl": 2100000000}
+            ]
+        }
+    }
+
+@app.get("/api/external-apis/thegraph/uniswap")
+async def get_thegraph_uniswap():
+    """Mock The Graph Uniswap endpoint"""
+    return {
+        "success": True,
+        "data": {
+            "pools": [
+                {"id": "0x8ad599c3a0ff1de082011efddc58f1908eb6e6d8", "tvl": 150000000},
+                {"id": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", "tvl": 120000000}
+            ]
+        }
+    }
+
+@app.get("/api/external-apis/etherscan/transactions")
+async def get_etherscan_transactions():
+    """Mock Etherscan transactions endpoint"""
+    return {
+        "success": True,
+        "data": {
+            "status": "1",
+            "message": "OK",
+            "result": [
+                {"hash": "0x123...", "value": "1000000000000000000"}
+            ]
+        }
+    }
+
+@app.get("/api/external-apis/arbiscan/transactions")
+async def get_arbiscan_transactions():
+    """Mock Arbiscan transactions endpoint"""
+    return {
+        "success": True,
+        "data": {
+            "status": "1",
+            "message": "OK",
+            "result": [
+                {"hash": "0x456...", "value": "500000000000000000"}
+            ]
+        }
+    }
+
+@app.get("/api/external-apis/polygonscan/transactions")
+async def get_polygonscan_transactions():
+    """Mock Polygonscan transactions endpoint"""
+    return {
+        "success": True,
+        "data": {
+            "status": "1",
+            "message": "OK",
+            "result": [
+                {"hash": "0x789...", "value": "2000000000000000000"}
+            ]
+        }
+    }
+
 @app.get("/api/external-apis/summary")
 async def get_all_apis_summary():
     try:
         quicknode_service = QuickNodeService()
+        blast_service = BlastService()
         coingecko_service = CoinGeckoService()
         coincap_service = CoinCapService()
         
         tasks = [
             quicknode_service.get_block_number(),
             quicknode_service.get_gas_price(),
+            blast_service.get_block_number(),
+            blast_service.get_gas_price(),
             coingecko_service.get_bitcoin_price(),
             coincap_service.get_bitcoin_data()
         ]
@@ -280,11 +430,15 @@ async def get_all_apis_summary():
                 "block_number": results[0] if not isinstance(results[0], Exception) else {"error": str(results[0])},
                 "gas_price": results[1] if not isinstance(results[1], Exception) else {"error": str(results[1])}
             },
+            "blast": {
+                "block_number": results[2] if not isinstance(results[2], Exception) else {"error": str(results[2])},
+                "gas_price": results[3] if not isinstance(results[3], Exception) else {"error": str(results[3])}
+            },
             "coingecko": {
-                "bitcoin_price": results[2] if not isinstance(results[2], Exception) else {"error": str(results[2])}
+                "bitcoin_price": results[4] if not isinstance(results[4], Exception) else {"error": str(results[4])}
             },
             "coincap": {
-                "bitcoin_data": results[3] if not isinstance(results[3], Exception) else {"error": str(results[3])}
+                "bitcoin_data": results[5] if not isinstance(results[5], Exception) else {"error": str(results[5])}
             }
         }
         

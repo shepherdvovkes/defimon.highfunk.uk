@@ -16,6 +16,7 @@ const footerLinks = {
     { name: 'Networks', href: '#networks' },
     { name: 'Analytics', href: '#analytics' },
     { name: 'API', href: '#api' },
+    { name: 'Investor Insights', href: '/investor-insights' },
   ],
   company: [
     { name: 'About', href: '#about' },

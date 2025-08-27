@@ -1,131 +1,120 @@
-# Blast API Setup Guide
+# Blast API Setup Guide - Updated for Alchemy Integration
 
 ## Обзор
 
-Согласно [официальной документации Blast API](https://docs.blastapi.io), Blast - это платформа API-провайдера от Bware Labs, которая предоставляет доступ к различным блокчейн сетям через географически распределенные узлы.
+Blast API теперь использует Alchemy в качестве провайдера. Это означает, что для работы с Blast API вам нужно использовать ваш Alchemy API ключ.
 
-## Особенности Blast API
+## Настройка
 
-### 1. Персонализированные эндпоинты
-- Blast не использует общий URL API
-- После регистрации пользователи получают персональные эндпоинты
-- Каждый эндпоинт уникален для пользователя
+### 1. Получение Alchemy API ключа
 
-### 2. Поддерживаемые сети
-- Ethereum
-- Polygon
-- BSC (Binance Smart Chain)
-- Avalanche
-- Fantom
-- И многие другие
+1. Перейдите на [Alchemy Dashboard](https://dashboard.alchemy.com/)
+2. Создайте новый проект или используйте существующий
+3. Скопируйте ваш API ключ из настроек проекта
 
-### 3. Типы API
-- **RPC/WSS** - для стандартных блокчейн запросов
-- **REST API** - для специфических операций
-- **Debug API** - для отладки
-- **Trace API** - для трассировки транзакций
+### 2. Настройка переменных окружения
 
-## Настройка Blast API
-
-### Шаг 1: Регистрация на платформе
-
-1. Перейдите на [https://blastapi.io](https://blastapi.io)
-2. Зарегистрируйтесь используя:
-   - MetaMask кошелек
-   - WalletConnect
-3. Подтвердите регистрацию
-
-### Шаг 2: Создание эндпоинта
-
-1. В панели управления выберите нужную блокчейн сеть
-2. Создайте новый эндпоинт
-3. Скопируйте персональный URL эндпоинта
-
-### Шаг 3: Настройка переменных окружения
+Добавьте ваш Alchemy API ключ в файл `.env`:
 
 ```bash
-# Установите URL вашего персонального эндпоинта
-export BLAST_API_URL="https://your-personal-endpoint.blastapi.io/your-project-id"
-
-# API ключ (если требуется)
-export BLAST_API_KEY="your-api-key"
+# Blast API теперь использует Alchemy
+ALCHEMY_API_KEY=your-alchemy-api-key-here
 ```
 
-## Пример использования
+### 3. Конфигурация
 
-### RPC запросы (как Ethereum)
+Blast API теперь использует следующие настройки:
 
-```bash
-curl -X POST "https://your-endpoint.blastapi.io/your-project-id" \
-  -H "Content-Type: application/json" \
-  -d '{
+- **Base URL**: `https://eth-mainnet.g.alchemy.com/v2`
+- **API Key**: Ваш Alchemy API ключ
+- **Headers**: `Content-Type: application/json`
+
+## Использование
+
+### RPC методы
+
+Blast API поддерживает все стандартные Ethereum RPC методы через Alchemy:
+
+```python
+# Пример получения номера блока
+payload = {
     "jsonrpc": "2.0",
     "method": "eth_blockNumber",
     "params": [],
     "id": 1
-  }'
+}
+
+url = f"https://eth-mainnet.g.alchemy.com/v2/{your_alchemy_api_key}"
+response = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
 ```
 
-### Поддерживаемые RPC методы
+### Доступные эндпоинты
 
-- `eth_blockNumber` - получить номер последнего блока
-- `eth_getBlockByNumber` - получить блок по номеру
-- `eth_gasPrice` - получить цену газа
-- `eth_getBalance` - получить баланс адреса
-- `eth_chainId` - получить ID сети
-- `net_version` - получить версию сети
+После интеграции в analytics-api доступны следующие эндпоинты:
 
-## Планы подписки
-
-### Бесплатный план
-- Ограниченное количество запросов
-- Базовая функциональность
-- Подходит для разработки
-
-### Платные планы
-- Увеличенные лимиты запросов
-- Приоритетная поддержка
-- Дополнительные функции
-
-## Обновление конфигурации в проекте
-
-После получения персонального эндпоинта обновите конфигурацию:
-
-```bash
-# В файле .env или переменных окружения
-BLAST_API_URL="https://your-personal-endpoint.blastapi.io/your-project-id"
-BLAST_API_KEY="your-api-key-if-needed"
-```
+- `GET /api/external-apis/blast/block-number` - Номер последнего блока
+- `GET /api/external-apis/blast/gas-price` - Текущая цена газа
+- `GET /api/external-apis/blast/balance/{address}` - Баланс адреса
 
 ## Тестирование
 
-После настройки запустите тесты:
+### Проверка подключения
 
 ```bash
-cd ExternalAPI
-./run_new_apis_test.sh
+# Получить номер последнего блока
+curl http://localhost:8002/api/external-apis/blast/block-number
+
+# Получить цену газа
+curl http://localhost:8002/api/external-apis/blast/gas-price
+
+# Получить сводку всех API
+curl http://localhost:8002/api/external-apis/summary
 ```
 
-## Troubleshooting
+### Примеры ответов
 
-### Проблема: "Failed to resolve domain"
-- **Причина**: Используется неправильный URL
-- **Решение**: Получите персональный эндпоинт с панели управления Blast
+```json
+{
+  "success": true,
+  "block_number": 18500000,
+  "hex_block_number": "0x11a5e00",
+  "provider": "Alchemy (Blast)"
+}
+```
 
-### Проблема: "Unauthorized"
-- **Причина**: Неправильный API ключ или эндпоинт
-- **Решение**: Проверьте учетные данные в панели управления
+## Преимущества использования Alchemy
 
-### Проблема: "Rate limit exceeded"
-- **Причина**: Превышен лимит запросов
-- **Решение**: Обновите план подписки или добавьте задержки
+1. **Надежность**: Alchemy предоставляет высоконадежную инфраструктуру
+2. **Производительность**: Быстрые ответы и высокая пропускная способность
+3. **Поддержка**: Отличная документация и поддержка
+4. **Масштабируемость**: Поддержка высоких нагрузок
+5. **Дополнительные возможности**: WebSocket, NFT API, и другие сервисы
 
-## Дополнительная информация
+## Миграция с Blast API
 
-- [Официальная документация](https://docs.blastapi.io)
-- [Поддерживаемые сети](https://docs.blastapi.io/supported-chains)
-- [Примеры использования](https://docs.blastapi.io/tutorials-and-guides)
+Если вы ранее использовали Blast API напрямую, обновите ваши запросы:
 
----
+### Старый формат (Blast API)
+```python
+url = "https://api.blast.io"
+headers = {"Authorization": f"Bearer {blast_api_key}"}
+```
 
-**Важно**: Без персонального эндпоинта от Blast API тесты будут завершаться ошибкой. Обязательно зарегистрируйтесь на платформе и получите свой эндпоинт.
+### Новый формат (Alchemy)
+```python
+url = f"https://eth-mainnet.g.alchemy.com/v2/{alchemy_api_key}"
+headers = {"Content-Type": "application/json"}
+```
+
+## Поддержка
+
+- [Alchemy Documentation](https://docs.alchemy.com/)
+- [Alchemy Dashboard](https://dashboard.alchemy.com/)
+- [Alchemy Discord](https://discord.gg/alchemy)
+
+## Примечания
+
+- Blast API теперь полностью интегрирован с Alchemy
+- Все существующие функции сохранены
+- Улучшена производительность и надежность
+- Добавлена поддержка дополнительных Alchemy сервисов
