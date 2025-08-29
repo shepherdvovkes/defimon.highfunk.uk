@@ -1,0 +1,57 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: price-oracle-service
+  namespace: default
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "3"
+        run.googleapis.com/cpu-throttling: "false"
+        run.googleapis.com/execution-environment: "gen2"
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      containers:
+      - image: gcr.io/defimon-ethereum-node/price-oracle-service:latest
+        ports:
+        - containerPort: 8081
+        env:
+        - name: DB_HOST
+          value: "/cloudsql/defimon-ethereum-node:us-central1:defimon-postgres-instance"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: "defimon_user"
+        - name: DB_PASSWORD
+          value: "defimon_secure_password_2024"
+        - name: DB_NAME
+          value: "defi_analytics"
+        - name: REDIS_HOST
+          value: "10.0.0.3"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "10.0.0.4:9092"
+        resources:
+          limits:
+            cpu: "1"
+            memory: "2Gi"
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+        volumeMounts:
+        - name: cloudsql-instance
+          mountPath: /cloudsql
+      volumes:
+      - name: cloudsql-instance
+        csi:
+          driver: gce.csi.driver
+          readOnly: true
+          fsType: ext4
+          volumeAttributes:
+            project: defimon-ethereum-node
+            zone: us-central1-a
+            instance: defimon-postgres-instance

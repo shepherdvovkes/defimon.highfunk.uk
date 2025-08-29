@@ -1,9 +1,15 @@
-import './globals.css'
 import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'DeFi Analytics Platform',
-  description: 'Real-time DeFi protocol monitoring and analytics with AI/ML predictions',
+  title: 'DeFiMon - DeFi Analytics Dashboard',
+  description: 'Real-time DeFi protocol monitoring and analytics',
+  icons: {
+    icon: '/favicon.svg',
+  },
 }
 
 export default function RootLayout({
@@ -13,7 +19,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={inter.className}>{children}</body>
     </html>
   )
 }

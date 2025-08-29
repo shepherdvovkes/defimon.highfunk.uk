@@ -1,0 +1,173 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: price-oracle-service
+  namespace: default
+  labels:
+    app: price-oracle-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: price-oracle-service
+  template:
+    metadata:
+      labels:
+        app: price-oracle-service
+    spec:
+      containers:
+      - name: price-oracle-service
+        image: gcr.io/defimon-ethereum-node/price-oracle-service:latest
+        ports:
+        - containerPort: 8081
+        env:
+        - name: DB_HOST
+          value: "defimon-postgres-instance"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: "defimon_user"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: password
+        - name: DB_NAME
+          value: "defi_analytics"
+        - name: REDIS_HOST
+          value: "defimon-redis-instance"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "defimon-kafka:9092"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+        livenessProbe:
+          httpGet:
+            path: /metrics
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /metrics
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: price-oracle-service
+  namespace: default
+spec:
+  selector:
+    app: price-oracle-service
+  ports:
+  - protocol: TCP
+    port: 8081
+    targetPort: 8081
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: price-oracle-api
+  namespace: default
+  labels:
+    app: price-oracle-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: price-oracle-api
+  template:
+    metadata:
+      labels:
+        app: price-oracle-api
+    spec:
+      containers:
+      - name: price-oracle-api
+        image: gcr.io/defimon-ethereum-node/price-oracle-api:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DB_HOST
+          value: "defimon-postgres-instance"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: "defimon_user"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: password
+        - name: DB_NAME
+          value: "defi_analytics"
+        - name: REDIS_HOST
+          value: "defimon-redis-instance"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "defimon-kafka:9092"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: price-oracle-api
+  namespace: default
+spec:
+  selector:
+    app: price-oracle-api
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000
+  type: LoadBalancer
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: price-oracle-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.global-static-ip-name: "price-oracle-ip"
+    networking.gke.io/managed-certificates: "price-oracle-cert"
+spec:
+  rules:
+  - host: api.defimon.highfunk.uk
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: price-oracle-api
+            port:
+              number: 8000

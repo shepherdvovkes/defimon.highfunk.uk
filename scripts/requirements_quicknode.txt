@@ -1,0 +1,18 @@
+# QuickNode 3-Day Data Collection Requirements
+# Python dependencies for the QuickNode data collection script
+
+# Core async libraries
+aiohttp>=3.8.0
+asyncpg>=0.27.0
+
+# Environment and configuration
+python-dotenv>=1.0.0
+
+# Data processing
+dataclasses>=0.6; python_version<"3.7"
+
+# Logging and utilities
+colorama>=0.4.6
+
+# Optional: For better performance
+uvloop>=0.17.0; sys_platform != "win32"

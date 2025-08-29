@@ -10,6 +10,7 @@ const navigation = [
   { name: 'Analytics', href: '#analytics' },
   { name: 'Networks', href: '#networks' },
   { name: 'API Dashboard', href: '/api-dashboard' },
+  { name: 'Syndica Check', href: '/syndica-check' },
   { name: 'About', href: '#about' },
 ]
 

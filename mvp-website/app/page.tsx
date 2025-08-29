@@ -47,6 +47,7 @@ import {
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import DataExportPanel from '../components/DataExportPanel'
 import AIQuestionInterface from '../components/AIQuestionInterface'
+import PriceOracleWidget from '../components/PriceOracleWidget'
 
 export default function FinancialAnalyticsDashboard() {
   const [activeTab, setActiveTab] = useState('overview')
@@ -697,6 +698,15 @@ export default function FinancialAnalyticsDashboard() {
                       transition={{ type: "spring", stiffness: 300 }}
                     >
                       <h3 className="text-xl font-bold text-white mb-6">Portfolio Stats</h3>
+                      
+                      {/* Price Oracle Widget */}
+                      <div className="mb-6">
+                        <PriceOracleWidget
+                          theme="dark"
+                          showL2Networks={false}
+                          refreshInterval={60000}
+                        />
+                      </div>
                       
                       <div className="space-y-4">
                         <div className="bg-gray-800/30 rounded-2xl p-4">

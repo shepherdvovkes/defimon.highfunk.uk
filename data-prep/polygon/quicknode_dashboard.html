@@ -1,0 +1,474 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polygon Network Data Dashboard - Last Month</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: transform 0.2s ease-in-out;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .network-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .transaction-card {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold mb-2">
+                        <i class="fas fa-chart-line mr-3"></i>
+                        Polygon Network Dashboard
+                    </h1>
+                    <p class="text-xl opacity-90">QuickNode Data Analysis - Last Month</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold">75,718,504</div>
+                    <div class="text-sm opacity-75">Latest Block</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8">
+        <!-- Network Statistics -->
+        <section class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-network-wired mr-3 text-blue-600"></i>
+                Network Statistics
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="stat-card rounded-lg p-6 text-white shadow-lg card-hover">
+                    <div class="flex items-center">
+                        <i class="fas fa-cube text-3xl mr-4"></i>
+                        <div>
+                            <div class="text-2xl font-bold">5,184,001</div>
+                            <div class="text-sm opacity-90">Blocks in Month</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="network-card rounded-lg p-6 text-white shadow-lg card-hover">
+                    <div class="flex items-center">
+                        <i class="fas fa-gas-pump text-3xl mr-4"></i>
+                        <div>
+                            <div class="text-2xl font-bold">26.00</div>
+                            <div class="text-sm opacity-90">Gas Price (Gwei)</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="transaction-card rounded-lg p-6 text-white shadow-lg card-hover">
+                    <div class="flex items-center">
+                        <i class="fas fa-exchange-alt text-3xl mr-4"></i>
+                        <div>
+                            <div class="text-2xl font-bold">352</div>
+                            <div class="text-sm opacity-90">Sample Transactions</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg p-6 text-white shadow-lg card-hover">
+                    <div class="flex items-center">
+                        <i class="fas fa-percentage text-3xl mr-4"></i>
+                        <div>
+                            <div class="text-2xl font-bold">93.3%</div>
+                            <div class="text-sm opacity-90">Success Rate</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-chart-bar mr-3 text-green-600"></i>
+                Network Analytics
+            </h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Transactions per Block -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Transactions per Block</h3>
+                    <canvas id="transactionsChart" width="400" height="200"></canvas>
+                </div>
+                
+                <!-- Gas Usage -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Gas Usage per Block</h3>
+                    <canvas id="gasChart" width="400" height="200"></canvas>
+                </div>
+                
+                <!-- Transaction Status -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Transaction Status</h3>
+                    <canvas id="statusChart" width="400" height="200"></canvas>
+                </div>
+                
+                <!-- Block Timeline -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Block Timeline</h3>
+                    <canvas id="timelineChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sample Data Tables -->
+        <section class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-table mr-3 text-indigo-600"></i>
+                Sample Data
+            </h2>
+            
+            <!-- Blocks Table -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Sample Blocks</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full table-auto">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Block</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hash</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transactions</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gas Used</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 text-sm text-gray-900">70,534,503</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x0777e5dfd29847aca1...</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">68</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">15,114,558</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">2025-04-20 16:05:13</td>
+                            </tr>
+                            
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 text-sm text-gray-900">71,571,303</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0xb5627a463b19f77d1a...</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">53</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">7,435,059</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">2025-05-16 06:16:16</td>
+                            </tr>
+                            
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 text-sm text-gray-900">72,608,103</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x49a2a15ad1d3de8ec2...</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">65</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">8,046,336</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">2025-06-10 22:39:32</td>
+                            </tr>
+                            
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 text-sm text-gray-900">73,644,903</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0xaa2245fe78b7b2ea76...</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">98</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">10,827,859</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">2025-07-06 13:23:27</td>
+                            </tr>
+                            
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 text-sm text-gray-900">74,681,703</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x91b9dd008c6855b9b2...</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">68</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">25,252,180</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">2025-08-01 23:59:12</td>
+                            </tr>
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Transactions Table -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Sample Transactions</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full table-auto">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hash</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">From</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">To</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x7f22129d042e9c91e0...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x3242d151322de13be4...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x4220a8259241644935...</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">0.000000 MATIC</td>
+                                <td class="px-4 py-2 text-sm">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                        Success
+                                    </span>
+                                </td>
+                            </tr>
+                            
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x5ac2c04feaf4ee9242...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x159755997e1e1d5f45...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0xa3fb72cbf2e07dc1b3...</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">0.000000 MATIC</td>
+                                <td class="px-4 py-2 text-sm">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                        Success
+                                    </span>
+                                </td>
+                            </tr>
+                            
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x0994a3e48ddaed9410...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x85632c735bcbff6014...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x62e31beb4b01c00d3a...</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">10.000000 MATIC</td>
+                                <td class="px-4 py-2 text-sm">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                        Success
+                                    </span>
+                                </td>
+                            </tr>
+                            
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x162f19bffa7385ef64...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x7fcc933f6042f84086...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0xbadffffffff3f67886...</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">0.000000 MATIC</td>
+                                <td class="px-4 py-2 text-sm">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                        Success
+                                    </span>
+                                </td>
+                            </tr>
+                            
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0xf8bafce05d1f8d22da...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0xa474589e94174ebf5c...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0xe3eb0edadb49e0362d...</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">0.000000 MATIC</td>
+                                <td class="px-4 py-2 text-sm">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                        Failed
+                                    </span>
+                                </td>
+                            </tr>
+                            
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x6596b1440cf77b1e13...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x423eaf46903b25a5c0...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x62e31beb4b01c00d3a...</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">5.000000 MATIC</td>
+                                <td class="px-4 py-2 text-sm">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                        Success
+                                    </span>
+                                </td>
+                            </tr>
+                            
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0xd2f8ca302111b192e7...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x8ea5456c2453492a3c...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x2791bca1f2de4661ed...</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">0.000000 MATIC</td>
+                                <td class="px-4 py-2 text-sm">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                        Success
+                                    </span>
+                                </td>
+                            </tr>
+                            
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x47c60e0f761ac093b8...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x7228a9f25aeadc9eab...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x2791bca1f2de4661ed...</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">0.000000 MATIC</td>
+                                <td class="px-4 py-2 text-sm">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                        Success
+                                    </span>
+                                </td>
+                            </tr>
+                            
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x3e7c73be33832b53de...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0xd0a8cb58efcee1caee...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x09105e595d38a0b60b...</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">0.000000 MATIC</td>
+                                <td class="px-4 py-2 text-sm">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                        Success
+                                    </span>
+                                </td>
+                            </tr>
+                            
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0xae5455d1b74ba85b1d...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0x029076163a55459b51...</td>
+                                <td class="px-4 py-2 text-sm text-gray-500 font-mono">0xa5e0829caced8ffdd4...</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">0.000000 MATIC</td>
+                                <td class="px-4 py-2 text-sm">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                        Success
+                                    </span>
+                                </td>
+                            </tr>
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="text-center py-8 text-gray-600">
+            <p>Data from QuickNode API • Last updated: 2025-08-27 15:35:27</p>
+            <p class="text-sm mt-2">Analysis period: Last 30 days • Sample size: 5 blocks, 15 transactions</p>
+        </footer>
+    </main>
+
+    <script>
+        // Charts configuration
+        const blockNumbers = [70534503, 71571303, 72608103, 73644903, 74681703];
+        const transactionCounts = [68, 53, 65, 98, 68];
+        const gasUsed = [15114558, 7435059, 8046336, 10827859, 25252180];
+        const statusData = {'Successful': 14, 'Failed': 1};
+        
+        // Transactions per Block Chart
+        new Chart(document.getElementById('transactionsChart'), {
+            type: 'line',
+            data: {
+                labels: blockNumbers.map(b => b.toLocaleString()),
+                datasets: [{
+                    label: 'Transactions',
+                    data: transactionCounts,
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // Gas Usage Chart
+        new Chart(document.getElementById('gasChart'), {
+            type: 'bar',
+            data: {
+                labels: blockNumbers.map(b => b.toLocaleString()),
+                datasets: [{
+                    label: 'Gas Used',
+                    data: gasUsed,
+                    backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                    borderColor: 'rgb(34, 197, 94)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // Transaction Status Chart
+        new Chart(document.getElementById('statusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(statusData),
+                datasets: [{
+                    data: Object.values(statusData),
+                    backgroundColor: [
+                        'rgba(34, 197, 94, 0.8)',
+                        'rgba(239, 68, 68, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgb(34, 197, 94)',
+                        'rgb(239, 68, 68)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        
+        // Block Timeline Chart
+        new Chart(document.getElementById('timelineChart'), {
+            type: 'line',
+            data: {
+                labels: blockNumbers.map(b => b.toLocaleString()),
+                datasets: [{
+                    label: 'Block Number',
+                    data: blockNumbers,
+                    borderColor: 'rgb(168, 85, 247)',
+                    backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                    tension: 0.1,
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

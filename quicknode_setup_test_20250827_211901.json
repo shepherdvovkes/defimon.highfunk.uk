@@ -1,0 +1,50 @@
+{
+  "environment": {
+    "QUICKNODE_ENDPOINT_NAME": "\u2705 Set",
+    "QUICKNODE_TOKEN_ID": "\u2705 Set",
+    "QUICKNODE_API_KEY": "\u2705 Set",
+    "POSTGRES_HOST": "\u2705 Set",
+    "POSTGRES_DB": "\u2705 Set",
+    "POSTGRES_USER": "\u2705 Set",
+    "POSTGRES_PASSWORD": "\u2705 Set"
+  },
+  "database": {
+    "connection": "\u2705 Success",
+    "version": "PostgreSQL",
+    "name": "defi_analytics"
+  },
+  "quicknode": {
+    "connection": "\u2705 Success",
+    "latest_block": 23234197
+  },
+  "networks": {
+    "ethereum": {
+      "status": "\u2705 Working",
+      "latest_block": 23234197
+    },
+    "polygon": {
+      "status": "\u2705 Working",
+      "latest_block": 75728236
+    },
+    "arbitrum": {
+      "status": "\u2705 Working",
+      "latest_block": 23234197
+    },
+    "optimism": {
+      "status": "\u2705 Working",
+      "latest_block": 140359981
+    },
+    "base": {
+      "status": "\u2705 Working",
+      "latest_block": 23234197
+    },
+    "bsc": {
+      "status": "\u2705 Working",
+      "latest_block": 23234197
+    },
+    "avalanche": {
+      "status": "\u274c HTTP 404",
+      "error": "HTTP 404"
+    }
+  }
+}

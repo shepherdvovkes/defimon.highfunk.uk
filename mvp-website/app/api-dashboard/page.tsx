@@ -257,6 +257,14 @@ export default function APIDashboard() {
               <p className="mt-2 text-gray-600">
                 Real-time monitoring of all external APIs and their status
               </p>
+              <div className="mt-4">
+                <a 
+                  href="/enhanced-api-dashboard" 
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700"
+                >
+                  🚀 View Enhanced Dashboard (23+ Networks)
+                </a>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">

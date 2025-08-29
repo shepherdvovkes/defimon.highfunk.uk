@@ -33,7 +33,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 # Import database models and utilities
 from database import get_db, engine
 from models import Base
-from routers import protocols, analytics, health, external_apis
+from routers import protocols, analytics, health, external_apis, enhanced_external_apis
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -43,6 +43,7 @@ app.include_router(health.router, prefix="/health", tags=["health"])
 app.include_router(protocols.router, prefix="/api/protocols", tags=["protocols"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
 app.include_router(external_apis.router, prefix="/api", tags=["external-apis"])
+app.include_router(enhanced_external_apis.router, prefix="/api", tags=["enhanced-external-apis"])
 
 @app.get("/")
 async def root():

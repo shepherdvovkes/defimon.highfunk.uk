@@ -1,0 +1,189 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: defi-storage-config
+  namespace: analytics
+data:
+  # Local Storage Configuration (Shrimp Server)
+  hot-storage-size: "500Gi"
+  warm-storage-size: "2Ti"
+  
+  # Data retention policies
+  hot-data-retention: "7d"
+  warm-data-retention: "30d"
+  
+  # Storage optimization
+  compression-enabled: "true"
+  auto-cleanup-enabled: "true"
+  
+  # DeFi specific configurations
+  protocol-metrics-retention: "30d"
+  transaction-data-retention: "30d"
+  price-data-retention: "30d"
+  tvl-data-retention: "30d"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: defi-hot-storage
+  namespace: analytics
+  labels:
+    app: defi-analytics
+    storage-tier: hot
+    location: local-shrimp
+    drive-type: nvme
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Gi
+  storageClassName: local-nvme
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: defi-warm-storage
+  namespace: analytics
+  labels:
+    app: defi-analytics
+    storage-tier: warm
+    location: local-shrimp
+    drive-type: usb
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Ti
+  storageClassName: local-usb
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: defi-storage-manager
+  namespace: analytics
+  labels:
+    app: defi-storage-manager
+    pool: analytics
+    location: local-shrimp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: defi-storage-manager
+  template:
+    metadata:
+      labels:
+        app: defi-storage-manager
+        pool: analytics
+        location: local-shrimp
+    spec:
+      containers:
+      - name: storage-manager
+        image: python:3.11-slim
+        command: ["python", "/app/storage_manager.py"]
+        env:
+        - name: HOT_STORAGE_PATH
+          value: "/data/hot"
+        - name: WARM_STORAGE_PATH
+          value: "/data/warm"
+        - name: COMPRESSION_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: defi-storage-config
+              key: compression-enabled
+        - name: AUTO_CLEANUP_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: defi-storage-config
+              key: auto-cleanup-enabled
+        volumeMounts:
+        - name: hot-storage
+          mountPath: /data/hot
+        - name: warm-storage
+          mountPath: /data/warm
+        - name: storage-config
+          mountPath: /app/config
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+      volumes:
+      - name: hot-storage
+        persistentVolumeClaim:
+          claimName: defi-hot-storage
+      - name: warm-storage
+        persistentVolumeClaim:
+          claimName: defi-warm-storage
+      - name: storage-config
+        configMap:
+          name: defi-storage-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: defi-data-manager
+  namespace: analytics
+  labels:
+    app: defi-data-manager
+    pool: analytics
+    location: local-shrimp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: defi-data-manager
+  template:
+    metadata:
+      labels:
+        app: defi-data-manager
+        pool: analytics
+        location: local-shrimp
+    spec:
+      containers:
+      - name: data-manager
+        image: python:3.11-slim
+        command: ["python", "/app/data_manager.py"]
+        env:
+        - name: HOT_STORAGE_PATH
+          value: "/data/hot"
+        - name: WARM_STORAGE_PATH
+          value: "/data/warm"
+        - name: COMPRESSION_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: defi-storage-config
+              key: compression-enabled
+        - name: AUTO_CLEANUP_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: defi-storage-config
+              key: auto-cleanup-enabled
+        volumeMounts:
+        - name: hot-storage
+          mountPath: /data/hot
+        - name: warm-storage
+          mountPath: /data/warm
+        - name: data-config
+          mountPath: /app/config
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+      volumes:
+      - name: hot-storage
+        persistentVolumeClaim:
+          claimName: defi-hot-storage
+      - name: warm-storage
+        persistentVolumeClaim:
+          claimName: defi-warm-storage
+      - name: data-config
+        configMap:
+          name: defi-storage-config

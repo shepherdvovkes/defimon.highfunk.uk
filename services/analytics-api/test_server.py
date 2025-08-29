@@ -699,6 +699,182 @@ async def delete_protocol(protocol_id: str):
     """Mock delete protocol endpoint"""
     return {"message": "Protocol deleted", "id": protocol_id}
 
+@app.get("/api/analytics/overview")
+async def get_analytics_overview():
+    """Mock analytics overview endpoint"""
+    return {
+        "total_tvl": 45000000000,  # $45B total TVL
+        "top_protocols": [
+            {
+                "name": "uniswap",
+                "display_name": "Uniswap",
+                "tvl": 8500000000,  # $8.5B
+                "volume_24h": 1200000000  # $1.2B
+            },
+            {
+                "name": "aave",
+                "display_name": "Aave",
+                "tvl": 6500000000,  # $6.5B
+                "volume_24h": 450000000  # $450M
+            },
+            {
+                "name": "compound",
+                "display_name": "Compound",
+                "tvl": 4200000000,  # $4.2B
+                "volume_24h": 320000000  # $320M
+            },
+            {
+                "name": "curve",
+                "display_name": "Curve Finance",
+                "tvl": 3800000000,  # $3.8B
+                "volume_24h": 280000000  # $280M
+            },
+            {
+                "name": "yearn",
+                "display_name": "Yearn Finance",
+                "tvl": 1200000000,  # $1.2B
+                "volume_24h": 150000000  # $150M
+            }
+        ],
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+@app.get("/api/polygon/data")
+async def get_polygon_data():
+    """Get Polygon network data from database"""
+    try:
+        # Import database connection
+        import asyncpg
+        import os
+        from dotenv import load_dotenv
+        
+        load_dotenv()
+        
+        # Database connection
+        user = os.getenv('GOOGLE_CLOUD_SQL_USER', 'defimon_user')
+        password = os.getenv('GOOGLE_CLOUD_SQL_PASSWORD', 'defimon_secure_password_2024')
+        database = os.getenv('GOOGLE_CLOUD_SQL_DATABASE_NAME', 'defi_analytics')
+        
+        # Connect to database
+        conn = await asyncpg.connect(
+            f"postgresql://{user}:{password}@localhost:5432/{database}"
+        )
+        
+        # Get latest block
+        latest_block = await conn.fetchrow("""
+            SELECT block_number, timestamp, gas_used, transactions_count 
+            FROM polygon_data.blocks 
+            ORDER BY block_number DESC 
+            LIMIT 1
+        """)
+        
+        # Get total blocks count
+        total_blocks = await conn.fetchval("""
+            SELECT COUNT(*) FROM polygon_data.blocks
+        """)
+        
+        # Get total transactions count
+        total_transactions = await conn.fetchval("""
+            SELECT COUNT(*) FROM polygon_data.transactions
+        """)
+        
+        # Get recent transactions (last 10)
+        recent_transactions = await conn.fetch("""
+            SELECT hash, from_address, to_address, value, gas_used, gas_price
+            FROM polygon_data.transactions 
+            ORDER BY block_number DESC 
+            LIMIT 10
+        """)
+        
+        # Get gas statistics
+        gas_stats = await conn.fetchrow("""
+            SELECT 
+                AVG(CAST(gas_price AS DECIMAL)) as avg_gas_price,
+                MAX(CAST(gas_price AS DECIMAL)) as max_gas_price,
+                MIN(CAST(gas_price AS DECIMAL)) as min_gas_price
+            FROM polygon_data.transactions 
+            WHERE block_number >= (SELECT MAX(block_number) - 1000 FROM polygon_data.blocks)
+        """)
+        
+        await conn.close()
+        
+        return {
+            "network": "Polygon",
+            "chain_id": 137,
+            "latest_block": {
+                "number": latest_block['block_number'] if latest_block else 0,
+                "timestamp": latest_block['timestamp'] if latest_block else 0,
+                "gas_used": latest_block['gas_used'] if latest_block else 0,
+                "transactions_count": latest_block['transactions_count'] if latest_block else 0
+            },
+            "statistics": {
+                "total_blocks": total_blocks or 0,
+                "total_transactions": total_transactions or 0,
+                "avg_gas_price": float(gas_stats['avg_gas_price']) if gas_stats and gas_stats['avg_gas_price'] else 0,
+                "max_gas_price": float(gas_stats['max_gas_price']) if gas_stats and gas_stats['max_gas_price'] else 0,
+                "min_gas_price": float(gas_stats['min_gas_price']) if gas_stats and gas_stats['min_gas_price'] else 0
+            },
+            "recent_transactions": [
+                {
+                    "hash": tx['hash'],
+                    "from": tx['from_address'],
+                    "to": tx['to_address'],
+                    "value": tx['value'],
+                    "gas_used": tx['gas_used'],
+                    "gas_price": tx['gas_price']
+                } for tx in recent_transactions
+            ],
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        # Return mock data for demonstration
+        return {
+            "network": "Polygon",
+            "chain_id": 137,
+            "latest_block": {
+                "number": 12345678,
+                "timestamp": int(datetime.utcnow().timestamp()),
+                "gas_used": 15000000,
+                "transactions_count": 150
+            },
+            "statistics": {
+                "total_blocks": 12345678,
+                "total_transactions": 1850000000,
+                "avg_gas_price": 30000000000,  # 30 Gwei
+                "max_gas_price": 50000000000,  # 50 Gwei
+                "min_gas_price": 10000000000   # 10 Gwei
+            },
+            "recent_transactions": [
+                {
+                    "hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+                    "from": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+                    "to": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+                    "value": "1000000000000000000",  # 1 MATIC
+                    "gas_used": 21000,
+                    "gas_price": "30000000000"
+                },
+                {
+                    "hash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+                    "from": "0x8ba1f109551bD432803012645Hac136c772c37e0",
+                    "to": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+                    "value": "500000000000000000",  # 0.5 MATIC
+                    "gas_used": 65000,
+                    "gas_price": "35000000000"
+                },
+                {
+                    "hash": "0x9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba",
+                    "from": "0x1234567890123456789012345678901234567890",
+                    "to": "0x9876543210987654321098765432109876543210",
+                    "value": "2000000000000000000",  # 2 MATIC
+                    "gas_used": 21000,
+                    "gas_price": "25000000000"
+                }
+            ],
+            "timestamp": datetime.utcnow().isoformat(),
+            "note": "Mock data - database connection not available"
+        }
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8002)
