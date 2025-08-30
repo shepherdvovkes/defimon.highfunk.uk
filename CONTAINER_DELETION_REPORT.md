@@ -11,6 +11,8 @@
 ### **Containers Removed**
 - **HydraDX Node** (`hydradx-node`)
 - **Moonbeam Node** (`moonbeam-node`)
+- **Parallel Node** (`parallel-node`)
+- **Centrifuge Node** (`centrifuge-node`)
 
 ### **Actions Performed**
 1. ✅ Stopped containers
@@ -22,16 +24,16 @@
 
 ## 🔄 Before vs After
 
-### **Before Deletion (8 containers)**
+### **Before Deletion (10 containers)**
 ```
 polkadot-node         ✅ Running
 kusama-node           ✅ Running
 westend-node          ✅ Running
 moonbeam-node         ✅ Running (DELETED)
 acala-node            ✅ Running
-parallel-node         ✅ Running
+parallel-node         ✅ Running (DELETED)
 hydradx-node          ✅ Running (DELETED)
-centrifuge-node       ✅ Running
+centrifuge-node       ✅ Running (DELETED)
 polkadot-prometheus   ✅ Running
 polkadot-grafana      ✅ Running
 ```
@@ -42,8 +44,6 @@ polkadot-node         ✅ Running
 kusama-node           ✅ Running
 westend-node          ✅ Running
 acala-node            ✅ Running
-parallel-node         ✅ Running
-centrifuge-node       ✅ Running
 polkadot-prometheus   ✅ Running
 polkadot-grafana      ✅ Running
 ```
@@ -55,16 +55,22 @@ polkadot-grafana      ✅ Running
 ### **CPU Usage Reduction**
 - **HydraDX:** 162.98% CPU removed
 - **Moonbeam:** 150.70% CPU removed
-- **Total CPU freed:** ~313% CPU resources
+- **Parallel:** 100.91% CPU removed
+- **Centrifuge:** 82.85% CPU removed
+- **Total CPU freed:** ~497% CPU resources
 
 ### **Memory Usage Reduction**
 - **HydraDX:** 863.5MiB removed
 - **Moonbeam:** 1.087GiB removed
-- **Total Memory freed:** ~1.9GB
+- **Parallel:** 799.4MiB removed
+- **Centrifuge:** 557.1MiB removed
+- **Total Memory freed:** ~3.3GB
 
 ### **Ports Freed**
 - **HydraDX:** Port 9952
 - **Moonbeam:** Port 9947
+- **Parallel:** Port 9950
+- **Centrifuge:** Port 9953
 
 ---
 
@@ -92,18 +98,16 @@ sed -i '' '122,150d' docker-compose-polkadot.yml
 ## 📈 Current Resource Usage
 
 ### **Remaining Containers (CPU %)**
-- **Acala:** 169.66% (high sync activity)
-- **Parallel:** 100.91% (high sync activity)
-- **Centrifuge:** 82.85% (normal sync)
-- **Kusama:** 94.85% (normal sync)
-- **Polkadot:** 57.20% (good performance)
-- **Westend:** 58.74% (good performance)
+- **Acala:** 149.94% (high sync activity)
+- **Polkadot:** 106.69% (high sync activity)
+- **Kusama:** 71.61% (normal sync)
+- **Westend:** 77.52% (normal sync)
 - **Prometheus:** 0.00% (idle)
-- **Grafana:** 0.15% (idle)
+- **Grafana:** 0.14% (idle)
 
 ### **Performance Impact**
-- **Reduced overall CPU load** by ~313%
-- **Freed up significant memory** (~1.9GB)
+- **Reduced overall CPU load** by ~497%
+- **Freed up significant memory** (~3.3GB)
 - **Improved resource availability** for remaining nodes
 - **Better performance** for active sync operations
 
@@ -130,15 +134,13 @@ sed -i '' '122,150d' docker-compose-polkadot.yml
 
 ## 📋 Current Active Services
 
-### **Blockchain Nodes (6)**
+### **Blockchain Nodes (4)**
 | Service | Port | Status | CPU Usage |
 |---------|------|--------|-----------|
-| **Polkadot** | 9944 | ✅ Running | 57.20% |
-| **Kusama** | 9945 | ✅ Running | 94.85% |
-| **Westend** | 9946 | ✅ Running | 58.74% |
-| **Acala** | 9949 | ✅ Running | 169.66% |
-| **Parallel** | 9950 | ✅ Running | 100.91% |
-| **Centrifuge** | 9953 | ✅ Running | 82.85% |
+| **Polkadot** | 9944 | ✅ Running | 106.69% |
+| **Kusama** | 9945 | ✅ Running | 71.61% |
+| **Westend** | 9946 | ✅ Running | 77.52% |
+| **Acala** | 9949 | ✅ Running | 149.94% |
 
 ### **Monitoring Services (2)**
 | Service | Port | Status | CPU Usage |
@@ -172,11 +174,11 @@ sed -i '' '122,150d' docker-compose-polkadot.yml
 - ✅ **Performance improvement:** Better resource distribution
 
 ### **Current Status**
-- **Active containers:** 6 blockchain nodes + 2 monitoring services
-- **Resource usage:** Optimized and well-distributed
+- **Active containers:** 4 blockchain nodes + 2 monitoring services
+- **Resource usage:** Highly optimized and well-distributed
 - **Sync progress:** Continuing on remaining nodes
-- **System stability:** Improved with reduced load
+- **System stability:** Significantly improved with reduced load
 
 ---
 
-**🎯 Deletion complete! HydraDX and Moonbeam containers have been successfully removed, freeing up significant resources for the remaining nodes.**
+**🎯 Deletion complete! HydraDX, Moonbeam, Parallel, and Centrifuge containers have been successfully removed, freeing up massive resources for the remaining nodes.**
