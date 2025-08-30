@@ -1,0 +1,5 @@
+block_number,block_timestamp,extrinsics_count,events_count,block_size,era,session,total_transactions,successful_transactions,failed_transactions,avg_transaction_fee,max_transaction_fee,min_transaction_fee,active_accounts,new_accounts,total_volume,avg_block_time,aca_price,ausd_price,ldot_price,total_tvl
+-1.3416407864998738,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,,
+-0.4472135954999579,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,,
+0.4472135954999579,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,,
+1.3416407864998738,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,,

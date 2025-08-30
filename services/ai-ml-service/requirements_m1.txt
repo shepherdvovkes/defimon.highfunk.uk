@@ -1,0 +1,76 @@
+# M1-Optimized ML Requirements for Apple Silicon
+# Core ML and Deep Learning (M1-optimized versions)
+tensorflow-macos>=2.13.0  # Native Apple Silicon support for M1
+tensorflow-metal>=1.0.0   # Metal GPU acceleration for M1
+torch>=2.0.0              # PyTorch with MPS support for M1
+torchvision>=0.15.0
+torchaudio>=2.0.0
+
+# Traditional ML (CPU-optimized for M1)
+scikit-learn>=1.2.0       # CPU-optimized for M1
+xgboost>=1.7.0            # Excellent M1 performance
+lightgbm>=3.3.0           # Fast gradient boosting for M1
+catboost>=1.1.0           # Categorical features support
+
+# Data Processing
+pandas>=1.5.0
+numpy>=1.23.0
+scipy>=1.10.0
+
+# Feature Engineering (lightweight for M1)
+ta>=0.10.0                # Technical analysis indicators
+yfinance>=0.2.0           # Financial data
+ccxt>=3.1.0               # Cryptocurrency exchange data
+
+# Visualization
+matplotlib>=3.6.0
+seaborn>=0.12.0
+plotly>=5.13.0
+
+# Model Management
+mlflow>=2.3.0             # Experiment tracking
+joblib>=1.2.0             # Model persistence
+pickle5>=0.0.12           # Enhanced pickle for large models
+
+# Time Series (M1-optimized)
+statsmodels>=0.13.0       # Statistical models
+prophet>=1.1.1            # Facebook's forecasting
+arch>=6.0.0               # GARCH models for volatility
+
+# Anomaly Detection
+pyod>=1.0.0               # Outlier detection
+isolation-forest>=0.1.0
+
+# Optimization (lightweight for M1)
+optuna>=3.1.0             # Hyperparameter optimization
+hyperopt>=0.2.7           # Bayesian optimization
+
+# API and Web
+fastapi>=0.95.0
+uvicorn>=0.22.0
+httpx>=0.24.0
+redis>=4.5.0
+
+# Utilities
+python-dotenv>=1.0.0
+pydantic>=1.10.0
+loguru>=0.6.0             # Better logging
+tqdm>=4.64.0              # Progress bars
+
+# Development
+pytest>=7.2.0
+black>=23.1.0
+flake8>=6.0.0
+mypy>=1.1.0
+
+# M1-Specific Optimizations
+# coremltools>=6.3.0      # Convert models to Core ML format for M1
+# metal-performance-shaders-python>=0.1.0  # Direct Metal API access
+
+# Memory Management (important for M1)
+psutil>=5.9.0             # System monitoring
+memory-profiler>=0.60.0   # Memory usage profiling
+
+# Alternative ML Libraries (M1-friendly)
+# h2o>=3.40.0             # AutoML for M1
+# autosklearn>=0.15.0     # AutoML with scikit-learn

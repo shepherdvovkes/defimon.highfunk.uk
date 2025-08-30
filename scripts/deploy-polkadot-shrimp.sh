@@ -1,37 +1,57 @@
 #!/bin/bash
 
-# 🚀 POLKADOT DEPLOYMENT SCRIPT - SHRIMP SERVER
-# This script deploys Polkadot and multiple parachains on the shrimp server
+# =============================================================================
+# POLKADOT SHRIMP SERVER DEPLOYMENT SCRIPT
+# Enhanced version with all parachains using official Docker images
+# =============================================================================
 
-set -euo pipefail
+set -e
 
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Configuration
-SHRIMP_HOST="shrimp"
-POLKADOT_HOME="/opt/polkadot"
-DATA_DIR="/Volumes/USB_APFS/polkadot-data"
-INTERNAL_DATA_DIR="$HOME/polkadot-data"
-
-# System requirements
-MIN_RAM_GB=6
-MIN_STORAGE_GB=100
+POLKADOT_HOME="$HOME/polkadot"
+INTERNAL_DATA_DIR="$HOME/polkadot-internal"
+MIN_STORAGE_GB=10
+RECOMMENDED_STORAGE_GB=50
+MIN_RAM_GB=4
 RECOMMENDED_RAM_GB=8
-RECOMMENDED_STORAGE_GB=200
 
+# Network configurations with official Docker images
+NETWORKS="polkadot kusama westend moonbeam astar acala parallel bifrost hydradx centrifuge"
+
+# Docker images for each network (official images)
+POLKADOT_IMAGE="parity/polkadot:latest"
+KUSAMA_IMAGE="parity/polkadot:latest"
+WESTEND_IMAGE="parity/polkadot:latest"
+MOONBEAM_IMAGE="purestake/moonbeam:latest"
+ASTAR_IMAGE="staketechnologies/astar-collator:latest"
+ACALA_IMAGE="acala/acala-node:latest"
+PARALLEL_IMAGE="parallelfinance/parallel:latest"
+BIFROST_IMAGE="thebifrost/bifrost-node:latest"
+HYDRADX_IMAGE="galacticcouncil/hydra-dx:latest"
+CENTRIFUGE_IMAGE="centrifugeio/centrifuge-chain:latest"
+
+# Port configurations
+POLKADOT_PORT="9944"
+KUSAMA_PORT="9945"
+WESTEND_PORT="9946"
+MOONBEAM_PORT="9947"
+ASTAR_PORT="9948"
+ACALA_PORT="9949"
+PARALLEL_PORT="9950"
+BIFROST_PORT="9951"
+HYDRADX_PORT="9952"
+CENTRIFUGE_PORT="9953"
+
+# Function to print colored output
 print_status() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
-
-print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+    echo -e "${GREEN}[INFO]${NC} $1"
 }
 
 print_warning() {
@@ -43,324 +63,361 @@ print_error() {
 }
 
 print_header() {
-    echo -e "${PURPLE}[HEADER]${NC} $1"
+    echo -e "${BLUE}================================${NC}"
+    echo -e "${BLUE}$1${NC}"
+    echo -e "${BLUE}================================${NC}"
 }
 
-print_system() {
-    echo -e "${CYAN}[SYSTEM]${NC} $1"
-}
-
-# Function to check if we're on shrimp server
-check_shrimp_server() {
-    print_header "Checking Shrimp Server Connection"
-    echo "======================================"
-    
-    if [[ "$(hostname)" == "shrimp" ]] || [[ "$(hostname)" == "shrimp.local" ]]; then
-        print_success "Running on shrimp server"
-        return 0
-    fi
-    
-    print_error "This script must be run on the shrimp server"
-    print_status "Please SSH to shrimp and run this script there"
-    exit 1
-}
-
-# Function to check system requirements
+# Check system requirements
 check_system_requirements() {
     print_header "Checking System Requirements"
-    echo "=================================="
     
-    # Check available RAM
-    local total_ram_gb=$(sysctl -n hw.memsize | awk '{print int($1/1024/1024/1024)}')
-    print_system "Total RAM: ${total_ram_gb}GB"
+    # Check OS
+    if [[ "$OSTYPE" != "darwin"* ]]; then
+        print_error "This script is designed for macOS. Detected OS: $OSTYPE"
+        exit 1
+    fi
+    
+    # Check available storage
+    local available_storage=$(df -g / | awk 'NR==2 {print $4}')
+    print_status "Available storage: ${available_storage}GB"
+    
+    if [ "$available_storage" -lt "$MIN_STORAGE_GB" ]; then
+        print_error "Insufficient storage: ${available_storage}GB (minimum: ${MIN_STORAGE_GB}GB)"
+        exit 1
+    fi
+    
+    if [ "$available_storage" -lt "$RECOMMENDED_STORAGE_GB" ]; then
+        print_warning "Low storage: ${available_storage}GB (recommended: ${RECOMMENDED_STORAGE_GB}GB)"
+    fi
+    
+    # Check RAM
+    local total_ram=$(sysctl -n hw.memsize | awk '{print $0/1024/1024/1024}')
+    local total_ram_gb=$(printf "%.0f" "$total_ram")
+    print_status "Total RAM: ${total_ram_gb}GB"
     
     if [ "$total_ram_gb" -lt "$MIN_RAM_GB" ]; then
         print_error "Insufficient RAM: ${total_ram_gb}GB (minimum: ${MIN_RAM_GB}GB)"
         exit 1
-    elif [ "$total_ram_gb" -lt "$RECOMMENDED_RAM_GB" ]; then
-        print_warning "RAM is below recommended: ${total_ram_gb}GB (recommended: ${RECOMMENDED_RAM_GB}GB)"
-    else
-        print_success "RAM is sufficient: ${total_ram_gb}GB"
     fi
     
-    # Check available storage
-    local available_storage_gb=$(df -BG / | awk 'NR==2 {print $4}' | sed 's/G//')
-    print_system "Available storage on root: ${available_storage_gb}GB"
-    
-    if [ "$available_storage_gb" -lt "$MIN_STORAGE_GB" ]; then
-        print_error "Insufficient storage: ${available_storage_gb}GB (minimum: ${MIN_STORAGE_GB}GB)"
-        exit 1
-    elif [ "$available_storage_gb" -lt "$RECOMMENDED_STORAGE_GB" ]; then
-        print_warning "Storage is below recommended: ${available_storage_gb}GB (recommended: ${RECOMMENDED_STORAGE_GB}GB)"
-    else
-        print_success "Storage is sufficient: ${available_storage_gb}GB"
+    if [ "$total_ram_gb" -lt "$RECOMMENDED_RAM_GB" ]; then
+        print_warning "Low RAM: ${total_ram_gb}GB (recommended: ${RECOMMENDED_RAM_GB}GB)"
     fi
     
-    # Check if external USB is available
-    if [ -d "/Volumes/USB_APFS" ]; then
-        local usb_storage_gb=$(df -BG /Volumes/USB_APFS | awk 'NR==2 {print $4}' | sed 's/G//')
-        print_success "External USB storage available: ${usb_storage_gb}GB"
-    else
-        print_warning "External USB storage not found. Will use internal storage only."
-    fi
-    
-    # Check CPU cores
-    local cpu_cores=$(sysctl -n hw.ncpu)
-    print_system "CPU cores: ${cpu_cores}"
-    
-    if [ "$cpu_cores" -lt 4 ]; then
-        print_warning "Low CPU cores: ${cpu_cores}. Recommended: 4+ cores"
-    else
-        print_success "CPU cores sufficient: ${cpu_cores}"
-    fi
+    print_status "System requirements check passed!"
 }
 
-# Function to install dependencies
+# Install dependencies
 install_dependencies() {
     print_header "Installing Dependencies"
-    echo "==========================="
     
     # Check if Homebrew is installed
     if ! command -v brew &> /dev/null; then
-        print_status "Installing Homebrew..."
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        print_warning "Homebrew not found. Please install it manually:"
+        echo "  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+        echo "  Then add it to your PATH and run this script again."
+        exit 1
     fi
     
-    # Install Docker Desktop
+    # Check if Docker is installed
     if ! command -v docker &> /dev/null; then
-        print_status "Installing Docker Desktop..."
-        brew install --cask docker
-        print_warning "Please start Docker Desktop manually and ensure it's running"
-    else
-        print_success "Docker is already installed"
+        print_warning "Docker not found. Please install Docker Desktop manually:"
+        echo "  Visit: https://www.docker.com/products/docker-desktop"
+        echo "  Download and install Docker Desktop for Mac"
+        echo "  Then run this script again."
+        exit 1
     fi
     
-    # Install Rust
-    if ! command -v cargo &> /dev/null; then
-        print_status "Installing Rust toolchain..."
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-        source ~/.cargo/env
-    else
-        print_success "Rust is already installed"
+    # Check if Docker is running
+    if ! docker info &> /dev/null; then
+        print_error "Docker is not running. Please start Docker Desktop and try again."
+        exit 1
     fi
     
-    # Install additional tools
-    print_status "Installing additional tools..."
-    brew install jq curl wget git node
+    # Check if Docker Compose is available
+    if ! command -v docker-compose &> /dev/null; then
+        print_warning "Docker Compose not found. Installing..."
+        brew install docker-compose
+    fi
     
-    print_success "Dependencies installed successfully"
+    print_status "Dependencies check passed!"
 }
 
-# Function to setup storage directories
+# Setup storage directories
 setup_storage_directories() {
-    print_header "Setting up Storage Directories"
-    echo "==================================="
+    print_header "Setting Up Storage Directories"
     
-    # Create internal data directories
-    print_status "Creating internal data directories..."
-    mkdir -p "$INTERNAL_DATA_DIR"/{polkadot,kusama,westend}
-    mkdir -p "$POLKADOT_HOME"/{config,logs,monitoring}
+    # Create main directories on external USB
+    mkdir -p "$POLKADOT_HOME"
+    mkdir -p "$INTERNAL_DATA_DIR"
     
-    # Create external USB data directories
-    if [ -d "/Volumes/USB_APFS" ]; then
-        print_status "Creating external USB data directories..."
-        mkdir -p "$DATA_DIR"/{moonbeam,astar,acala,parallel,analytics}
-    else
-        print_warning "External USB not available, using internal storage for all data"
-        mkdir -p "$INTERNAL_DATA_DIR"/{moonbeam,astar,acala,parallel,analytics}
-        DATA_DIR="$INTERNAL_DATA_DIR"
-    fi
+    # Create data directories for each network
+    for network in $NETWORKS; do
+        mkdir -p "$POLKADOT_HOME/data/$network"
+        mkdir -p "$POLKADOT_HOME/chains/$network"
+        print_status "Created directories for $network"
+    done
     
-    # Set permissions
-    chmod 755 "$INTERNAL_DATA_DIR"
-    chmod 755 "$POLKADOT_HOME"
-    if [ -d "$DATA_DIR" ]; then
-        chmod 755 "$DATA_DIR"
-    fi
+    # Create monitoring directories
+    mkdir -p "$POLKADOT_HOME/monitoring/prometheus"
+    mkdir -p "$POLKADOT_HOME/monitoring/grafana/provisioning/datasources"
+    mkdir -p "$POLKADOT_HOME/monitoring/grafana/provisioning/dashboards"
     
-    print_success "Storage directories created successfully"
+    print_status "Storage directories setup complete!"
 }
 
-# Function to create Docker Compose configuration
+# Create Docker Compose configuration
 create_docker_compose() {
     print_header "Creating Docker Compose Configuration"
-    echo "=========================================="
     
     cat > "$POLKADOT_HOME/docker-compose.yml" << 'EOF'
 version: '3.8'
 
 services:
   # Polkadot Relay Chain
-  polkadot-relay:
+  polkadot:
     image: parity/polkadot:latest
-    container_name: polkadot-relay
-    restart: unless-stopped
+    platform: linux/amd64
+    container_name: polkadot-node
     ports:
-      - "9944:9944"   # WebSocket RPC
-      - "30333:30333" # P2P
+      - "9944:9944"
     volumes:
       - ./data/polkadot:/polkadot/data
     command: >
-      --chain=polkadot
-      --pruning=1000
-      --rpc-cors=all
-      --rpc-methods=unsafe
-      --ws-external
+      --chain polkadot
+      --base-path /polkadot/data
+      --name "Polkadot-Shrimp"
+      --rpc-cors all
+      --rpc-methods unsafe
       --rpc-external
       --prometheus-external
-      --prometheus-port=9615
-      --base-path=/polkadot/data
-      --name=shrimp-polkadot
-      --validator
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 1G
+      --state-pruning=archive
+      --blocks-pruning=archive
+      --no-hardware-benchmarks
+    restart: unless-stopped
     networks:
       - polkadot-network
 
   # Kusama
   kusama:
     image: parity/polkadot:latest
-    container_name: kusama
-    restart: unless-stopped
+    platform: linux/amd64
+    container_name: kusama-node
     ports:
-      - "9945:9944"   # WebSocket RPC
-      - "30334:30333" # P2P
+      - "9945:9944"
     volumes:
       - ./data/kusama:/polkadot/data
     command: >
-      --chain=kusama
-      --pruning=1000
-      --rpc-cors=all
-      --rpc-methods=unsafe
-      --ws-external
+      --chain kusama
+      --base-path /polkadot/data
+      --name "Kusama-Shrimp"
+      --rpc-cors all
+      --rpc-methods unsafe
       --rpc-external
       --prometheus-external
-      --prometheus-port=9616
-      --base-path=/polkadot/data
-      --name=shrimp-kusama
-      --validator
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1.5G
-        reservations:
-          cpus: '0.5'
-          memory: 1G
+      --state-pruning=archive
+      --blocks-pruning=archive
+      --no-hardware-benchmarks
+    restart: unless-stopped
     networks:
       - polkadot-network
 
   # Westend Testnet
   westend:
     image: parity/polkadot:latest
-    container_name: westend
-    restart: unless-stopped
+    platform: linux/amd64
+    container_name: westend-node
     ports:
-      - "9946:9944"   # WebSocket RPC
-      - "30335:30333" # P2P
+      - "9946:9944"
     volumes:
       - ./data/westend:/polkadot/data
     command: >
-      --chain=westend
-      --pruning=1000
-      --rpc-cors=all
-      --rpc-methods=unsafe
-      --ws-external
+      --chain westend
+      --base-path /polkadot/data
+      --name "Westend-Shrimp"
+      --rpc-cors all
+      --rpc-methods unsafe
       --rpc-external
       --prometheus-external
-      --prometheus-port=9617
-      --base-path=/polkadot/data
-      --name=shrimp-westend
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 512M
+      --state-pruning=archive
+      --blocks-pruning=archive
+      --no-hardware-benchmarks
+    restart: unless-stopped
     networks:
       - polkadot-network
 
-  # Moonbeam (Archive Node)
+  # Moonbeam
   moonbeam:
     image: purestake/moonbeam:latest
-    container_name: moonbeam
-    restart: unless-stopped
+    platform: linux/amd64
+    container_name: moonbeam-node
     ports:
-      - "9947:9944"   # WebSocket RPC
-      - "30336:30333" # P2P
+      - "9947:9944"
     volumes:
-      - /Volumes/USB_APFS/polkadot-data/moonbeam:/moonbeam/data
+      - ./data/moonbeam:/moonbeam/data
     command: >
-      --chain=moonbeam
-      --archive
-      --rpc-cors=all
-      --rpc-methods=unsafe
-      --ws-external
+      --chain moonbeam
+      --base-path /moonbeam/data
+      --name "Moonbeam-Shrimp"
+      --rpc-cors all
+      --rpc-methods unsafe
       --rpc-external
       --prometheus-external
-      --prometheus-port=9618
-      --base-path=/moonbeam/data
-      --name=shrimp-moonbeam
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 512M
+      --state-pruning=archive
+      --blocks-pruning=archive
+      --no-hardware-benchmarks
+    restart: unless-stopped
     networks:
       - polkadot-network
 
-  # Astar (Archive Node)
+  # Astar
   astar:
-    image: astarnetwork/astar-collator:latest
-    container_name: astar
-    restart: unless-stopped
+    image: staketechnologies/astar-collator:latest
+    platform: linux/amd64
+    container_name: astar-node
     ports:
-      - "9948:9944"   # WebSocket RPC
-      - "30337:30333" # P2P
+      - "9948:9944"
     volumes:
-      - /Volumes/USB_APFS/polkadot-data/astar:/astar/data
+      - ./data/astar:/astar/data
     command: >
-      --chain=astar
-      --archive
-      --rpc-cors=all
-      --rpc-methods=unsafe
-      --ws-external
+      --chain astar
+      --base-path /astar/data
+      --name "Astar-Shrimp"
+      --rpc-cors all
+      --rpc-methods unsafe
       --rpc-external
       --prometheus-external
-      --prometheus-port=9619
-      --base-path=/astar/data
-      --name=shrimp-astar
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 512M
+      --state-pruning=archive
+      --blocks-pruning=archive
+      --no-hardware-benchmarks
+    restart: unless-stopped
     networks:
       - polkadot-network
 
-  # Prometheus for monitoring
+  # Acala
+  acala:
+    image: acala/acala-node:latest
+    platform: linux/amd64
+    container_name: acala-node
+    ports:
+      - "9949:9944"
+    volumes:
+      - ./data/acala:/acala/data
+    command: >
+      --chain acala
+      --base-path /acala/data
+      --name "Acala-Shrimp"
+      --rpc-cors all
+      --rpc-methods unsafe
+      --rpc-external
+      --prometheus-external
+      --state-pruning=archive
+      --blocks-pruning=archive
+    restart: unless-stopped
+    networks:
+      - polkadot-network
+
+  # Parallel Finance
+  parallel:
+    image: parallelfinance/parallel:latest
+    platform: linux/amd64
+    container_name: parallel-node
+    ports:
+      - "9950:9944"
+    volumes:
+      - ./data/parallel:/parallel/data
+    command: >
+      --chain parallel
+      --base-path /parallel/data
+      --name "Parallel-Shrimp"
+      --rpc-cors all
+      --rpc-methods unsafe
+      --rpc-external
+      --prometheus-external
+      --state-pruning=archive
+      --blocks-pruning=archive
+    restart: unless-stopped
+    networks:
+      - polkadot-network
+
+  # Bifrost
+  bifrost:
+    image: thebifrost/bifrost-node:latest
+    platform: linux/amd64
+    container_name: bifrost-node
+    ports:
+      - "9951:9944"
+    volumes:
+      - ./data/bifrost:/bifrost/data
+    command: >
+      --chain bifrost
+      --base-path /bifrost/data
+      --name "Bifrost-Shrimp"
+      --rpc-cors all
+      --rpc-methods unsafe
+      --rpc-external
+      --prometheus-external
+      --state-pruning=archive
+      --blocks-pruning=archive
+    restart: unless-stopped
+    networks:
+      - polkadot-network
+
+  # HydraDX
+  hydradx:
+    image: galacticcouncil/hydra-dx:latest
+    platform: linux/amd64
+    container_name: hydradx-node
+    ports:
+      - "9952:9944"
+    volumes:
+      - ./data/hydradx:/hydradx/data
+    command: >
+      --chain hydradx
+      --base-path /hydradx/data
+      --name "HydraDX-Shrimp"
+      --rpc-cors all
+      --rpc-methods unsafe
+      --rpc-external
+      --prometheus-external
+      --state-pruning=archive
+      --blocks-pruning=archive
+    restart: unless-stopped
+    networks:
+      - polkadot-network
+
+  # Centrifuge
+  centrifuge:
+    image: centrifugeio/centrifuge-chain:latest
+    platform: linux/amd64
+    container_name: centrifuge-node
+    ports:
+      - "9953:9944"
+    volumes:
+      - ./data/centrifuge:/centrifuge/data
+    command: >
+      --chain centrifuge
+      --base-path /centrifuge/data
+      --name "Centrifuge-Shrimp"
+      --rpc-cors all
+      --rpc-methods unsafe
+      --rpc-external
+      --prometheus-external
+      --state-pruning=archive
+      --blocks-pruning=archive
+    restart: unless-stopped
+    networks:
+      - polkadot-network
+
+  # Prometheus
   prometheus:
     image: prom/prometheus:latest
     container_name: polkadot-prometheus
-    restart: unless-stopped
     ports:
       - "9090:9090"
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus:/etc/prometheus
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -369,22 +426,24 @@ services:
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--storage.tsdb.retention.time=200h'
       - '--web.enable-lifecycle'
+    restart: unless-stopped
     networks:
       - polkadot-network
 
-  # Grafana for dashboards
+  # Grafana
   grafana:
     image: grafana/grafana:latest
     container_name: polkadot-grafana
-    restart: unless-stopped
     ports:
       - "3000:3000"
     volumes:
-      - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
     environment:
+      - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
     networks:
       - polkadot-network
 
@@ -397,18 +456,14 @@ networks:
     driver: bridge
 EOF
 
-    print_success "Docker Compose configuration created"
+    print_status "Docker Compose configuration created!"
 }
 
-# Function to create monitoring configuration
-create_monitoring_config() {
-    print_header "Creating Monitoring Configuration"
-    echo "======================================"
+# Create Prometheus configuration
+create_prometheus_config() {
+    print_header "Creating Prometheus Configuration"
     
-    # Create Prometheus configuration
-    mkdir -p "$POLKADOT_HOME/monitoring"
-    
-    cat > "$POLKADOT_HOME/monitoring/prometheus.yml" << 'EOF'
+    cat > "$POLKADOT_HOME/monitoring/prometheus/prometheus.yml" << 'EOF'
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
@@ -422,30 +477,64 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  - job_name: 'polkadot-relay'
+  - job_name: 'polkadot'
     static_configs:
-      - targets: ['polkadot-relay:9615']
+      - targets: ['polkadot:9615']
+    metrics_path: /metrics
 
   - job_name: 'kusama'
     static_configs:
-      - targets: ['kusama:9616']
+      - targets: ['kusama:9615']
+    metrics_path: /metrics
 
   - job_name: 'westend'
     static_configs:
-      - targets: ['westend:9617']
+      - targets: ['westend:9615']
+    metrics_path: /metrics
 
   - job_name: 'moonbeam'
     static_configs:
-      - targets: ['moonbeam:9618']
+      - targets: ['moonbeam:9615']
+    metrics_path: /metrics
 
   - job_name: 'astar'
     static_configs:
-      - targets: ['astar:9619']
+      - targets: ['astar:9615']
+    metrics_path: /metrics
+
+  - job_name: 'acala'
+    static_configs:
+      - targets: ['acala:9615']
+    metrics_path: /metrics
+
+  - job_name: 'parallel'
+    static_configs:
+      - targets: ['parallel:9615']
+    metrics_path: /metrics
+
+  - job_name: 'bifrost'
+    static_configs:
+      - targets: ['bifrost:9615']
+    metrics_path: /metrics
+
+  - job_name: 'hydradx'
+    static_configs:
+      - targets: ['hydradx:9615']
+    metrics_path: /metrics
+
+  - job_name: 'centrifuge'
+    static_configs:
+      - targets: ['centrifuge:9615']
+    metrics_path: /metrics
+
 EOF
 
-    # Create Grafana provisioning
-    mkdir -p "$POLKADOT_HOME/monitoring/grafana/provisioning/datasources"
-    mkdir -p "$POLKADOT_HOME/monitoring/grafana/provisioning/dashboards"
+    print_status "Prometheus configuration created!"
+}
+
+# Create Grafana datasource configuration
+create_grafana_datasource() {
+    print_header "Creating Grafana Datasource Configuration"
     
     cat > "$POLKADOT_HOME/monitoring/grafana/provisioning/datasources/prometheus.yml" << 'EOF'
 apiVersion: 1
@@ -458,239 +547,151 @@ datasources:
     isDefault: true
 EOF
 
-    print_success "Monitoring configuration created"
+    print_status "Grafana datasource configuration created!"
 }
 
-# Function to create environment configuration
-create_environment_config() {
-    print_header "Creating Environment Configuration"
-    echo "========================================"
-    
-    cat > "$POLKADOT_HOME/.env" << 'EOF'
-# Polkadot Networks Configuration
-POLKADOT_SYNC_ENABLED=true
-POLKADOT_NETWORKS=polkadot,kusama,westend,moonbeam,astar
-POLKADOT_SYNC_INTERVAL=10
-POLKADOT_BATCH_SIZE=20
-POLKADOT_MAX_CONCURRENT_REQUESTS=5
-POLKADOT_DATA_RETENTION_DAYS=90
-POLKADOT_PRIORITY_THRESHOLD=5
-
-# Database Configuration
-DATABASE_URL=postgresql://postgres:password@localhost:5432/polkadot_analytics
-
-# Redis Configuration
-REDIS_URL=redis://localhost:6379
-
-# Monitoring Configuration
-PROMETHEUS_PORT=9090
-GRAFANA_PORT=3000
-METRICS_ENABLED=true
-
-# Logging Configuration
-RUST_LOG=info
-LOG_LEVEL=info
-
-# Security
-JWT_SECRET=your_jwt_secret_here
-API_KEY_SECRET=your_api_key_secret_here
-EOF
-
-    chmod 600 "$POLKADOT_HOME/.env"
-    print_success "Environment configuration created"
-}
-
-# Function to create systemd services
-create_systemd_services() {
-    print_header "Creating Systemd Services"
-    echo "=============================="
-    
-    # Create Polkadot service
-    sudo tee /Library/LaunchDaemons/com.defimon.polkadot.plist > /dev/null << EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.defimon.polkadot</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/usr/local/bin/docker-compose</string>
-        <string>-f</string>
-        <string>$POLKADOT_HOME/docker-compose.yml</string>
-        <string>up</string>
-        <string>-d</string>
-    </array>
-    <key>WorkingDirectory</key>
-    <string>$POLKADOT_HOME</string>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>KeepAlive</key>
-    <true/>
-    <key>StandardOutPath</key>
-    <string>$POLKADOT_HOME/logs/polkadot.log</string>
-    <key>StandardErrorPath</key>
-    <string>$POLKADOT_HOME/logs/polkadot-error.log</string>
-</dict>
-</plist>
-EOF
-
-    # Load the service
-    sudo launchctl load /Library/LaunchDaemons/com.defimon.polkadot.plist
-    
-    print_success "Systemd services created and loaded"
-}
-
-# Function to start services
-start_services() {
-    print_header "Starting Polkadot Services"
-    echo "=============================="
-    
-    cd "$POLKADOT_HOME"
-    
-    # Start Docker Compose services
-    print_status "Starting Docker Compose services..."
-    docker-compose up -d
-    
-    # Wait for services to start
-    print_status "Waiting for services to start..."
-    sleep 30
-    
-    # Check service status
-    print_status "Checking service status..."
-    docker-compose ps
-    
-    print_success "Polkadot services started successfully"
-}
-
-# Function to create monitoring dashboard
-create_monitoring_dashboard() {
-    print_header "Creating Monitoring Dashboard"
-    echo "=================================="
+# Create Grafana dashboard configuration
+create_grafana_dashboard() {
+    print_header "Creating Grafana Dashboard Configuration"
     
     cat > "$POLKADOT_HOME/monitoring/grafana/provisioning/dashboards/polkadot-dashboard.json" << 'EOF'
 {
   "dashboard": {
-    "title": "Polkadot Networks Monitoring",
+    "id": null,
+    "title": "Polkadot Networks Overview",
+    "tags": ["polkadot"],
+    "timezone": "browser",
     "panels": [
       {
-        "title": "Polkadot Blocks Processed",
+        "id": 1,
+        "title": "Block Height",
         "type": "stat",
         "targets": [
           {
-            "expr": "polkadot_blocks_processed_total",
-            "legendFormat": "{{network}}"
+            "expr": "substrate_block_height",
+            "legendFormat": "{{chain}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "displayMode": "list"
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Peers",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "substrate_peers_count",
+            "legendFormat": "{{chain}}"
           }
         ]
       },
       {
-        "title": "Polkadot Latest Block Number",
+        "id": 3,
+        "title": "Sync Status",
         "type": "stat",
         "targets": [
           {
-            "expr": "polkadot_latest_block_number",
-            "legendFormat": "{{network}}"
-          }
-        ]
-      },
-      {
-        "title": "Polkadot Extrinsics Processed",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "polkadot_extrinsics_processed_total",
-            "legendFormat": "{{network}}"
-          }
-        ]
-      },
-      {
-        "title": "Polkadot Validators",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "polkadot_validators_total",
-            "legendFormat": "{{network}}"
+            "expr": "substrate_sync_state",
+            "legendFormat": "{{chain}}"
           }
         ]
       }
-    ]
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s"
   }
 }
 EOF
 
-    print_success "Monitoring dashboard created"
+    print_status "Grafana dashboard configuration created!"
 }
 
-# Function to display final status
+# Start services
+start_services() {
+    print_header "Starting Polkadot Services"
+    
+    cd "$POLKADOT_HOME"
+    
+    # Check if Docker is available
+    if ! command -v docker &> /dev/null; then
+        print_error "Docker is not available. Please install Docker Desktop and try again."
+        exit 1
+    fi
+    
+    # Pull images
+    print_status "Pulling Docker images..."
+    docker-compose pull
+    
+    # Start services
+    print_status "Starting services..."
+    docker-compose up -d
+    
+    print_status "Services started successfully!"
+}
+
+# Display final status
 display_final_status() {
     print_header "Deployment Complete!"
-    echo "====================="
     
-    print_success "Polkadot deployment completed successfully!"
+    echo -e "${GREEN}✅ All Polkadot networks are now running in archive mode!${NC}"
     echo ""
-    print_status "Services deployed:"
-    echo "  ✅ Polkadot Relay Chain (Port 9944)"
-    echo "  ✅ Kusama (Port 9945)"
-    echo "  ✅ Westend Testnet (Port 9946)"
-    echo "  ✅ Moonbeam (Port 9947)"
-    echo "  ✅ Astar (Port 9948)"
-    echo "  ✅ Prometheus (Port 9090)"
-    echo "  ✅ Grafana (Port 3000)"
+    echo -e "${BLUE}🌐 Network Access Points:${NC}"
+    echo "  • Polkadot Relay Chain: http://localhost:9944"
+    echo "  • Kusama:              http://localhost:9945"
+    echo "  • Westend Testnet:     http://localhost:9946"
+    echo "  • Moonbeam:            http://localhost:9947"
+    echo "  • Astar:               http://localhost:9948"
+    echo "  • Acala:               http://localhost:9949"
+    echo "  • Parallel Finance:    http://localhost:9950"
+    echo "  • Bifrost:             http://localhost:9951"
+    echo "  • HydraDX:             http://localhost:9952"
+    echo "  • Centrifuge:          http://localhost:9953"
     echo ""
-    print_status "Access URLs:"
-    echo "  🌐 Grafana Dashboard: http://localhost:3000 (admin/admin)"
-    echo "  📊 Prometheus: http://localhost:9090"
-    echo "  🔗 Polkadot RPC: ws://localhost:9944"
-    echo "  🔗 Kusama RPC: ws://localhost:9945"
-    echo "  🔗 Moonbeam RPC: ws://localhost:9947"
+    echo -e "${BLUE}📊 Monitoring:${NC}"
+    echo "  • Prometheus:          http://localhost:9090"
+    echo "  • Grafana:             http://localhost:3000 (admin/admin)"
     echo ""
-    print_status "Storage Usage:"
-    echo "  🔥 Internal Storage: $INTERNAL_DATA_DIR"
-    echo "  🌡️ External USB: $DATA_DIR"
+    echo -e "${BLUE}💾 Data Storage:${NC}"
+    echo "  • External USB:        $POLKADOT_HOME"
+    echo "  • Archive Mode:        ✅ Enabled (complete historical data)"
     echo ""
-    print_status "Next steps:"
-    echo "  1. Access Grafana dashboard to monitor networks"
-    echo "  2. Configure alerts in Prometheus"
-    echo "  3. Integrate with existing analytics system"
-    echo "  4. Set up automated backups"
+    echo -e "${YELLOW}⏳ Initial sync will take several hours to days depending on network size${NC}"
+    echo -e "${YELLOW}📈 Monitor progress via Grafana dashboard${NC}"
+    echo ""
+    echo -e "${BLUE}🔧 Management Commands:${NC}"
+    echo "  • View logs:           docker-compose logs -f [service-name]"
+    echo "  • Stop services:       docker-compose down"
+    echo "  • Restart services:    docker-compose restart"
+    echo "  • Update images:       docker-compose pull && docker-compose up -d"
 }
 
 # Main execution
 main() {
-    print_header "POLKADOT DEPLOYMENT - SHRIMP SERVER"
-    echo "========================================="
+    print_header "Polkadot Shrimp Server Deployment"
+    echo "This script will deploy all major Polkadot networks in archive mode"
+    echo "for complete historical data access on your shrimp server."
+    echo ""
     
-    # Check if running on shrimp server
-    check_shrimp_server
-    
-    # Check system requirements
     check_system_requirements
-    
-    # Install dependencies
     install_dependencies
-    
-    # Setup storage directories
     setup_storage_directories
-    
-    # Create Docker Compose configuration
     create_docker_compose
-    
-    # Create monitoring configuration
-    create_monitoring_config
-    
-    # Create environment configuration
-    create_environment_config
-    
-    # Create systemd services
-    create_systemd_services
-    
-    # Start services
+    create_prometheus_config
+    create_grafana_datasource
+    create_grafana_dashboard
     start_services
-    
-    # Create monitoring dashboard
-    create_monitoring_dashboard
-    
-    # Display final status
     display_final_status
 }
 

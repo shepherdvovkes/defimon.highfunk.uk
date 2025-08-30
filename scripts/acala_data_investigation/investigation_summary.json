@@ -1,0 +1,55 @@
+{
+  "investigation_timestamp": "2025-08-29T21:13:15.977259",
+  "acala_node_url": "http://localhost:9949",
+  "data_summary": {
+    "blocks_collected": 5,
+    "extrinsics_collected": 10,
+    "events_collected": 0,
+    "accounts_collected": 0,
+    "tokens_collected": 6
+  },
+  "data_structure_analysis": {
+    "block_fields": [
+      "block_number",
+      "block_hash",
+      "parent_hash",
+      "timestamp",
+      "extrinsics_count",
+      "events_count",
+      "total_fee",
+      "block_size",
+      "validator",
+      "era",
+      "session"
+    ],
+    "extrinsic_fields": [
+      "extrinsic_hash",
+      "block_number",
+      "extrinsic_index",
+      "call_module",
+      "call_function",
+      "signer",
+      "nonce",
+      "fee",
+      "success",
+      "error_message",
+      "params"
+    ],
+    "token_fields": [
+      "token_id",
+      "name",
+      "symbol",
+      "decimals",
+      "total_supply",
+      "circulating_supply",
+      "price_usd"
+    ]
+  },
+  "recommendations": [
+    "Use WebSocket connections for real-time data",
+    "Implement proper error handling for RPC calls",
+    "Add rate limiting to avoid overwhelming the node",
+    "Cache frequently accessed data",
+    "Implement data validation and sanitization"
+  ]
+}
