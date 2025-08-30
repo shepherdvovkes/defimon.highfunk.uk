@@ -1,0 +1,195 @@
+{
+  "prediction_target": "ETH Price 1 Month Forecast",
+  "prediction_requirements": {
+    "training_period_days": 365,
+    "prediction_horizon_days": 30,
+    "min_data_points": 10000,
+    "optimal_data_points": 50000,
+    "update_frequency_hours": 1,
+    "confidence_level": 0.75
+  },
+  "data_approaches": {
+    "enhanced_apis": {
+      "enhanced_apis": {
+        "qn_getTokenAnalytics": {
+          "calls_per_day": 24,
+          "data_size_kb": 5,
+          "cost_per_call": 0.001,
+          "description": "Token analytics and metrics"
+        },
+        "qn_getTokenPrice": {
+          "calls_per_day": 24,
+          "data_size_kb": 2,
+          "cost_per_call": 0.001,
+          "description": "Current token price"
+        },
+        "qn_getTransactionAnalytics": {
+          "calls_per_day": 24,
+          "data_size_kb": 8,
+          "cost_per_call": 0.001,
+          "description": "Transaction patterns and volume"
+        },
+        "qn_getWalletAnalytics": {
+          "calls_per_day": 6,
+          "data_size_kb": 10,
+          "cost_per_call": 0.001,
+          "description": "Wallet behavior analysis"
+        }
+      },
+      "daily_requirements": {
+        "api_calls": 78,
+        "data_size_kb": 420,
+        "data_size_mb": 0.41015625,
+        "cost_usd": 0.078
+      },
+      "training_requirements": {
+        "api_calls": 28470,
+        "data_size_kb": 153300,
+        "data_size_mb": 149.70703125,
+        "data_size_gb": 0.14619827270507812,
+        "cost_usd": 28.47
+      },
+      "real_time_requirements": {
+        "api_calls_per_hour": 3.25,
+        "data_size_per_hour_kb": 17.5,
+        "cost_per_hour_usd": 0.00325
+      }
+    },
+    "light_rpc": {
+      "essential_rpc_calls": {
+        "eth_blockNumber": {
+          "calls_per_day": 24,
+          "data_size_bytes": 64,
+          "cost_per_call": 0.0001,
+          "description": "Current block number"
+        },
+        "eth_gasPrice": {
+          "calls_per_day": 24,
+          "data_size_bytes": 64,
+          "cost_per_call": 0.0001,
+          "description": "Current gas price"
+        },
+        "eth_getBlockByNumber": {
+          "calls_per_day": 24,
+          "data_size_bytes": 2048,
+          "cost_per_call": 0.0001,
+          "description": "Block data for metrics"
+        },
+        "eth_getBalance": {
+          "calls_per_day": 24,
+          "data_size_bytes": 64,
+          "cost_per_call": 0.0001,
+          "description": "Large wallet balances"
+        }
+      },
+      "daily_requirements": {
+        "api_calls": 96,
+        "data_size_bytes": 53760,
+        "data_size_kb": 52.5,
+        "cost_usd": 0.009600000000000001
+      },
+      "training_requirements": {
+        "api_calls": 35040,
+        "data_size_bytes": 19622400,
+        "data_size_kb": 19162.5,
+        "data_size_mb": 18.71337890625,
+        "cost_usd": 3.5040000000000004
+      }
+    },
+    "hybrid": {
+      "approach": "Hybrid (Enhanced APIs + Light RPC)",
+      "daily_requirements": {
+        "api_calls": 174,
+        "data_size_kb": 472.5,
+        "data_size_mb": 0.46142578125,
+        "cost_usd": 0.0876
+      },
+      "training_requirements": {
+        "api_calls": 63510,
+        "data_size_kb": 172462.5,
+        "data_size_mb": 168.42041015625,
+        "data_size_gb": 0.1644730567932129,
+        "cost_usd": 31.974
+      },
+      "components": {
+        "enhanced_apis": {
+          "api_calls": 78,
+          "data_size_kb": 420,
+          "data_size_mb": 0.41015625,
+          "cost_usd": 0.078
+        },
+        "rpc_calls": {
+          "api_calls": 96,
+          "data_size_bytes": 53760,
+          "data_size_kb": 52.5,
+          "cost_usd": 0.009600000000000001
+        }
+      }
+    }
+  },
+  "ml_requirements": {
+    "model_specifications": {
+      "model_type": "LSTM with Attention",
+      "input_features": 15,
+      "sequence_length": 30,
+      "hidden_layers": 3,
+      "neurons_per_layer": 128,
+      "training_epochs": 100,
+      "batch_size": 32,
+      "validation_split": 0.2
+    },
+    "data_requirements": {
+      "total_samples": 50000,
+      "sequence_length": 30,
+      "total_data_points": 1500000,
+      "total_features": 22500000,
+      "features_per_sample": 15
+    },
+    "training_requirements": {
+      "training_time_hours": 2,
+      "memory_usage_gb": 4,
+      "storage_size_mb": 50
+    }
+  },
+  "comparison": {
+    "enhanced_apis": {
+      "daily_cost": 0.078,
+      "training_cost": 28.47,
+      "daily_data": 0.41015625,
+      "training_data": 0.14619827270507812,
+      "api_calls_per_day": 78
+    },
+    "light_rpc": {
+      "daily_cost": 0.009600000000000001,
+      "training_cost": 3.5040000000000004,
+      "daily_data": 52.5,
+      "training_data": 18.71337890625,
+      "api_calls_per_day": 96
+    },
+    "hybrid": {
+      "daily_cost": 0.0876,
+      "training_cost": 31.974,
+      "daily_data": 0.46142578125,
+      "training_data": 0.1644730567932129,
+      "api_calls_per_day": 174
+    }
+  },
+  "recommendations": {
+    "best_approach": "Hybrid",
+    "reason": "Balanced cost, data quality, and coverage",
+    "implementation_priority": [
+      "1. Start with Enhanced APIs for core metrics",
+      "2. Add light RPC calls for network data",
+      "3. Implement real-time updates",
+      "4. Train ML model on collected data"
+    ]
+  },
+  "summary": {
+    "recommended_daily_cost": 0.0876,
+    "recommended_training_cost": 31.974,
+    "recommended_daily_data": 0.46142578125,
+    "recommended_training_data": 0.1644730567932129,
+    "training_time_hours": 2,
+    "expected_accuracy": "70-75%"
+  }
+}

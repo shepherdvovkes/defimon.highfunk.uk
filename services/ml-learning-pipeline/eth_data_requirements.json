@@ -1,0 +1,145 @@
+{
+  "daily_data": {
+    "daily_breakdown": {
+      "blocks": {
+        "count": 7200,
+        "size_per_block": 2048,
+        "total_size": 14745600,
+        "api_calls": 7200
+      },
+      "transactions": {
+        "count": 1080000,
+        "size_per_tx": 1536,
+        "total_size": 1658880000,
+        "api_calls": 1080000
+      },
+      "logs": {
+        "count": 540000,
+        "size_per_log": 512,
+        "total_size": 276480000,
+        "api_calls": 540000
+      },
+      "gas_prices": {
+        "count": 7200,
+        "size_per_price": 64,
+        "total_size": 460800,
+        "api_calls": 7200
+      },
+      "mempool": {
+        "count": 10000,
+        "size_per_tx": 1024,
+        "total_size": 10240000,
+        "api_calls": 1000
+      }
+    },
+    "total_daily_size_bytes": 1960806400,
+    "total_daily_size_gb": 1.8261432647705078,
+    "total_daily_calls": 1635400,
+    "daily_cost_usd": 163.54000000000002
+  },
+  "training_requirements": {
+    "raw_data": {
+      "total_days": 365,
+      "raw_data_size_gb": 666.5422916412354,
+      "total_api_calls": 596921000,
+      "total_cost_usd": 59692.100000000006
+    },
+    "processed_data": {
+      "compression_ratio": 0.2,
+      "processed_data_size_gb": 133.30845832824707,
+      "features_per_sample": 70,
+      "samples_per_day": 1440,
+      "total_samples": 525600
+    },
+    "training_data": {
+      "training_samples": 420480,
+      "validation_samples": 52560,
+      "test_samples": 52560,
+      "training_size_gb": 106.64676666259766,
+      "validation_size_gb": 13.330845832824707,
+      "test_size_gb": 13.330845832824707
+    },
+    "training_split": {
+      "training_set": 0.8,
+      "validation_set": 0.1,
+      "test_set": 0.1
+    }
+  },
+  "model_requirements": {
+    "models": {
+      "1m_model": {
+        "parameters": 5000000,
+        "size_mb": 20,
+        "memory_gb": 2,
+        "training_time_hours": 2
+      },
+      "5m_model": {
+        "parameters": 10000000,
+        "size_mb": 40,
+        "memory_gb": 4,
+        "training_time_hours": 4
+      },
+      "6m_model": {
+        "parameters": 12000000,
+        "size_mb": 48,
+        "memory_gb": 4,
+        "training_time_hours": 4
+      },
+      "1y_model": {
+        "parameters": 20000000,
+        "size_mb": 80,
+        "memory_gb": 8,
+        "training_time_hours": 8
+      },
+      "ensemble_model": {
+        "parameters": 50000000,
+        "size_mb": 200,
+        "memory_gb": 16,
+        "training_time_hours": 12
+      }
+    },
+    "total_model_size_mb": 388,
+    "total_model_size_gb": 0.37890625,
+    "total_model_memory_gb": 34,
+    "total_training_time_hours": 30
+  },
+  "m4_optimization": {
+    "specifications": {
+      "cpu_cores": 8,
+      "neural_engine_cores": 16,
+      "gpu_cores": 10,
+      "memory_bandwidth_gbps": 68.25,
+      "unified_memory_gb": 32
+    },
+    "performance_improvements": {
+      "training_speedup": 10,
+      "inference_speedup": 15,
+      "power_efficiency": 0.5,
+      "memory_efficiency": 0.8
+    },
+    "optimized_training_time_hours": 3.0,
+    "optimized_memory_usage_gb": 27.200000000000003,
+    "inference_predictions_per_second": 1000
+  },
+  "storage_requirements": {
+    "raw_data_gb": 666.5422916412354,
+    "processed_data_gb": 133.30845832824707,
+    "model_storage_gb": 0.37890625,
+    "cached_predictions_gb": 1,
+    "total_storage_gb": 801.2296562194824
+  },
+  "cost_breakdown": {
+    "initial_data_collection_usd": 59692.100000000006,
+    "monthly_api_costs_usd": 4906.200000000001,
+    "annual_api_costs_usd": 59692.100000000006,
+    "storage_costs_usd": 16.02459312438965,
+    "compute_costs_usd": 0
+  },
+  "summary": {
+    "total_storage_tb": 0.7824508361518383,
+    "total_initial_cost_usd": 59692.100000000006,
+    "total_monthly_cost_usd": 4906.200000000001,
+    "total_training_time_hours": 3.0,
+    "prediction_accuracy_range": "50-75%"
+  }
+}
