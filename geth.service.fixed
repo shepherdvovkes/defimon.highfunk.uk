@@ -24,10 +24,10 @@ ExecStart=/usr/local/bin/geth \
     --authrpc.port 8551 \
     --authrpc.vhosts "*" \
     --authrpc.jwtsecret /home/vovkes/ethereum/jwtsecret \
-    --syncmode snap \
-    --cache 4096 \
-    --maxpeers 100 \
-    --maxpendpeers 50 \
+    --syncmode light \
+    --cache 2048 \
+    --maxpeers 50 \
+    --maxpendpeers 25 \
     --metrics \
     --metrics.addr 0.0.0.0 \
     --metrics.port 6060 \
