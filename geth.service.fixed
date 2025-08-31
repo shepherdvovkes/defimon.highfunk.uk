@@ -36,7 +36,6 @@ ExecStart=/usr/local/bin/geth \
     --snapshot=false \
     --discovery.port 30303 \
     --discovery.v5 \
-    --discovery.v5.addr 0.0.0.0:30303 \
     --nat extip:188.190.253.225 \
     --netrestrict 0.0.0.0/0
 
