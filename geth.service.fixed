@@ -1,0 +1,49 @@
+# /etc/systemd/system/geth.service
+[Unit]
+Description=Ethereum Geth Execution Client
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=vovkes
+Group=vovkes
+WorkingDirectory=/home/vovkes/ethereum
+ExecStart=/usr/local/bin/geth \
+    --datadir /home/vovkes/ethereum-data/geth \
+    --http \
+    --http.addr 0.0.0.0 \
+    --http.port 8545 \
+    --http.corsdomain "*" \
+    --http.vhosts "*" \
+    --ws \
+    --ws.addr 0.0.0.0 \
+    --ws.port 8546 \
+    --ws.origins "*" \
+    --authrpc.addr 0.0.0.0 \
+    --authrpc.port 8551 \
+    --authrpc.vhosts "*" \
+    --authrpc.jwtsecret /home/vovkes/ethereum/jwtsecret \
+    --syncmode snap \
+    --cache 4096 \
+    --maxpeers 100 \
+    --maxpendpeers 50 \
+    --metrics \
+    --metrics.addr 0.0.0.0 \
+    --metrics.port 6060 \
+    --verbosity 3 \
+    --txlookuplimit 0 \
+    --snapshot=false \
+    --discovery.port 30303 \
+    --discovery.v5 \
+    --discovery.v5.addr 0.0.0.0:30303 \
+    --nat extip:188.190.253.225 \
+    --netrestrict 0.0.0.0/0
+
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
