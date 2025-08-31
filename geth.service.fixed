@@ -24,7 +24,7 @@ ExecStart=/usr/local/bin/geth \
     --authrpc.port 8551 \
     --authrpc.vhosts "*" \
     --authrpc.jwtsecret /home/vovkes/ethereum/jwtsecret \
-    --syncmode light \
+    --syncmode snap \
     --cache 2048 \
     --maxpeers 50 \
     --maxpendpeers 25 \
