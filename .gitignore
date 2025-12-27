@@ -1,5 +1,6 @@
 # Dependencies
-node_modules/
+# Only ignore frontend/node_modules, allow other node_modules if needed
+frontend/node_modules/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -128,7 +129,11 @@ jspm_packages/
 
 # Next.js build output
 .next
-out
+frontend/.next/
+# Block out directories except frontend/out/ (contains generated static site)
+# Allow frontend/out/ to be tracked
+out/
+!frontend/out/
 
 # Nuxt.js build / generate output
 .nuxt
@@ -137,6 +142,8 @@ dist
 # Gatsby files
 .cache/
 public
+# Exception: frontend/public contains static files that should be tracked
+!frontend/public/
 
 # Storybook build outputs
 .out
