@@ -41,7 +41,7 @@ export default function Home() {
             <a 
               href="#contact" 
               className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white/10 transition-all"
-            >
+          >
               Зв'язатися з нами
             </a>
           </div>
